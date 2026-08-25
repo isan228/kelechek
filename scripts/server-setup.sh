@@ -42,20 +42,27 @@ NODE_ENV=production
 DATABASE_URL=postgresql://kelech:${DB_PASS}@127.0.0.1:5432/kelech
 JWT_SECRET=${JWT_SECRET}
 API_PORT=3001
-WEB_ORIGIN=https://${DOMAIN}
+WEB_ORIGIN=http://${DOMAIN}
+COOKIE_SECURE=false
 MOCK_PAYMENTS=true
 OTP_DEV_ECHO=false
 EOF
   chown kelech:kelech "$ENV_FILE"
   chmod 600 "$ENV_FILE"
+  ln -sfn "$ENV_FILE" "$APP_DIR/.env"
   echo "Создан $ENV_FILE (пароль БД и JWT сгенерированы)"
 fi
+ln -sfn "$ENV_FILE" "$APP_DIR/.env" 2>/dev/null || true
+
+as_kelech() {
+  sudo -u kelech bash -lc "cd '$APP_DIR' && set -a && . '$ENV_FILE' && set +a && $*"
+}
 
 cd "$APP_DIR"
-sudo -u kelech npm install --workspace=@kelech/api --workspace=@kelech/web --workspace=@kelech/shared --include-workspace-root
-sudo -u kelech npx prisma db push --schema apps/api/prisma/schema.prisma
-sudo -u kelech npm run db:seed || true
-sudo -u kelech npm run build -w @kelech/web
+as_kelech "npm install --workspace=@kelech/api --workspace=@kelech/web --workspace=@kelech/shared --include-workspace-root"
+as_kelech "npx prisma db push --schema apps/api/prisma/schema.prisma"
+as_kelech "npm run db:seed" || true
+as_kelech "npm run build -w @kelech/web"
 
 cp "$APP_DIR/deploy/kelech-api.service" /etc/systemd/system/kelech-api.service
 sed -i "s|/var/www/kelechek|$APP_DIR|g" /etc/systemd/system/kelech-api.service

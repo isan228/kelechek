@@ -12,7 +12,7 @@ git reset --hard "origin/${BRANCH}"
 chown -R kelech:kelech "$ROOT"
 
 run_app() {
-  sudo -u kelech --preserve-env=NODE_ENV bash -lc "cd '$ROOT' && $*"
+  sudo -u kelech bash -lc "cd '$ROOT' && set -a && . apps/api/.env && set +a && $*"
 }
 
 run_app "npm install"
