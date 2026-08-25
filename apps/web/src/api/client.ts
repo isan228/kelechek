@@ -38,10 +38,10 @@ export const api = {
   logout: () => request("/api/auth/logout", { method: "POST" }),
   patchMe: (data: Partial<Pick<ApiUser, "locale" | "firstName" | "lastName">>) =>
     request<{ user: ApiUser }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
-  tariffs: () =>
+  tariffs: (locale = "ru") =>
     request<{
       tariffs: { id: string; priceKgs: number; periodDays: number; name: string; description: string }[];
-    }>("/api/tariffs"),
+    }>(`/api/tariffs?locale=${locale}`),
   pay: (tariffId: string) => request<{ payment: { id: string; status: string } }>("/api/payments", {
     method: "POST",
     body: JSON.stringify({ tariffId }),
@@ -70,7 +70,7 @@ export const api = {
         appliedTraineeRateBps: number | null;
       }[];
     }>("/api/me/ledger"),
-  content: () =>
+  content: (locale = "ru") =>
     request<{
       canReadBody: boolean;
       items: {
@@ -81,8 +81,8 @@ export const api = {
         bodyAvailable: boolean;
         tags: string[];
       }[];
-    }>("/api/content"),
-  contentItem: (id: string) =>
+    }>(`/api/content?locale=${locale}`),
+  contentItem: (id: string, locale = "ru") =>
     request<{
       id: string;
       type: string;
@@ -91,7 +91,7 @@ export const api = {
       bodyAvailable: boolean;
       bodyRich: string | null;
       contraindications: string | null;
-    }>(`/api/content/${id}`),
+    }>(`/api/content/${id}?locale=${locale}`),
   invitations: () =>
     request<{
       invites: {

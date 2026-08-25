@@ -57,6 +57,7 @@ export function BalancePage() {
   }, []);
 
   return (
+    <div className="wrap section">
     <div className="grid two">
       <section className="card">
         <h1>{t("balance.title")}</h1>
@@ -91,6 +92,7 @@ export function BalancePage() {
           ))}
         </ul>
       </section>
+    </div>
     </div>
   );
 }

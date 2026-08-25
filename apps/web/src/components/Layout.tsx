@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
@@ -7,14 +8,15 @@ export function Layout() {
   const { t, i18n } = useTranslation();
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const isCoach = user?.roles.includes("COACH");
-  const isTrainee = user?.roles.includes("TRAINEE");
+  const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
 
-  async function switchLang(locale: "ru" | "ky") {
-    await i18n.changeLanguage(locale);
-    localStorage.setItem("locale", locale);
+  async function switchLang(next: "ru" | "ky") {
+    await i18n.changeLanguage(next);
+    localStorage.setItem("locale", next);
     if (user) {
-      const res = await api.patchMe({ locale });
+      const res = await api.patchMe({ locale: next });
       setUser(res.user);
     }
   }
@@ -22,43 +24,83 @@ export function Layout() {
   async function logout() {
     await api.logout();
     setUser(null);
+    setOpen(false);
     navigate("/");
   }
 
+  function close() {
+    setOpen(false);
+  }
+
   return (
-    <div className="shell">
-      <header className="top">
-        <NavLink to="/" className="brand">
-          {t("appName")}
-        </NavLink>
-        <nav className="nav">
-          <NavLink to="/">{t("nav.home")}</NavLink>
-          {user && isTrainee && <NavLink to="/balance">{t("nav.balance")}</NavLink>}
-          {user && <NavLink to="/content">{t("nav.content")}</NavLink>}
-          {user && isTrainee && <NavLink to="/invites">{t("nav.invites")}</NavLink>}
-          {user && isCoach && <NavLink to="/coach">{t("nav.coach")}</NavLink>}
-          {user && <NavLink to="/profile">{t("nav.profile")}</NavLink>}
-          {user ? (
-            <button className="secondary" type="button" onClick={() => void logout()}>
-              {t("nav.logout")}
-            </button>
-          ) : (
-            <NavLink to="/login" className="nav-cta">
-              {t("nav.login")}
-            </NavLink>
-          )}
-        </nav>
-        <div className="lang-switch">
-          <button type="button" className={i18n.language === "ru" ? "on" : ""} onClick={() => void switchLang("ru")}>
-            RU
+    <div className="site">
+      <header className="site-header">
+        <div className="wrap">
+          <NavLink to="/" className="brand" onClick={close}>
+            <img src="/ornament.svg" alt="" />
+            {t("appName")}
+          </NavLink>
+          <button className="menu-btn" type="button" aria-label="menu" onClick={() => setOpen((v) => !v)}>
+            ☰
           </button>
-          <button type="button" className={i18n.language.startsWith("ky") ? "on" : ""} onClick={() => void switchLang("ky")}>
-            KY
-          </button>
+          <nav className={`nav ${open ? "open" : ""}`}>
+            <NavLink to="/" onClick={close}>{t("nav.home")}</NavLink>
+            <NavLink to="/about" onClick={close}>{t("nav.about")}</NavLink>
+            <NavLink to="/memberships" onClick={close}>{t("nav.memberships")}</NavLink>
+            <NavLink to="/workouts" onClick={close}>{t("nav.workouts")}</NavLink>
+            <NavLink to="/coaches" onClick={close}>{t("nav.coaches")}</NavLink>
+            {user && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
+            {user && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
+            {isCoach && <NavLink to="/coach" onClick={close}>{t("nav.wards")}</NavLink>}
+            <span className="lang-switch">
+              <button type="button" className={`lang-btn ${locale === "ru" ? "on" : ""}`} onClick={() => void switchLang("ru")}>
+                RU
+              </button>
+              <button type="button" className={`lang-btn ${locale === "ky" ? "on" : ""}`} onClick={() => void switchLang("ky")}>
+                KY
+              </button>
+            </span>
+            {user ? (
+              <button className="ghost" type="button" onClick={() => void logout()}>
+                {t("nav.logout")}
+              </button>
+            ) : (
+              <NavLink to="/login" className="nav-cta" onClick={close}>
+                {t("nav.login")}
+              </NavLink>
+            )}
+          </nav>
         </div>
       </header>
-      <Outlet />
-      <p className="disclaimer">{t("disclaimer")}</p>
+      <main className="site-main">
+        <Outlet />
+      </main>
+      <footer className="site-footer">
+        <div className="wrap footer-grid">
+          <div>
+            <div className="brand" style={{ color: "#f4efe6" }}>
+              <img src="/ornament.svg" alt="" />
+              {t("appName")}
+            </div>
+            <p>{t("footer.tag")}</p>
+          </div>
+          <div>
+            <NavLink to="/about">{t("nav.about")}</NavLink>
+            <br />
+            <NavLink to="/memberships">{t("nav.memberships")}</NavLink>
+            <br />
+            <NavLink to="/workouts">{t("nav.workouts")}</NavLink>
+          </div>
+          <div>
+            <NavLink to="/coaches">{t("nav.coaches")}</NavLink>
+            <br />
+            <NavLink to="/goal">{t("nav.goal")}</NavLink>
+          </div>
+        </div>
+        <div className="wrap">
+          <p className="disclaimer">{t("disclaimer")}</p>
+        </div>
+      </footer>
     </div>
   );
 }

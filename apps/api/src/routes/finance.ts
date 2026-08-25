@@ -17,16 +17,16 @@ function pickI18n<T extends { locale: string }>(rows: T[], locale: string): T | 
 }
 
 export async function registerFinanceRoutes(app: FastifyInstance) {
-  app.get("/api/tariffs", async (request, reply) => {
-    const user = requireAuth(request, reply);
-    if (!user) return;
+  app.get("/api/tariffs", async (request) => {
+    const q = request.query as { locale?: string };
+    const locale = request.authUser?.locale ?? (q.locale === "ky" ? "ky" : "ru");
     const tariffs = await prisma.tariff.findMany({
       where: { isActive: true },
       include: { translations: true },
     });
     return {
       tariffs: tariffs.map((t) => {
-        const tr = pickI18n(t.translations, user.locale);
+        const tr = pickI18n(t.translations, locale);
         return {
           id: t.id,
           priceKgs: t.priceKgs,

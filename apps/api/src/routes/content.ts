@@ -10,10 +10,12 @@ function pickI18n<T extends { locale: string }>(rows: T[], locale: string): T | 
 }
 
 export async function registerContentRoutes(app: FastifyInstance) {
-  app.get("/api/content", async (request, reply) => {
-    const user = requireAuth(request, reply);
-    if (!user) return;
-    const canReadBody = await isContentAccessible(prisma, user.id, user.roles);
+  app.get("/api/content", async (request) => {
+    const q = request.query as { locale?: string };
+    const locale = request.authUser?.locale ?? (q.locale === "ky" ? "ky" : "ru");
+    const canReadBody = request.authUser
+      ? await isContentAccessible(prisma, request.authUser.id, request.authUser.roles)
+      : false;
     const items = await prisma.contentItem.findMany({
       where: { status: "PUBLISHED" },
       include: { translations: true, tags: { include: { tag: { include: { translations: true } } } } },
@@ -22,30 +24,32 @@ export async function registerContentRoutes(app: FastifyInstance) {
     return {
       canReadBody,
       items: items.map((item) => {
-        const tr = pickI18n(item.translations, user.locale);
+        const tr = pickI18n(item.translations, locale);
         return {
           id: item.id,
           type: item.type,
           title: tr?.title ?? "",
           summary: tr?.summary ?? "",
           bodyAvailable: canReadBody || item.accessPolicy === "FREE_PREVIEW",
-          tags: item.tags.map((t) => pickI18n(t.tag.translations, user.locale)?.name).filter(Boolean),
+          tags: item.tags.map((t) => pickI18n(t.tag.translations, locale)?.name).filter(Boolean),
         };
       }),
     };
   });
 
   app.get("/api/content/:id", async (request, reply) => {
-    const user = requireAuth(request, reply);
-    if (!user) return;
     const { id } = request.params as { id: string };
+    const q = request.query as { locale?: string };
+    const locale = request.authUser?.locale ?? (q.locale === "ky" ? "ky" : "ru");
     const item = await prisma.contentItem.findFirst({
       where: { id, status: "PUBLISHED" },
       include: { translations: true },
     });
     if (!item) return reply.code(404).send({ error: "NOT_FOUND" });
-    const canReadBody = await isContentAccessible(prisma, user.id, user.roles);
-    const tr = pickI18n(item.translations, user.locale);
+    const canReadBody = request.authUser
+      ? await isContentAccessible(prisma, request.authUser.id, request.authUser.roles)
+      : false;
+    const tr = pickI18n(item.translations, locale);
     const bodyAllowed = canReadBody || item.accessPolicy === "FREE_PREVIEW";
     return {
       id: item.id,
