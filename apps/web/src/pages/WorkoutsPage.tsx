@@ -3,14 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { photos } from "../photos";
 
 const COVER: Record<string, string> = {
-  ARTICLE:
-    "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80",
-  EXERCISE:
-    "https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=900&q=80",
-  PROGRAM:
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=900&q=80",
+  ARTICLE: photos.city,
+  EXERCISE: photos.movement,
+  PROGRAM: photos.medal,
 };
 
 export function WorkoutsPage() {

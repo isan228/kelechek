@@ -1,15 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
-
-const HERO =
-  "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1800&q=80";
-const RUN =
-  "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=1400&q=80";
-const MOUNTAIN =
-  "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1400&q=80";
-const GYM =
-  "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1200&q=80";
+import { photos } from "../photos";
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -20,7 +12,7 @@ export function HomePage() {
     <>
       <section className="hero">
         <div className="hero-media">
-          <img src={HERO} alt="" />
+          <img src={photos.hero} alt="" />
         </div>
         <img className="hero-ornament" src="/ornament.svg" alt="" />
         <div className="hero-inner">
@@ -86,7 +78,7 @@ export function HomePage() {
               </Link>
             </div>
           </div>
-          <img src={RUN} alt="" />
+          <img src={photos.movement} alt="" />
         </div>
       </section>
 
@@ -94,7 +86,7 @@ export function HomePage() {
         <div className="wrap">
           <div className="grid two">
             <article className="card photo">
-              <img src={MOUNTAIN} alt="" />
+              <img src={photos.goals} alt="" />
               <div className="pad">
                 <span className="badge">{t("landing.card1b")}</span>
                 <h3>{t("landing.card1t")}</h3>
@@ -102,7 +94,7 @@ export function HomePage() {
               </div>
             </article>
             <article className="card photo">
-              <img src={GYM} alt="" />
+              <img src={photos.discipline} alt="" />
               <div className="pad">
                 <span className="badge">{t("landing.card2b")}</span>
                 <h3>{t("landing.card2t")}</h3>

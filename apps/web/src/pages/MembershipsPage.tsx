@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { photos } from "../photos";
 
 function formatSom(value: number, locale: string) {
   return new Intl.NumberFormat(locale === "ky" ? "ky-KG" : "ru-KG", { maximumFractionDigits: 0 }).format(value);
@@ -40,6 +41,9 @@ export function MembershipsPage() {
         </div>
       </div>
       <section className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <img className="page-banner" src={photos.future} alt="" />
+        </div>
         <div className="wrap grid two">
           {tariffs.map((tariff) => (
             <article className="card" key={tariff.id}>

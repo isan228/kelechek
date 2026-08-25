@@ -1,19 +1,11 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { photos } from "../photos";
 
 const COACHES = [
-  {
-    key: "a",
-    img: "https://images.unsplash.com/photo-1548690312-e3b507d8c110?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    key: "b",
-    img: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    key: "c",
-    img: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-  },
+  { key: "a", img: photos.honor },
+  { key: "b", img: photos.discipline },
+  { key: "c", img: photos.youth },
 ];
 
 export function CoachesPublicPage() {

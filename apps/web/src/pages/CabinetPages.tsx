@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { photos } from "../photos";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -104,7 +105,9 @@ export function GoalPage() {
       <p className="kicker">{t("nav.goal")}</p>
       <h1>{t("goal.title")}</h1>
       <p className="lead">{t("goal.lead")}</p>
-      <article className="card">
+      <article className="card photo">
+        <img src={photos.medal} alt="" />
+        <div className="pad">
         <h3>{t("goal.bar")}</h3>
         <div className="progress-ring">
           <span style={{ width: `${pct}%` }} />
@@ -117,6 +120,7 @@ export function GoalPage() {
           <li>{t("goal.r2")}</li>
           <li>{t("goal.r3")}</li>
         </ul>
+        </div>
       </article>
     </div>
   );

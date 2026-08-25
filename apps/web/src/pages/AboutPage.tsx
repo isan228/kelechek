@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-
-const IMG =
-  "https://images.unsplash.com/photo-1552674605-db8be97f5d23?auto=format&fit=crop&w=1400&q=80";
+import { photos } from "../photos";
 
 export function AboutPage() {
   const { t } = useTranslation();
@@ -17,7 +15,7 @@ export function AboutPage() {
       </div>
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap split">
-          <img src={IMG} alt="" />
+          <img src={photos.traditions} alt="" />
           <div>
             <h2>{t("about.ideaTitle")}</h2>
             <p className="lead">{t("about.idea")}</p>

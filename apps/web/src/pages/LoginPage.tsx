@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { photos } from "../photos";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -45,7 +46,9 @@ export function LoginPage() {
 
   return (
     <div className="wrap section">
-      <div className="card" style={{ maxWidth: 440 }}>
+      <div className="split">
+        <img className="login-photo" src={photos.city} alt="" />
+        <div className="card" style={{ maxWidth: 440 }}>
         <p className="kicker">{t("appName")}</p>
         <h1>{t("auth.title")}</h1>
         <p className="muted">{t("auth.lead")}</p>
@@ -74,6 +77,7 @@ export function LoginPage() {
           </>
         )}
         {error && <p className="error">{error}</p>}
+        </div>
       </div>
     </div>
   );
