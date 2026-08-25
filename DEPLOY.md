@@ -35,7 +35,8 @@ $RemoteDir = "/var/www/kelechek"
 Пуш:
 
 ```powershell
-.\scripts\push.ps1 -Message "описание изменений"
+npm run push
+npm run push -- "описание изменений"
 ```
 
 Если GitHub спросит пароль — используйте [Personal Access Token](https://github.com/settings/tokens).
