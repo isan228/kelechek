@@ -13,7 +13,7 @@
     "db:studio": "npm run db:studio -w @kelech/api",
     "build": "npm run build -w @kelech/web",
     "start:api": "npm run start -w @kelech/api",
-    "push": "powershell -ExecutionPolicy Bypass -File scripts/push.ps1"
+    "push": "powershell -ExecutionPolicy Bypass -File scripts/push.ps1 -NoCommit"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

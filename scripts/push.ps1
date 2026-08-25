@@ -39,8 +39,8 @@ if ($branch -eq "HEAD") { $branch = $GitHubBranch }
 
 $remote = git remote get-url origin 2>$null
 if (-not $remote) {
-  if (-not $GitHubRepo -or $GitHubRepo -like "*USER/kelech*") {
-    throw "Добавьте remote: git remote add origin <URL>  или заполните GitHubRepo в deploy/config.local.ps1"
+  if (-not $GitHubRepo -or $GitHubRepo -match "YOUR_SERVER|USER/kelech") {
+    throw "Добавьте remote: git remote add origin URL  или заполните GitHubRepo в deploy/config.local.ps1"
   }
   git remote add origin $GitHubRepo
 }
