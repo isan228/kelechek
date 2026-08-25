@@ -42,29 +42,20 @@ $RemoteDir = "/var/www/kelechek"
 
 ## 2. Первый раз на сервере
 
-Зайдите по SSH. Чтобы сервер мог `git clone` / `git pull` **приватного** репозитория, добавьте deploy key:
+Репозиторий публичный — достаточно HTTPS. Вы уже клонировали в домашнюю папку, дальше так:
 
 ```bash
-ssh-keygen -t ed25519 -f /root/.ssh/kelech_github -N ""
-cat /root/.ssh/kelech_github.pub
+cd ~/kelechek
+export DOMAIN=IP_ИЛИ_ДОМЕН
+export GITHUB_REPO=https://github.com/isan228/kelechek.git
+bash scripts/server-setup.sh
 ```
 
-Ключ вставьте в GitHub: **Settings → Deploy keys → Add deploy key** (read-only).
+`DOMAIN` — либо домен (`app.example.com`), либо публичный IP сервера Contabo, если домена ещё нет.
 
-```bash
-cat >> /root/.ssh/config << 'EOF'
-Host github.com
-  IdentityFile /root/.ssh/kelech_github
-  StrictHostKeyChecking accept-new
-EOF
+Скрипт поставит Node, Nginx, PostgreSQL, создаст пользователя `kelech`, скопирует проект в `/var/www/kelechek`, соберёт фронт и запустит API.
 
-export DOMAIN=example.com
-export GITHUB_REPO=nina.v@example.com:isan228/kelechek.git
-git clone "$GITHUB_REPO" /tmp/kelechek-src
-sudo bash /tmp/kelechek-src/scripts/server-setup.sh
-```
-
-Скрипт поставит Node, Nginx, PostgreSQL, создаст пользователя `kelech`, базу, `.env`, соберёт фронт и запустит API.
+Если клонировали в другое место — запускайте `bash /полный/путь/kelechek/scripts/server-setup.sh`, не `/tmp/kelechek-src/...`.
 
 Проверка:
 

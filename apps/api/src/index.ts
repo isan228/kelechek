@@ -55,6 +55,9 @@ async function ensureIndexes() {
 }
 
 const port = Number(process.env.API_PORT ?? 3001);
+const host =
+  process.env.API_HOST ??
+  (process.env.NODE_ENV === "production" ? "127.0.0.1" : "0.0.0.0");
 
 try {
   await ensureIndexes();
@@ -62,4 +65,4 @@ try {
   app.log.warn({ err }, "index bootstrap skipped (database may not be ready)");
 }
 
-await app.listen({ port, host: "0.0.0.0" });
+await app.listen({ port, host });
