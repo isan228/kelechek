@@ -31,7 +31,7 @@ export function setSessionCookie(reply: FastifyReply, token: string) {
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
-    secure: process.env.COOKIE_SECURE === "true" || (process.env.WEB_ORIGIN ?? "").startsWith("https://"),
+    secure: process.env.COOKIE_SECURE === "true",
   });
 }
 

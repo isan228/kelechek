@@ -32,12 +32,20 @@ $SshHost = "root@IP_СЕРВЕРА"
 $RemoteDir = "/var/www/kelechek"
 ```
 
-Пуш:
+Пуш с ПК:
 
 ```powershell
 npm run push
 npm run push -- "описание изменений"
 ```
+
+На сервере после пуша:
+
+```bash
+bash /var/www/kelechek/scripts/update.sh
+```
+
+Скрипт сам делает `git fetch`, выравнивает код с GitHub, сохраняет `.env`, ставит зависимости, собирает фронт, перезапускает API.
 
 Если GitHub спросит пароль — используйте [Personal Access Token](https://github.com/settings/tokens).
 
@@ -120,7 +128,7 @@ cat /root/.ssh/github_actions   # это ПРИВАТНЫЙ ключ — в GitH
 ```bash
 journalctl -u kelech-api -f          # логи API
 systemctl status kelech-api
-sudo -u kelech bash /var/www/kelechek/scripts/server-deploy.sh
+bash /var/www/kelechek/scripts/update.sh
 ```
 
 Файлы секретов (`apps/api/.env`) **не коммитить**. Шаблон: `deploy/.env.production.example`.
@@ -128,6 +136,7 @@ sudo -u kelech bash /var/www/kelechek/scripts/server-deploy.sh
 ## 6. Что ещё сменить на проде
 
 - `JWT_SECRET` — длинная случайная строка (setup уже генерирует).
-- `OTP_DEV_ECHO=false` — коды не светятся в API-ответе.
+- Пока нет SMS: `OTP_DEV_ECHO=true` — код входа виден на экране. `update.sh` сам ставит это.
+- Сайт по HTTP (IP, без сертификата): `COOKIE_SECURE=false`, иначе браузер не сохранит сессию.
 - `MOCK_PAYMENTS=true` — пока нет банка; после интеграции шлюза выключить.
 - Seed (`npm run db:seed`) создаёт демо-номера; на боевом можно не запускать повторно.

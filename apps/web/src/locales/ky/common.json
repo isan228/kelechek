@@ -31,7 +31,10 @@
     "code": "SMS коду",
     "verify": "Улантуу",
     "devCode": "Иштеп чыгуу коду: {code}",
-    "invalidPhone": "+996XXXXXXXXX форматында жазыңыз"
+    "invalidPhone": "+996XXXXXXXXX форматында жазыңыз",
+    "rateLimit": "Өтө көп аракет. 15 мүнөт күтүңүз.",
+    "badCode": "Код туура эмес же мөөнөтү өткөн",
+    "checkSms": "Код жөнөтүлдү. SMS жок болсо — API журналын караңыз."
   },
   "home": {
     "greeting": "Салам",

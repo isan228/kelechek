@@ -45,7 +45,7 @@ API_PORT=3001
 WEB_ORIGIN=http://${DOMAIN}
 COOKIE_SECURE=false
 MOCK_PAYMENTS=true
-OTP_DEV_ECHO=false
+OTP_DEV_ECHO=true
 EOF
   chown kelech:kelech "$ENV_FILE"
   chmod 600 "$ENV_FILE"

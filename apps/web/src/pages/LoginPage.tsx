@@ -20,8 +20,13 @@ export function LoginPage() {
       const res = await api.requestOtp(phone);
       setSent(true);
       setDevCode(res.devCode ?? null);
-    } catch {
-      setError(t("auth.invalidPhone"));
+      if (res.devCode) setCode(res.devCode);
+      if (!res.devCode) setError(t("auth.checkSms"));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "OTP_RATE_LIMIT") setError(t("auth.rateLimit"));
+      else if (msg === "INVALID_PHONE") setError(t("auth.invalidPhone"));
+      else setError(t("errors.generic"));
     }
   }
 
@@ -31,8 +36,10 @@ export function LoginPage() {
       const res = await api.verifyOtp(phone, code);
       setUser(res.user);
       navigate("/cabinet");
-    } catch {
-      setError(t("errors.generic"));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "INVALID_OTP") setError(t("auth.badCode"));
+      else setError(t("errors.generic"));
     }
   }
 

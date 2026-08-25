@@ -14,11 +14,17 @@ function randomOtp(): string {
 }
 
 export function normalizePhone(input: string): string | null {
-  const digits = input.replace(/[^\d+]/g, "");
-  if (/^\+996\d{9}$/.test(digits)) return digits;
-  if (/^996\d{9}$/.test(digits)) return `+${digits}`;
-  if (/^0\d{9}$/.test(digits)) return `+996${digits.slice(1)}`;
+  const d = input.replace(/\D/g, "");
+  if (d.startsWith("996") && d.length === 12) return `+${d}`;
+  if (d.startsWith("0") && d.length === 10) return `+996${d.slice(1)}`;
+  if (d.length === 9) return `+996${d}`;
   return null;
+}
+
+function shouldEchoOtp(): boolean {
+  if (process.env.OTP_DEV_ECHO === "true") return true;
+  if (process.env.OTP_DEV_ECHO === "false" && process.env.SMS_PROVIDER) return false;
+  return !process.env.SMS_PROVIDER;
 }
 
 export async function requestOtp(phone: string): Promise<{ devCode?: string }> {
@@ -39,8 +45,8 @@ export async function requestOtp(phone: string): Promise<{ devCode?: string }> {
     },
   });
 
-  if (process.env.OTP_DEV_ECHO === "true") {
-    console.log(`[otp] ${phone} → ${code}`);
+  console.log(`[otp] ${phone} → ${code}`);
+  if (shouldEchoOtp()) {
     return { devCode: code };
   }
   return {};
