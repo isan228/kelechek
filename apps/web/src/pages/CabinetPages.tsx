@@ -79,6 +79,13 @@ export function CabinetPage() {
                 {t("nav.profile")}
               </button>
             </Link>
+            {user?.roles.includes("ADMIN") && (
+              <Link to="/admin">
+                <button className="ghost" type="button">
+                  {t("nav.admin")}
+                </button>
+              </Link>
+            )}
           </div>
         </article>
       </div>

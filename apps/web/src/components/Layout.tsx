@@ -10,6 +10,7 @@ export function Layout() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const isCoach = user?.roles.includes("COACH");
+  const isAdmin = user?.roles.includes("ADMIN");
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
 
   async function switchLang(next: "ru" | "ky") {
@@ -52,6 +53,7 @@ export function Layout() {
             {user && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
             {user && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
             {isCoach && <NavLink to="/coach" onClick={close}>{t("nav.wards")}</NavLink>}
+            {isAdmin && <NavLink to="/admin" onClick={close}>{t("nav.admin")}</NavLink>}
             <span className="lang-switch">
               <button type="button" className={`lang-btn ${locale === "ru" ? "on" : ""}`} onClick={() => void switchLang("ru")}>
                 RU

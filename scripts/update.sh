@@ -48,6 +48,8 @@ chmod 600 "$ENV_FILE"
 # иначе npm не ставит @types/react, typescript и vite, и tsc падает.
 # --include=dev ставит пакеты для сборки фронта.
 sudo -u kelech bash -c "cd '$ROOT' && npm install --include=dev"
+sudo -u kelech bash -c "cd '$ROOT' && set -a && . '$ENV_FILE' && set +a && npx prisma db push --schema apps/api/prisma/schema.prisma"
+sudo -u kelech bash -c "cd '$ROOT' && set -a && . '$ENV_FILE' && set +a && npm run db:seed" || true
 sudo -u kelech bash -c "cd '$ROOT' && npm run build -w @kelech/web"
 chmod -R a+rX "$ROOT/apps/web/dist"
 systemctl restart kelech-api

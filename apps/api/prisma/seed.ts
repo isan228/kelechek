@@ -3,9 +3,41 @@ import { Prisma, PrismaClient, ContentStatus, ContentType, Locale, UserRole } fr
 
 const prisma = new PrismaClient();
 
+async function ensureDemoUsers() {
+  await prisma.user.upsert({
+    where: { phone: "+996700000000" },
+    create: {
+      phone: "+996700000000",
+      roles: [UserRole.ADMIN, UserRole.CONTENT_EDITOR],
+      firstName: "Админ",
+      locale: Locale.ru,
+      phoneVerifiedAt: new Date(),
+    },
+    update: {
+      roles: [UserRole.ADMIN, UserRole.CONTENT_EDITOR],
+      status: "ACTIVE",
+      deletedAt: null,
+    },
+  });
+  await prisma.user.upsert({
+    where: { phone: "+996700000001" },
+    create: {
+      phone: "+996700000001",
+      roles: [UserRole.COACH],
+      firstName: "Айбек",
+      lastName: "Тренер",
+      locale: Locale.ru,
+      phoneVerifiedAt: new Date(),
+      coachCounter: { create: { activeRelationCount: 0 } },
+    },
+    update: {},
+  });
+}
+
 async function main() {
+  await ensureDemoUsers();
   if ((await prisma.tariff.count()) > 0) {
-    console.log("Seed skipped: data already present");
+    console.log("Seed skipped: data already present. Admin +996700000000");
     return;
   }
 

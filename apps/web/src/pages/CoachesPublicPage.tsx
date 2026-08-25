@@ -1,15 +1,19 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { photos } from "../photos";
+import { api } from "../api/client";
 
-const COACHES = [
-  { key: "a", img: photos.honor },
-  { key: "b", img: photos.discipline },
-  { key: "c", img: photos.youth },
-];
+const COACH_PHOTOS = [photos.honor, photos.discipline, photos.youth];
 
 export function CoachesPublicPage() {
   const { t } = useTranslation();
+  const [coaches, setCoaches] = useState<{ id: string; firstName: string | null; lastName: string | null }[]>([]);
+
+  useEffect(() => {
+    void api.publicCoaches().then((r) => setCoaches(r.coaches)).catch(() => setCoaches([]));
+  }, []);
+
   return (
     <>
       <div className="page-hero">
@@ -21,16 +25,21 @@ export function CoachesPublicPage() {
       </div>
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap grid three">
-          {COACHES.map((c) => (
-            <article className="card photo coach-card" key={c.key}>
-              <img src={c.img} alt="" />
+          {coaches.map((c, i) => (
+            <article className="card photo coach-card" key={c.id}>
+              <img src={COACH_PHOTOS[i % COACH_PHOTOS.length]} alt="" />
               <div className="pad">
-                <h3>{t(`coaches.${c.key}n`)}</h3>
-                <p className="muted">{t(`coaches.${c.key}`)}</p>
+                <h3>{[c.firstName, c.lastName].filter(Boolean).join(" ") || t("coaches.unnamed")}</h3>
+                <p className="muted">{t("coaches.cardLead")}</p>
               </div>
             </article>
           ))}
         </div>
+        {coaches.length === 0 && (
+          <div className="wrap">
+            <p className="muted">{t("coaches.empty")}</p>
+          </div>
+        )}
         <div className="wrap" style={{ marginTop: "1.5rem" }}>
           <Link to="/login">
             <button type="button">{t("coaches.cta")}</button>

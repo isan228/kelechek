@@ -7,6 +7,7 @@ import { loadUserFromRequest } from "./lib/auth.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerFinanceRoutes } from "./routes/finance.js";
 import { registerContentRoutes, registerInvitationRoutes } from "./routes/content.js";
+import { registerAdminRoutes } from "./routes/admin.js";
 
 const app = Fastify({
   logger: true,
@@ -29,6 +30,7 @@ await registerAuthRoutes(app);
 await registerFinanceRoutes(app);
 await registerInvitationRoutes(app);
 await registerContentRoutes(app);
+await registerAdminRoutes(app);
 
 async function ensureIndexes() {
   await prisma.$executeRawUnsafe(`

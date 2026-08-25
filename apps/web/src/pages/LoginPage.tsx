@@ -36,7 +36,7 @@ export function LoginPage() {
     try {
       const res = await api.verifyOtp(phone, code);
       setUser(res.user);
-      navigate("/cabinet");
+      navigate(res.user.roles.includes("ADMIN") ? "/admin" : "/cabinet");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg === "INVALID_OTP") setError(t("auth.badCode"));

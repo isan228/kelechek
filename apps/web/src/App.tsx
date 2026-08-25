@@ -10,6 +10,7 @@ import { CoachesPublicPage } from "./pages/CoachesPublicPage";
 import { CabinetPage, GoalPage } from "./pages/CabinetPages";
 import { BalancePage } from "./pages/PayPage";
 import { CoachPage, InvitesPage, ProfilePage } from "./pages/MiscPages";
+import { AdminPage } from "./pages/AdminPage";
 
 function Guard() {
   const { user, loading } = useAuth();
@@ -32,7 +33,7 @@ export function App() {
         <Route path="/goal" element={<GoalPage />} />
         <Route
           path="/login"
-          element={user && !loading ? <Navigate to="/cabinet" replace /> : <LoginPage />}
+          element={user && !loading ? <Navigate to={user.roles.includes("ADMIN") ? "/admin" : "/cabinet"} replace /> : <LoginPage />}
         />
         <Route element={<Guard />}>
           <Route path="/cabinet" element={<CabinetPage />} />
@@ -40,6 +41,7 @@ export function App() {
           <Route path="/invites" element={<InvitesPage />} />
           <Route path="/coach" element={<CoachPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Route>
     </Routes>

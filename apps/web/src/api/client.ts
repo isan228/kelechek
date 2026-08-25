@@ -124,4 +124,106 @@ export const api = {
         relationStartedAt: string;
       }[];
     }>("/api/coach/trainees"),
+  publicCoaches: () =>
+    request<{ coaches: { id: string; firstName: string | null; lastName: string | null }[] }>("/api/coaches"),
+  adminOverview: () =>
+    request<{
+      users: number;
+      coaches: number;
+      tariffs: number;
+      content: number;
+      payments: number;
+      paidKgs: number;
+    }>("/api/admin/overview"),
+  adminUsers: (q = "") =>
+    request<{
+      users: {
+        id: string;
+        phone: string;
+        firstName: string | null;
+        lastName: string | null;
+        locale: "ru" | "ky";
+        roles: string[];
+        status: string;
+        createdAt: string;
+      }[];
+    }>(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  adminCreateUser: (data: {
+    phone: string;
+    firstName?: string;
+    lastName?: string;
+    roles: string[];
+  }) => request("/api/admin/users", { method: "POST", body: JSON.stringify(data) }),
+  adminPatchUser: (
+    id: string,
+    data: Partial<{
+      firstName: string;
+      lastName: string;
+      phone: string;
+      roles: string[];
+      status: string;
+      locale: string;
+    }>,
+  ) => request(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  adminTariffs: () =>
+    request<{
+      tariffs: {
+        id: string;
+        priceKgs: number;
+        periodDays: number;
+        isActive: boolean;
+        ru: { name: string; description: string };
+        ky: { name: string; description: string };
+      }[];
+    }>("/api/admin/tariffs"),
+  adminSaveTariff: (
+    id: string | null,
+    data: {
+      priceKgs: number;
+      periodDays: number;
+      isActive: boolean;
+      ru: { name: string; description: string };
+      ky: { name: string; description: string };
+    },
+  ) =>
+    request(id ? `/api/admin/tariffs/${id}` : "/api/admin/tariffs", {
+      method: id ? "PATCH" : "POST",
+      body: JSON.stringify(data),
+    }),
+  adminContent: () =>
+    request<{
+      items: {
+        id: string;
+        type: string;
+        status: string;
+        ru: { title: string; summary: string; bodyRich: string; contraindications: string };
+        ky: { title: string; summary: string; bodyRich: string; contraindications: string };
+      }[];
+    }>("/api/admin/content"),
+  adminSaveContent: (
+    id: string | null,
+    data: {
+      type: string;
+      status: string;
+      ru: { title: string; summary: string; bodyRich: string; contraindications: string };
+      ky: { title: string; summary: string; bodyRich: string; contraindications: string };
+    },
+  ) =>
+    request(id ? `/api/admin/content/${id}` : "/api/admin/content", {
+      method: id ? "PATCH" : "POST",
+      body: JSON.stringify(data),
+    }),
+  adminArchiveContent: (id: string) => request(`/api/admin/content/${id}`, { method: "DELETE" }),
+  adminPayments: () =>
+    request<{
+      payments: {
+        id: string;
+        amountKgs: number;
+        status: string;
+        createdAt: string;
+        paidAt: string | null;
+        tariffName: string;
+        user: { phone: string; firstName: string | null; lastName: string | null };
+      }[];
+    }>("/api/admin/payments"),
 };
