@@ -4,13 +4,8 @@ import { prisma, COOKIE_NAME } from "../lib/prisma.js";
 import { requireAuth, setSessionCookie, signSession } from "../lib/auth.js";
 import { normalizePhone, requestOtp, verifyOtp } from "../services/otp.js";
 
-const SMS_AUTH = process.env.AUTH_SMS_ENABLED === "true";
-
 export async function registerAuthRoutes(app: FastifyInstance) {
   app.post("/api/auth/otp/request", async (request, reply) => {
-    if (!SMS_AUTH) {
-      return reply.code(503).send({ error: "AUTH_COMING_SOON" });
-    }
     const body = request.body as { phone?: string };
     const phone = body.phone ? normalizePhone(body.phone) : null;
     if (!phone) {
@@ -26,9 +21,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/auth/otp/verify", async (request, reply) => {
-    if (!SMS_AUTH) {
-      return reply.code(503).send({ error: "AUTH_COMING_SOON" });
-    }
     const body = request.body as { phone?: string; code?: string };
     const phone = body.phone ? normalizePhone(body.phone) : null;
     const code = body.code?.trim() ?? "";

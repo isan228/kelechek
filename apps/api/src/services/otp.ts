@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { prisma } from "../lib/prisma.js";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 20;
 const WINDOW_MS = 15 * 60 * 1000;
 
 function hashCode(phone: string, code: string): string {
