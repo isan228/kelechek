@@ -12,7 +12,7 @@ void i18n
       ru: { common: ru },
       ky: { common: ky },
     },
-    lng: "ru",
+    lng: localStorage.getItem("locale") || "ru",
     fallbackLng: ["ru", "ky"],
     ns: ["common"],
     defaultNS: "common",

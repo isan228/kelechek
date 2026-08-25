@@ -37,7 +37,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420, margin: "2rem auto" }}>
+    <div className="card" style={{ maxWidth: 420 }}>
       <h1>{t("auth.title")}</h1>
       <p className="muted">{t("auth.lead")}</p>
       <label>

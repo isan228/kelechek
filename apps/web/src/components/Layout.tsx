@@ -12,6 +12,7 @@ export function Layout() {
 
   async function switchLang(locale: "ru" | "ky") {
     await i18n.changeLanguage(locale);
+    localStorage.setItem("locale", locale);
     if (user) {
       const res = await api.patchMe({ locale });
       setUser(res.user);
@@ -21,7 +22,7 @@ export function Layout() {
   async function logout() {
     await api.logout();
     setUser(null);
-    navigate("/login");
+    navigate("/");
   }
 
   return (
@@ -30,19 +31,23 @@ export function Layout() {
         <NavLink to="/" className="brand">
           {t("appName")}
         </NavLink>
-        {user && (
-          <nav className="nav">
-            <NavLink to="/">{t("nav.home")}</NavLink>
-            {isTrainee && <NavLink to="/balance">{t("nav.balance")}</NavLink>}
-            <NavLink to="/content">{t("nav.content")}</NavLink>
-            {isTrainee && <NavLink to="/invites">{t("nav.invites")}</NavLink>}
-            {isCoach && <NavLink to="/coach">{t("nav.coach")}</NavLink>}
-            <NavLink to="/profile">{t("nav.profile")}</NavLink>
+        <nav className="nav">
+          <NavLink to="/">{t("nav.home")}</NavLink>
+          {user && isTrainee && <NavLink to="/balance">{t("nav.balance")}</NavLink>}
+          {user && <NavLink to="/content">{t("nav.content")}</NavLink>}
+          {user && isTrainee && <NavLink to="/invites">{t("nav.invites")}</NavLink>}
+          {user && isCoach && <NavLink to="/coach">{t("nav.coach")}</NavLink>}
+          {user && <NavLink to="/profile">{t("nav.profile")}</NavLink>}
+          {user ? (
             <button className="secondary" type="button" onClick={() => void logout()}>
               {t("nav.logout")}
             </button>
-          </nav>
-        )}
+          ) : (
+            <NavLink to="/login" className="nav-cta">
+              {t("nav.login")}
+            </NavLink>
+          )}
+        </nav>
         <div className="lang-switch">
           <button type="button" className={i18n.language === "ru" ? "on" : ""} onClick={() => void switchLang("ru")}>
             RU
