@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { Locale, UserRole } from "@prisma/client";
-import { prisma, COOKIE_NAME } from "../lib/prisma.js";
-import { requireAuth, setSessionCookie, signSession } from "../lib/auth.js";
+import { prisma } from "../lib/prisma.js";
+import { requireAuth, setSessionCookie, clearSessionCookie, signSession } from "../lib/auth.js";
 import { normalizePhone, requestOtp, verifyOtp } from "../services/otp.js";
 
 export async function registerAuthRoutes(app: FastifyInstance) {
@@ -57,7 +57,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/auth/logout", async (_request, reply) => {
-    reply.clearCookie(COOKIE_NAME, { path: "/" });
+    clearSessionCookie(reply);
     return { ok: true };
   });
 

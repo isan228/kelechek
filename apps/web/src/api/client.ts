@@ -8,18 +8,22 @@ export type ApiUser = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    ...((init?.headers as Record<string, string> | undefined) ?? {}),
+  };
+  if (init?.body && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
   const res = await fetch(path, {
     ...init,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `HTTP_${res.status}`);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -35,7 +39,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ phone, code }),
     }),
-  logout: () => request("/api/auth/logout", { method: "POST" }),
+  logout: () => request("/api/auth/logout", { method: "POST", body: "{}" }),
   patchMe: (data: Partial<Pick<ApiUser, "locale" | "firstName" | "lastName">>) =>
     request<{ user: ApiUser }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
   tariffs: (locale = "ru") =>

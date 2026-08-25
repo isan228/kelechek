@@ -25,14 +25,24 @@ export function signSession(userId: string): string {
   return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "7d" });
 }
 
+export function sessionCookieOpts() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    path: "/",
+    secure: process.env.COOKIE_SECURE === "true",
+  };
+}
+
 export function setSessionCookie(reply: FastifyReply, token: string) {
   reply.setCookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
+    ...sessionCookieOpts(),
     maxAge: 60 * 60 * 24 * 7,
-    secure: process.env.COOKIE_SECURE === "true",
   });
+}
+
+export function clearSessionCookie(reply: FastifyReply) {
+  reply.clearCookie(COOKIE_NAME, sessionCookieOpts());
 }
 
 export async function loadUserFromRequest(request: FastifyRequest): Promise<AuthUser | null> {

@@ -23,10 +23,14 @@ export function Layout() {
   }
 
   async function logout() {
-    await api.logout();
+    try {
+      await api.logout();
+    } catch {
+      /* всё равно выходим локально */
+    }
     setUser(null);
     setOpen(false);
-    navigate("/");
+    navigate("/", { replace: true });
   }
 
   function close() {
