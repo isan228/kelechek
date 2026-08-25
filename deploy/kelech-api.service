@@ -1,0 +1,18 @@
+[Unit]
+Description=Kelech API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/kelechek
+Environment=NODE_ENV=production
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+EnvironmentFile=/var/www/kelechek/apps/api/.env
+ExecStart=/usr/bin/npm run start -w @kelech/api
+Restart=always
+RestartSec=4
+User=kelech
+Group=kelech
+
+[Install]
+WantedBy=multi-user.target

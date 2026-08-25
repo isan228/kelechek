@@ -1,0 +1,692 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Locale {
+  ru
+  ky
+}
+
+enum UserRole {
+  TRAINEE
+  COACH
+  ADMIN
+  CONTENT_EDITOR
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+  CHARGEBACK
+  EXPIRED
+  NEEDS_RECONCILIATION
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  REFUNDED
+  SUPERSEDED
+}
+
+enum InvitationStatus {
+  SENT
+  ACCEPTED
+  DECLINED
+  REVOKED
+  EXPIRED
+}
+
+enum RelationStatus {
+  ACTIVE
+  ENDED
+}
+
+enum AttendanceStatus {
+  MARKED
+  ACCEPTED
+  DISPUTED
+  UPHELD
+  OVERTURNED
+}
+
+enum WithdrawalStatus {
+  DRAFT
+  SUBMITTED
+  CONDITION_FAILED
+  IN_REVIEW
+  NEED_INFO
+  REJECTED
+  APPROVED
+  PAYOUT_IN_PROGRESS
+  PAID
+  PAYOUT_FAILED
+  EXPIRED
+}
+
+enum PayoutMethod {
+  CARD
+  GRANT
+}
+
+enum ContentType {
+  EXERCISE
+  PROGRAM
+  ARTICLE
+}
+
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  SCHEDULED
+  PUBLISHED
+  UNPUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  phone           String     @unique
+  phoneVerifiedAt DateTime?
+  email           String?
+  locale          Locale     @default(ru)
+  roles           UserRole[]
+  status          UserStatus @default(ACTIVE)
+  firstName       String?
+  lastName        String?
+  pinEncrypted    String?
+  createdAt       DateTime   @default(now())
+  deletedAt       DateTime?
+
+  payments              Payment[]
+  memberships           MembershipPeriod[]
+  traineeLedger         TraineeLedgerEntry[]
+  withdrawals           WithdrawalApplication[]
+  documents             UserDocument[]
+  sentInvitations       CoachingInvitation[] @relation("InvitationCoach")
+  receivedInvitations   CoachingInvitation[] @relation("InvitationTrainee")
+  coachRelations        CoachingRelation[]   @relation("RelationCoach")
+  traineeRelations      CoachingRelation[]   @relation("RelationTrainee")
+  classes               Class[]
+  attendanceMarked      AttendanceRecord[]   @relation("AttendanceMarker")
+  attendanceAsTrainee   AttendanceRecord[]   @relation("AttendanceTrainee")
+  favorites             ContentFavorite[]
+  cardTokens            CardToken[]
+  debts                 UserDebt[]
+  notifications         Notification[]
+  authoredContent       ContentItem[]        @relation("ContentAuthor")
+  reviewedContent       ContentItem[]        @relation("ContentReviewer")
+  coachCounter          CoachCounter?
+  classMemberships      ClassMember[]
+
+  @@index([status])
+}
+
+model OtpChallenge {
+  id         String    @id @default(uuid()) @db.Uuid
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Tariff {
+  id         String      @id @default(uuid()) @db.Uuid
+  priceKgs   Int
+  periodDays Int         @default(30)
+  isActive   Boolean     @default(true)
+  translations TariffI18n[]
+  payments   Payment[]
+}
+
+model TariffI18n {
+  tariffId    String @db.Uuid
+  locale      Locale
+  name        String
+  description String
+  tariff      Tariff @relation(fields: [tariffId], references: [id], onDelete: Cascade)
+
+  @@id([tariffId, locale])
+}
+
+model RatePlan {
+  id                  String    @id @default(uuid()) @db.Uuid
+  traineeSoloBps      Int       @default(8200)
+  traineeWithCoachBps Int       @default(3200)
+  coachBps            Int       @default(5000)
+  validFrom           DateTime
+  validTo             DateTime?
+}
+
+model Payment {
+  id                  String        @id @default(uuid()) @db.Uuid
+  userId              String        @db.Uuid
+  tariffId            String        @db.Uuid
+  amountKgs           Int
+  status              PaymentStatus
+  provider            String
+  providerPaymentId   String?
+  idempotencyKey      String        @unique
+  traineeRateBps      Int?
+  coachRateBps        Int?
+  coachId             String?       @db.Uuid
+  coachingRelationId  String?       @db.Uuid
+  distributionGroupId String?       @db.Uuid
+  traineeShareKgs     Int?
+  coachShareKgs       Int?
+  operatorShareKgs    Int?
+  paidAt              DateTime?
+  createdAt           DateTime      @default(now())
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  tariff     Tariff            @relation(fields: [tariffId], references: [id], onDelete: Restrict)
+  membership MembershipPeriod?
+
+  @@unique([provider, providerPaymentId])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model ProcessedWebhook {
+  id              String   @id @default(uuid()) @db.Uuid
+  provider        String
+  providerEventId String
+  paymentId       String?  @db.Uuid
+  processedAt     DateTime @default(now())
+
+  @@unique([provider, providerEventId])
+}
+
+model MembershipPeriod {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @db.Uuid
+  paymentId       String           @unique @db.Uuid
+  startsAt        DateTime
+  endsAtExclusive DateTime
+  status          MembershipStatus
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  payment         Payment          @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, startsAt, endsAtExclusive])
+}
+
+model TraineeLedgerEntry {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @db.Uuid
+  type                  String
+  amount                Int
+  signedAmount          Int
+  appliedTraineeRateBps Int?
+  paymentId             String?  @db.Uuid
+  linkedEntryId         String?  @db.Uuid
+  distributionGroupId   String?  @db.Uuid
+  coachId               String?  @db.Uuid
+  coachingRelationId    String?  @db.Uuid
+  withdrawalId          String?  @db.Uuid
+  actorId               String?  @db.Uuid
+  createdAt             DateTime @default(now())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([distributionGroupId])
+  @@index([paymentId])
+}
+
+model CoachLedgerEntry {
+  id                  String   @id @default(uuid()) @db.Uuid
+  coachId             String   @db.Uuid
+  type                String
+  amount              Int
+  signedAmount        Int
+  appliedCoachRateBps Int?
+  paymentId           String?  @db.Uuid
+  traineeUserId       String?  @db.Uuid
+  linkedEntryId       String?  @db.Uuid
+  distributionGroupId String?  @db.Uuid
+  coachingRelationId  String?  @db.Uuid
+  actorId             String?  @db.Uuid
+  createdAt           DateTime @default(now())
+
+  @@index([coachId, createdAt])
+  @@index([paymentId])
+}
+
+model OperatorLedgerEntry {
+  id                  String   @id @default(uuid()) @db.Uuid
+  type                String
+  amount              Int
+  signedAmount        Int
+  paymentId           String?  @db.Uuid
+  distributionGroupId String?  @db.Uuid
+  createdAt           DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model BalanceSnapshot {
+  id          String   @id @default(uuid()) @db.Uuid
+  ownerType   String
+  ownerId     String
+  asOf        DateTime
+  sumSigned   Int
+  lastEntryId String   @db.Uuid
+
+  @@index([ownerType, ownerId, asOf])
+}
+
+model CoachingInvitation {
+  id          String           @id @default(uuid()) @db.Uuid
+  coachId     String           @db.Uuid
+  traineeId   String           @db.Uuid
+  status      InvitationStatus
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  respondedAt DateTime?
+  coach       User             @relation("InvitationCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  trainee     User             @relation("InvitationTrainee", fields: [traineeId], references: [id], onDelete: Restrict)
+
+  @@index([traineeId, status])
+  @@index([coachId, status])
+}
+
+model CoachingRelation {
+  id           String         @id @default(uuid()) @db.Uuid
+  coachId      String         @db.Uuid
+  traineeId    String         @db.Uuid
+  status       RelationStatus
+  startedAt    DateTime
+  endedAt      DateTime?
+  endReason    String?
+  invitationId String?        @db.Uuid
+  coach        User           @relation("RelationCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  trainee      User           @relation("RelationTrainee", fields: [traineeId], references: [id], onDelete: Restrict)
+
+  @@index([coachId, status])
+  @@index([traineeId, status])
+}
+
+model CoachCounter {
+  coachId             String @id @db.Uuid
+  activeRelationCount Int    @default(0)
+  coach               User   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+}
+
+model Class {
+  id           String        @id @default(uuid()) @db.Uuid
+  coachId      String        @db.Uuid
+  isActive     Boolean       @default(true)
+  coach        User          @relation(fields: [coachId], references: [id], onDelete: Restrict)
+  translations ClassI18n[]
+  members      ClassMember[]
+  sessions     ClassSession[]
+}
+
+model ClassI18n {
+  classId String @db.Uuid
+  locale  Locale
+  name    String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([classId, locale])
+}
+
+model ClassMember {
+  classId   String @db.Uuid
+  traineeId String @db.Uuid
+  class     Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  trainee   User   @relation(fields: [traineeId], references: [id], onDelete: Restrict)
+
+  @@id([classId, traineeId])
+}
+
+model ClassSession {
+  id        String             @id @default(uuid()) @db.Uuid
+  classId   String             @db.Uuid
+  startsAt  DateTime
+  endsAt    DateTime
+  status    String
+  lockedAt  DateTime?
+  class     Class              @relation(fields: [classId], references: [id], onDelete: Restrict)
+  attendance AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id              String           @id @default(uuid()) @db.Uuid
+  sessionId       String           @db.Uuid
+  traineeId       String           @db.Uuid
+  present         Boolean
+  status          AttendanceStatus
+  markedById      String           @db.Uuid
+  markedAt        DateTime
+  disputeDeadline DateTime
+  session         ClassSession     @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  trainee         User             @relation("AttendanceTrainee", fields: [traineeId], references: [id], onDelete: Restrict)
+  markedBy        User             @relation("AttendanceMarker", fields: [markedById], references: [id], onDelete: Restrict)
+  audits          AttendanceAudit[]
+  disputes        AttendanceDispute[]
+
+  @@unique([sessionId, traineeId])
+  @@index([traineeId, markedAt])
+}
+
+model AttendanceAudit {
+  id         String           @id @default(uuid()) @db.Uuid
+  recordId   String           @db.Uuid
+  actorId    String           @db.Uuid
+  at         DateTime         @default(now())
+  beforeJson Json
+  afterJson  Json
+  record     AttendanceRecord @relation(fields: [recordId], references: [id], onDelete: Restrict)
+}
+
+model AttendanceDispute {
+  id          String           @id @default(uuid()) @db.Uuid
+  recordId    String           @db.Uuid
+  traineeId   String           @db.Uuid
+  reason      String
+  status      String
+  adminId     String?
+  decision    String?
+  reasonAdmin String?
+  record      AttendanceRecord @relation(fields: [recordId], references: [id], onDelete: Restrict)
+}
+
+model AttendanceAdjustment {
+  id              String   @id @default(uuid()) @db.Uuid
+  recordId        String   @db.Uuid
+  payrollPeriodId String?
+  reason          String
+  actorId         String   @db.Uuid
+  createdAt       DateTime @default(now())
+}
+
+model WithdrawalPolicyVersion {
+  id            String                   @id @default(uuid()) @db.Uuid
+  version       Int                      @unique
+  isActive      Boolean
+  createdAt     DateTime                 @default(now())
+  rules         PolicyRule[]
+  applications  WithdrawalApplication[]
+}
+
+model PolicyRule {
+  id         String                  @id @default(uuid()) @db.Uuid
+  versionId  String                  @db.Uuid
+  code       String
+  enabled    Boolean
+  paramsJson Json
+  version    WithdrawalPolicyVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+}
+
+model WithdrawalApplication {
+  id               String                  @id @default(uuid()) @db.Uuid
+  userId           String                  @db.Uuid
+  status           WithdrawalStatus
+  method           PayoutMethod
+  amountKgs        Int
+  policyVersionId  String                  @db.Uuid
+  conditionResults Json
+  requisitesJson   Json
+  holdEntryId      String?                 @db.Uuid
+  assignedAdminId  String?                 @db.Uuid
+  createdAt        DateTime                @default(now())
+  user             User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  policyVersion    WithdrawalPolicyVersion @relation(fields: [policyVersionId], references: [id])
+  documents        UserDocument[]
+
+  @@index([status, createdAt])
+  @@index([userId, status])
+}
+
+model UserDocument {
+  id             String                  @id @default(uuid()) @db.Uuid
+  userId         String                  @db.Uuid
+  type           String
+  storageKey     String
+  localeHint     String?
+  status         String
+  reviewedBy     String?
+  validUntil     DateTime?
+  createdAt      DateTime                @default(now())
+  withdrawalId   String?                 @db.Uuid
+  user           User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  withdrawal     WithdrawalApplication?  @relation(fields: [withdrawalId], references: [id])
+}
+
+model EducationInstitution {
+  id                   String                       @id @default(uuid()) @db.Uuid
+  bin                  String?
+  isActive             Boolean                      @default(true)
+  payoutRequisitesJson Json?
+  translations         EducationInstitutionI18n[]
+}
+
+model EducationInstitutionI18n {
+  institutionId String               @db.Uuid
+  locale        Locale
+  name          String
+  institution   EducationInstitution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  @@id([institutionId, locale])
+}
+
+model CardToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  provider  String
+  token     String
+  mask      String
+  brand     String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemConfig {
+  key   String @id
+  value Json
+}
+
+model UserDebt {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  amountKgs Int
+  reason    String
+  open      Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ContentItem {
+  id                  String           @id @default(uuid()) @db.Uuid
+  type                ContentType
+  status              ContentStatus
+  authorId            String           @db.Uuid
+  reviewerId          String?          @db.Uuid
+  reviewedAt          DateTime?
+  coverMediaId        String?
+  bodyJson            Json
+  accessPolicy        String           @default("SUBSCRIBERS")
+  publishedRevisionId String?
+  publishedAt         DateTime?
+  scheduledAt         DateTime?
+  author              User             @relation("ContentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  reviewer            User?            @relation("ContentReviewer", fields: [reviewerId], references: [id])
+  translations        ContentItemI18n[]
+  tags                ContentTag[]
+  favorites           ContentFavorite[]
+}
+
+model ContentItemI18n {
+  itemId            String      @db.Uuid
+  locale            Locale
+  title             String
+  summary           String
+  bodyRich          String
+  contraindications String?
+  item              ContentItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, locale])
+}
+
+model TagGroup {
+  id           String     @id @default(uuid()) @db.Uuid
+  code         String     @unique
+  translations TagGroupI18n[]
+  tags         Tag[]
+}
+
+model TagGroupI18n {
+  groupId String   @db.Uuid
+  locale  Locale
+  name    String
+  group   TagGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, locale])
+}
+
+model Tag {
+  id           String      @id @default(uuid()) @db.Uuid
+  groupId      String      @db.Uuid
+  code         String
+  group        TagGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  translations TagI18n[]
+  items        ContentTag[]
+
+  @@unique([groupId, code])
+}
+
+model TagI18n {
+  tagId  String @db.Uuid
+  locale Locale
+  name   String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([tagId, locale])
+}
+
+model ContentTag {
+  itemId String      @db.Uuid
+  tagId  String      @db.Uuid
+  item   ContentItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+}
+
+model ContentFavorite {
+  userId    String      @db.Uuid
+  itemId    String      @db.Uuid
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      ContentItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+}
+
+model ContentCompletion {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  itemId     String   @db.Uuid
+  occurredAt DateTime @default(now())
+  source     String   @default("SELF_REPORT")
+
+  @@index([userId, itemId])
+}
+
+model MediaAsset {
+  id          String  @id @default(uuid()) @db.Uuid
+  storageKey  String?
+  mime        String
+  bytes       Int?
+  width       Int?
+  height      Int?
+  durationMs  Int?
+  kind        String
+  source      String
+  externalUrl String?
+  variants    Json?
+}
+
+model RejectionReason {
+  id           String                 @id @default(uuid()) @db.Uuid
+  code         String                 @unique
+  translations RejectionReasonI18n[]
+}
+
+model RejectionReasonI18n {
+  reasonId String          @db.Uuid
+  locale   Locale
+  label    String
+  reason   RejectionReason @relation(fields: [reasonId], references: [id], onDelete: Cascade)
+
+  @@id([reasonId, locale])
+}
+
+model PayrollPeriod {
+  id                   String    @id @default(uuid()) @db.Uuid
+  from                 DateTime
+  to                   DateTime
+  lockedAt             DateTime?
+  exportedToAccounting Boolean   @default(false)
+  markedPaidExternally Boolean   @default(false)
+}
+
+model PayrollExport {
+  id        String   @id @default(uuid()) @db.Uuid
+  periodId  String   @db.Uuid
+  version   Int
+  contentHash String
+  createdAt DateTime @default(now())
+
+  @@unique([periodId, version])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  beforeJson Json?
+  afterJson  Json?
+  ip         String?
+  at         DateTime @default(now())
+
+  @@index([entityType, entityId, at])
+  @@index([actorId, at])
+}
+
+model SensitiveAccessLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String   @db.Uuid
+  subjectId String   @db.Uuid
+  purpose   String
+  at        DateTime @default(now())
+}

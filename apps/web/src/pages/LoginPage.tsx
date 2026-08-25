@@ -1,0 +1,69 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { api } from "../api/client";
+import { useAuth } from "../auth/AuthProvider";
+
+export function LoginPage() {
+  const { t } = useTranslation();
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
+  const [phone, setPhone] = useState("+996");
+  const [code, setCode] = useState("");
+  const [devCode, setDevCode] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function send() {
+    setError(null);
+    try {
+      const res = await api.requestOtp(phone);
+      setSent(true);
+      setDevCode(res.devCode ?? null);
+    } catch {
+      setError(t("auth.invalidPhone"));
+    }
+  }
+
+  async function verify() {
+    setError(null);
+    try {
+      const res = await api.verifyOtp(phone, code);
+      setUser(res.user);
+      navigate("/");
+    } catch {
+      setError(t("errors.generic"));
+    }
+  }
+
+  return (
+    <div className="card" style={{ maxWidth: 420, margin: "2rem auto" }}>
+      <h1>{t("auth.title")}</h1>
+      <p className="muted">{t("auth.lead")}</p>
+      <label>
+        {t("auth.phone")}
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("auth.phonePlaceholder")} />
+      </label>
+      <div className="row" style={{ marginTop: "0.8rem" }}>
+        <button type="button" onClick={() => void send()}>
+          {t("auth.sendCode")}
+        </button>
+      </div>
+      {devCode && <p className="ok">{t("auth.devCode", { code: devCode })}</p>}
+      {sent && (
+        <>
+          <label>
+            {t("auth.code")}
+            <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" />
+          </label>
+          <div className="row" style={{ marginTop: "0.8rem" }}>
+            <button type="button" onClick={() => void verify()}>
+              {t("auth.verify")}
+            </button>
+          </div>
+        </>
+      )}
+      {error && <p className="error">{error}</p>}
+    </div>
+  );
+}

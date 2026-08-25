@@ -1,0 +1,24 @@
+{
+  "name": "kelech",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c teal,yellow \"npm run dev -w @kelech/api\" \"npm run dev -w @kelech/web\"",
+    "test": "npm run test -w @kelech/shared",
+    "db:push": "npm run db:push -w @kelech/api",
+    "db:seed": "npm run db:seed -w @kelech/api",
+    "db:studio": "npm run db:studio -w @kelech/api",
+    "build": "npm run build -w @kelech/web",
+    "start:api": "npm run start -w @kelech/api",
+    "push": "powershell -ExecutionPolicy Bypass -File scripts/push.ps1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

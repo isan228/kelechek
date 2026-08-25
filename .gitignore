@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+.env
+.env.local
+*.log
+.DS_Store
+coverage
+.vite
+apps/api/generated
+apps/web/dist
+*.tsbuildinfo
+deploy/config.local.ps1
+deploy/config.local.sh
+.github-deploy-key
