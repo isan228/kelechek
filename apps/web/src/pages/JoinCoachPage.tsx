@@ -104,8 +104,10 @@ export function JoinCoachPage() {
         setNeedReplace(true);
         setManual(token);
         setErr(t("join.replaceHint"));
-      } else if (msg === "INVALID_OR_EXPIRED_QR") setErr(t("join.expired"));
-      else if (msg === "COACH_NOT_FOUND") setErr(t("join.noCoach"));
+      }       else if (msg === "INVALID_OR_EXPIRED_QR") setErr(t("join.expired"));
+      else if (msg === "COACH_NOT_FOUND" || msg === "NOT_A_COACH") setErr(t("join.noCoach"));
+      else if (msg === "COACH_INACTIVE") setErr(t("join.inactive"));
+      else if (msg === "CANNOT_LINK_SELF") setErr(t("join.self"));
       else setErr(t("errors.generic"));
     } finally {
       setBusy(false);

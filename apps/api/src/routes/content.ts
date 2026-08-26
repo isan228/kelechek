@@ -3,7 +3,12 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireRole } from "../lib/auth.js";
 import { isContentAccessible } from "../services/access.js";
 import { endRelation, linkTraineeToCoach, respondInvitation, sendInvitation } from "../services/invitations.js";
-import { issueCoachDayToken, verifyCoachDayToken, webOrigin } from "../services/coachQr.js";
+import {
+  extractCoachToken,
+  issueCoachDayToken,
+  verifyCoachDayToken,
+  webOrigin,
+} from "../services/coachQr.js";
 import { normalizePhone } from "../services/otp.js";
 
 function pickI18n<T extends { locale: string }>(rows: T[], locale: string): T | undefined {
@@ -145,7 +150,8 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/coach/qr", async (request, reply) => {
-    const user = requireRole(request, reply, ["COACH", "ADMIN"]);
+    // Только аккаунт с ролью COACH — иначе в QR попадает id админа без роли тренера.
+    const user = requireRole(request, reply, ["COACH"]);
     if (!user) return;
     const { token, day, validUntil } = issueCoachDayToken(user.id);
     const joinUrl = `${webOrigin()}/join?t=${encodeURIComponent(token)}`;
@@ -169,17 +175,7 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
     const raw = (body.token ?? "").trim();
     if (!raw) return reply.code(400).send({ error: "TOKEN_REQUIRED" });
 
-    // QR может содержать полный URL /join?t=...
-    let token = raw;
-    try {
-      if (raw.includes("t=")) {
-        const u = new URL(raw, webOrigin());
-        token = u.searchParams.get("t") || raw;
-      }
-    } catch {
-      /* plain token */
-    }
-
+    const token = extractCoachToken(raw);
     const parsed = verifyCoachDayToken(token);
     if (!parsed) {
       return reply.code(400).send({ error: "INVALID_OR_EXPIRED_QR" });

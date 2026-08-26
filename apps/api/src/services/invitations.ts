@@ -121,15 +121,16 @@ export async function linkTraineeToCoach(
   }
 
   const coach = await prisma.user.findFirst({
-    where: {
-      id: coachId,
-      deletedAt: null,
-      status: "ACTIVE",
-      roles: { has: "COACH" },
-    },
+    where: { id: coachId, deletedAt: null },
   });
   if (!coach) {
     throw Object.assign(new Error("COACH_NOT_FOUND"), { statusCode: 404 });
+  }
+  if (coach.status !== "ACTIVE") {
+    throw Object.assign(new Error("COACH_INACTIVE"), { statusCode: 400 });
+  }
+  if (!coach.roles.includes("COACH")) {
+    throw Object.assign(new Error("NOT_A_COACH"), { statusCode: 400 });
   }
 
   return prisma.$transaction(async (tx) => {
@@ -139,7 +140,15 @@ export async function linkTraineeToCoach(
       where: { traineeId, status: "ACTIVE" },
     });
     if (current?.coachId === coachId) {
-      return { alreadyLinked: true as const, coachId };
+      return {
+        alreadyLinked: true as const,
+        coachId,
+        coach: {
+          id: coach.id,
+          firstName: coach.firstName,
+          lastName: coach.lastName,
+        },
+      };
     }
     if (current && !confirmReplace) {
       throw Object.assign(new Error("CONFIRM_REPLACE_REQUIRED"), { statusCode: 409 });

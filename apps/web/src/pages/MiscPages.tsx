@@ -104,7 +104,7 @@ export function CoachPage() {
   }
 
   useEffect(() => {
-    if (user?.roles.includes("COACH") || user?.roles.includes("ADMIN")) {
+    if (user?.roles.includes("COACH")) {
       void load().catch(() => setData(null));
       void loadQr().catch(() => setQr(null));
     }
@@ -112,7 +112,7 @@ export function CoachPage() {
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (!user.roles.includes("COACH") && !user.roles.includes("ADMIN")) {
+  if (!user.roles.includes("COACH")) {
     return <Navigate to="/cabinet" replace />;
   }
 
