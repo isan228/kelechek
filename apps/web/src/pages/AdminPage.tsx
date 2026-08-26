@@ -74,14 +74,113 @@ function Overview() {
     void api.adminOverview().then(setData).catch(() => setData(null));
   }, []);
   if (!data) return <p className="muted">{t("admin.loading")}</p>;
+
   return (
-    <div className="stats">
-      <div className="stat"><b>{data.users}</b><span>{t("admin.tab.users")}</span></div>
-      <div className="stat"><b>{data.coaches}</b><span>{t("nav.coaches")}</span></div>
-      <div className="stat"><b>{data.tariffs}</b><span>{t("admin.tab.tariffs")}</span></div>
-      <div className="stat"><b>{data.content}</b><span>{t("admin.tab.content")}</span></div>
-      <div className="stat"><b>{data.payments}</b><span>{t("admin.tab.payments")}</span></div>
-      <div className="stat"><b>{data.paidKgs}</b><span>{t("admin.paidKgs")}</span></div>
+    <div className="admin-stats">
+      <section>
+        <h2>{t("admin.statsPeople")}</h2>
+        <div className="stats">
+          <div className="stat">
+            <b>{data.users}</b>
+            <span>{t("admin.statUsers")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.trainees}</b>
+            <span>{t("admin.statTrainees")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.coaches}</b>
+            <span>{t("admin.statCoaches")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.activeMemberships}</b>
+            <span>{t("admin.statActiveMemberships")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.activeRelations}</b>
+            <span>{t("admin.statActiveRelations")}</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>{t("admin.statsMoney")}</h2>
+        <div className="stats">
+          <div className="stat">
+            <b>{data.paidKgs}</b>
+            <span>{t("admin.paidKgs")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.traineeShareKgs}</b>
+            <span>{t("admin.traineeShareKgs")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.coachShareKgs}</b>
+            <span>{t("admin.coachShareKgs")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.operatorShareKgs}</b>
+            <span>{t("admin.operatorShareKgs")}</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>{t("admin.statsPayments")}</h2>
+        <div className="stats">
+          <div className="stat">
+            <b>{data.succeededPayments}</b>
+            <span>{t("admin.statSucceeded")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.soloPayments}</b>
+            <span>{t("admin.statSolo")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.withCoachPayments}</b>
+            <span>{t("admin.statWithCoach")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.pendingPayments}</b>
+            <span>{t("admin.statPending")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.failedPayments}</b>
+            <span>{t("admin.statFailed")}</span>
+          </div>
+          <div className="stat">
+            <b>{data.payments}</b>
+            <span>{t("admin.statAllPayments")}</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="card admin-rates">
+        <h2>{t("admin.ratesTitle")}</h2>
+        <p className="muted">{t("admin.ratesLead")}</p>
+        <ul className="admin-rates-list">
+          <li>
+            <strong>{t("admin.ratesSolo")}</strong>
+            <span>
+              {t("admin.ratesLine", {
+                trainee: data.rates.solo.traineePct,
+                coach: data.rates.solo.coachPct,
+                operator: data.rates.solo.operatorPct,
+              })}
+            </span>
+          </li>
+          <li>
+            <strong>{t("admin.ratesWithCoach")}</strong>
+            <span>
+              {t("admin.ratesLine", {
+                trainee: data.rates.withCoach.traineePct,
+                coach: data.rates.withCoach.coachPct,
+                operator: data.rates.withCoach.operatorPct,
+              })}
+            </span>
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }
@@ -871,31 +970,63 @@ function PaymentsTab() {
   useEffect(() => {
     void api.adminPayments().then((r) => setRows(r.payments));
   }, []);
+
+  function displayName(p: {
+    firstName: string | null;
+    lastName: string | null;
+    phone?: string;
+    login?: string | null;
+  }) {
+    return [p.firstName, p.lastName].filter(Boolean).join(" ") || p.login || p.phone || "—";
+  }
+
   return (
-    <div className="table-wrap">
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>{t("auth.phone")}</th>
-            <th>{t("admin.name")}</th>
-            <th>{t("admin.price")}</th>
-            <th>{t("admin.status")}</th>
-            <th>{t("admin.date")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id}>
-              <td>{row.user.phone}</td>
-              <td>{row.tariffName}</td>
-              <td>{row.amountKgs}</td>
-              <td>{row.status}</td>
-              <td>{new Date(row.createdAt).toLocaleString()}</td>
+    <div>
+      <p className="muted" style={{ marginBottom: "1rem" }}>
+        {t("admin.paymentsLead")}
+      </p>
+      <div className="table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>{t("admin.date")}</th>
+              <th>{t("admin.payer")}</th>
+              <th>{t("admin.name")}</th>
+              <th>{t("admin.mode")}</th>
+              <th>{t("admin.price")}</th>
+              <th>{t("admin.colTraineeShare")}</th>
+              <th>{t("admin.colCoachShare")}</th>
+              <th>{t("admin.colOperatorShare")}</th>
+              <th>{t("admin.status")}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {rows.length === 0 && <p className="muted">{t("admin.emptyPayments")}</p>}
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td>{new Date(row.paidAt ?? row.createdAt).toLocaleString()}</td>
+                <td>
+                  <div>{displayName(row.user)}</div>
+                  <div className="muted">{row.user.phone}</div>
+                </td>
+                <td>{row.tariffName}</td>
+                <td>
+                  {row.hasCoach
+                    ? t("admin.modeWithCoach", {
+                        name: row.coach ? displayName(row.coach) : "—",
+                      })
+                    : t("admin.modeSolo")}
+                </td>
+                <td>{row.amountKgs}</td>
+                <td>{row.traineeShareKgs ?? "—"}</td>
+                <td>{row.coachShareKgs ?? "—"}</td>
+                <td>{row.operatorShareKgs ?? "—"}</td>
+                <td>{row.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {rows.length === 0 && <p className="muted">{t("admin.emptyPayments")}</p>}
+      </div>
     </div>
   );
 }

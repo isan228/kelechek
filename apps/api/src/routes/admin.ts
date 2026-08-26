@@ -111,24 +111,85 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   app.get("/api/admin/overview", async (request, reply) => {
     const admin = requireRole(request, reply, ["ADMIN"]);
     if (!admin) return;
-    const [users, coaches, tariffs, content, payments, paid] = await Promise.all([
-      prisma.user.count({ where: { deletedAt: null } }),
-      prisma.user.count({ where: { deletedAt: null, roles: { has: "COACH" } } }),
-      prisma.tariff.count(),
-      prisma.contentItem.count(),
-      prisma.payment.count(),
-      prisma.payment.aggregate({
-        where: { status: "SUCCEEDED" },
-        _sum: { amountKgs: true },
-      }),
-    ]);
-    return {
+    const now = new Date();
+    const succeeded = { status: "SUCCEEDED" as const };
+
+    const [
       users,
+      trainees,
       coaches,
       tariffs,
       content,
       payments,
-      paidKgs: paid._sum.amountKgs ?? 0,
+      pendingPayments,
+      failedPayments,
+      succeededCount,
+      paid,
+      shares,
+      withCoachPayments,
+      soloPayments,
+      activeMemberships,
+      activeRelations,
+      operatorLedger,
+    ] = await Promise.all([
+      prisma.user.count({ where: { deletedAt: null } }),
+      prisma.user.count({ where: { deletedAt: null, roles: { has: "TRAINEE" } } }),
+      prisma.user.count({ where: { deletedAt: null, roles: { has: "COACH" } } }),
+      prisma.tariff.count(),
+      prisma.contentItem.count(),
+      prisma.payment.count(),
+      prisma.payment.count({ where: { status: "PENDING" } }),
+      prisma.payment.count({ where: { status: { in: ["FAILED", "CANCELED"] } } }),
+      prisma.payment.count({ where: succeeded }),
+      prisma.payment.aggregate({
+        where: succeeded,
+        _sum: { amountKgs: true },
+      }),
+      prisma.payment.aggregate({
+        where: succeeded,
+        _sum: {
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.count({ where: { ...succeeded, coachId: { not: null } } }),
+      prisma.payment.count({ where: { ...succeeded, coachId: null } }),
+      prisma.membershipPeriod.count({
+        where: { status: "ACTIVE", endsAtExclusive: { gt: now } },
+      }),
+      prisma.coachingRelation.count({ where: { status: "ACTIVE" } }),
+      prisma.operatorLedgerEntry.aggregate({ _sum: { signedAmount: true } }),
+    ]);
+
+    const paidKgs = paid._sum.amountKgs ?? 0;
+    const traineeShareKgs = shares._sum.traineeShareKgs ?? 0;
+    const coachShareKgs = shares._sum.coachShareKgs ?? 0;
+    const operatorShareKgs = shares._sum.operatorShareKgs ?? 0;
+
+    return {
+      users,
+      trainees,
+      coaches,
+      tariffs,
+      content,
+      payments,
+      pendingPayments,
+      failedPayments,
+      succeededPayments: succeededCount,
+      paidKgs,
+      traineeShareKgs,
+      coachShareKgs,
+      operatorShareKgs,
+      operatorLedgerKgs: operatorLedger._sum.signedAmount ?? 0,
+      withCoachPayments,
+      soloPayments,
+      activeMemberships,
+      activeRelations,
+      rates: {
+        solo: { traineePct: 82, coachPct: 0, operatorPct: 18 },
+        withCoach: { traineePct: 32, coachPct: 50, operatorPct: 18 },
+      },
     };
   });
 
@@ -679,22 +740,60 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     if (!admin) return;
     const payments = await prisma.payment.findMany({
       orderBy: { createdAt: "desc" },
-      take: 100,
+      take: 200,
       include: {
-        user: { select: { phone: true, firstName: true, lastName: true } },
+        user: {
+          select: {
+            phone: true,
+            login: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
         tariff: { include: { translations: true } },
       },
     });
+
+    const coachIds = [
+      ...new Set(payments.map((p) => p.coachId).filter((id): id is string => Boolean(id))),
+    ];
+    const coaches =
+      coachIds.length === 0
+        ? []
+        : await prisma.user.findMany({
+            where: { id: { in: coachIds } },
+            select: { id: true, firstName: true, lastName: true, login: true, phone: true },
+          });
+    const coachById = new Map(coaches.map((c) => [c.id, c]));
+
     return {
-      payments: payments.map((p) => ({
-        id: p.id,
-        amountKgs: p.amountKgs,
-        status: p.status,
-        createdAt: p.createdAt,
-        paidAt: p.paidAt,
-        user: p.user,
-        tariffName: pickTr(p.tariff.translations, "ru")?.name ?? "",
-      })),
+      payments: payments.map((p) => {
+        const coach = p.coachId ? coachById.get(p.coachId) ?? null : null;
+        return {
+          id: p.id,
+          amountKgs: p.amountKgs,
+          status: p.status,
+          createdAt: p.createdAt,
+          paidAt: p.paidAt,
+          hasCoach: Boolean(p.coachId),
+          traineeShareKgs: p.traineeShareKgs,
+          coachShareKgs: p.coachShareKgs,
+          operatorShareKgs: p.operatorShareKgs,
+          traineeRateBps: p.traineeRateBps,
+          coachRateBps: p.coachRateBps,
+          user: p.user,
+          coach: coach
+            ? {
+                id: coach.id,
+                firstName: coach.firstName,
+                lastName: coach.lastName,
+                login: coach.login,
+                phone: coach.phone,
+              }
+            : null,
+          tariffName: pickTr(p.tariff.translations, "ru")?.name ?? "",
+        };
+      }),
     };
   });
 

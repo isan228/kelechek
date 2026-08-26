@@ -386,11 +386,27 @@ export const api = {
   adminOverview: () =>
     request<{
       users: number;
+      trainees: number;
       coaches: number;
       tariffs: number;
       content: number;
       payments: number;
+      pendingPayments: number;
+      failedPayments: number;
+      succeededPayments: number;
       paidKgs: number;
+      traineeShareKgs: number;
+      coachShareKgs: number;
+      operatorShareKgs: number;
+      operatorLedgerKgs: number;
+      withCoachPayments: number;
+      soloPayments: number;
+      activeMemberships: number;
+      activeRelations: number;
+      rates: {
+        solo: { traineePct: number; coachPct: number; operatorPct: number };
+        withCoach: { traineePct: number; coachPct: number; operatorPct: number };
+      };
     }>("/api/admin/overview"),
   adminCoaches: () =>
     request<{
@@ -553,8 +569,26 @@ export const api = {
         status: string;
         createdAt: string;
         paidAt: string | null;
+        hasCoach: boolean;
+        traineeShareKgs: number | null;
+        coachShareKgs: number | null;
+        operatorShareKgs: number | null;
+        traineeRateBps: number | null;
+        coachRateBps: number | null;
         tariffName: string;
-        user: { phone: string; firstName: string | null; lastName: string | null };
+        user: {
+          phone: string;
+          login: string | null;
+          firstName: string | null;
+          lastName: string | null;
+        };
+        coach: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        } | null;
       }[];
     }>("/api/admin/payments"),
 };
