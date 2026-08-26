@@ -21,6 +21,128 @@ function toLocalInput(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
+
+function weekdayLabel(t: (k: string) => string, day: number) {
+  return t(`schedule.weekday${day}`);
+}
+
+export function CoachWeeklyPanel({ onChanged }: { onChanged?: () => void }) {
+  const { t } = useTranslation();
+  const [slots, setSlots] = useState<Awaited<ReturnType<typeof api.coachWeeklySlots>>["slots"]>([]);
+  const [weekday, setWeekday] = useState(1);
+  const [startHm, setStartHm] = useState("18:00");
+  const [endHm, setEndHm] = useState("19:30");
+  const [title, setTitle] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const r = await api.coachWeeklySlots();
+    setSlots(r.slots.filter((s) => s.isActive));
+  }
+
+  useEffect(() => {
+    void load().catch(() => setSlots([]));
+  }, []);
+
+  async function create(e: FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setBusy(true);
+    try {
+      await api.coachCreateWeeklySlot({
+        weekday,
+        startHm,
+        endHm,
+        title: title || t("schedule.defaultTitle"),
+      });
+      setTitle("");
+      await load();
+      onChanged?.();
+    } catch (ex) {
+      const msg = ex instanceof Error ? ex.message : "";
+      if (msg === "INVALID_TIME") setErr(t("schedule.invalidTime"));
+      else if (msg === "INVALID_WEEKDAY") setErr(t("schedule.invalidWeekday"));
+      else setErr(t("errors.generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    setBusy(true);
+    try {
+      await api.coachDeleteWeeklySlot(id);
+      await load();
+      onChanged?.();
+    } catch {
+      setErr(t("errors.generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="coach-panel-grid">
+      <article className="coach-panel">
+        <h3>{t("schedule.weeklyTitle")}</h3>
+        <p className="muted">{t("schedule.weeklyLead")}</p>
+        <form className="coach-form" onSubmit={(e) => void create(e)}>
+          <label>
+            {t("schedule.weekday")}
+            <select value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
+              {WEEKDAYS.map((d) => (
+                <option key={d} value={d}>
+                  {weekdayLabel(t, d)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="coach-time-row">
+            <label>
+              {t("schedule.starts")}
+              <input type="time" value={startHm} onChange={(e) => setStartHm(e.target.value)} required />
+            </label>
+            <label>
+              {t("schedule.ends")}
+              <input type="time" value={endHm} onChange={(e) => setEndHm(e.target.value)} required />
+            </label>
+          </div>
+          <label>
+            {t("schedule.sessionTitle")}
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("schedule.defaultTitle")} />
+          </label>
+          {err && <p className="error">{err}</p>}
+          <button type="submit" disabled={busy}>
+            {t("schedule.weeklySave")}
+          </button>
+        </form>
+      </article>
+
+      <article className="coach-panel">
+        <h3>{t("schedule.weeklyList")}</h3>
+        {slots.length === 0 && <p className="muted">{t("schedule.weeklyEmpty")}</p>}
+        <ul className="coach-session-list">
+          {slots.map((s) => (
+            <li key={s.id} className="coach-session-item">
+              <div className="coach-session-main">
+                <strong>{s.title}</strong>
+                <span className="muted">
+                  {weekdayLabel(t, s.weekday)} · {s.startHm}–{s.endHm}
+                </span>
+              </div>
+              <button type="button" className="ghost" disabled={busy} onClick={() => void remove(s.id)}>
+                {t("schedule.weeklyRemove")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </article>
+    </div>
+  );
+}
+
 export function CoachSchedulePanel({ onChanged }: { onChanged?: () => void }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
@@ -74,6 +196,7 @@ export function CoachSchedulePanel({ onChanged }: { onChanged?: () => void }) {
         setQrUrl(null);
       }
       await load();
+      onChanged?.();
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : t("errors.generic"));
     } finally {
@@ -101,59 +224,70 @@ export function CoachSchedulePanel({ onChanged }: { onChanged?: () => void }) {
   }
 
   return (
-    <div className="grid two" style={{ marginTop: "1.4rem" }}>
-      <article className="card">
-        <h2>{t("schedule.createTitle")}</h2>
-        <p className="muted">{t("schedule.createLead")}</p>
-        <form onSubmit={(e) => void create(e)}>
-          <label>
-            {t("schedule.sessionTitle")}
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("schedule.defaultTitle")} />
-          </label>
-          <label>
-            {t("schedule.starts")}
-            <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required />
-          </label>
-          <label>
-            {t("schedule.ends")}
-            <input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} required />
-          </label>
-          {err && <p className="error">{err}</p>}
-          <div className="row" style={{ marginTop: "0.8rem" }}>
+    <div className="coach-schedule-block">
+      <CoachWeeklyPanel onChanged={() => void load().then(() => onChanged?.())} />
+
+      <div className="coach-panel-grid" style={{ marginTop: "1.2rem" }}>
+        <article className="coach-panel">
+          <h3>{t("schedule.createTitle")}</h3>
+          <p className="muted">{t("schedule.createLead")}</p>
+          <form className="coach-form" onSubmit={(e) => void create(e)}>
+            <label>
+              {t("schedule.sessionTitle")}
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("schedule.defaultTitle")} />
+            </label>
+            <label>
+              {t("schedule.starts")}
+              <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required />
+            </label>
+            <label>
+              {t("schedule.ends")}
+              <input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} required />
+            </label>
+            {err && <p className="error">{err}</p>}
             <button type="submit" disabled={busy}>
               {t("schedule.save")}
             </button>
-          </div>
-        </form>
-      </article>
+          </form>
+        </article>
 
-      <article className="card">
-        <h2>{t("schedule.listTitle")}</h2>
-        {sessions.length === 0 && <p className="muted">{t("schedule.empty")}</p>}
-        <ul className="list">
-          {sessions.map((s) => (
-            <li key={s.id}>
-              <strong>{s.title}</strong>
-              <div className="muted">
-                {formatDt(s.startsAt, locale)} — {formatDt(s.endsAt, locale)}
-              </div>
-              <div className="muted">{t("schedule.presentCount", { count: s.presentCount })}</div>
-              <div className="row" style={{ marginTop: "0.5rem", flexWrap: "wrap", gap: "0.4rem" }}>
-                <button type="button" disabled={busy} onClick={() => void openCheckIn(s.id)}>
-                  {t("schedule.checkinQr")}
-                </button>
-                <button type="button" className="ghost" disabled={busy} onClick={() => void remove(s.id)}>
-                  {t("admin.cancel")}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </article>
+        <article className="coach-panel">
+          <h3>{t("schedule.listTitle")}</h3>
+          {sessions.length === 0 && <p className="muted">{t("schedule.empty")}</p>}
+          <ul className="coach-session-list">
+            {sessions.map((s) => (
+              <li key={s.id} className="coach-session-item">
+                <div className="coach-session-main">
+                  <strong>
+                    {s.title}
+                    {s.fromWeekly ? (
+                      <span className="coach-pill">{t("schedule.fromWeekly")}</span>
+                    ) : null}
+                  </strong>
+                  <span className="muted">
+                    {formatDt(s.startsAt, locale)} — {formatDt(s.endsAt, locale)}
+                  </span>
+                  <span className="muted">{t("schedule.presentCount", { count: s.presentCount })}</span>
+                </div>
+                <div className="coach-session-actions">
+                  <button type="button" disabled={busy} onClick={() => void openCheckIn(s.id)}>
+                    {t("schedule.checkinQr")}
+                  </button>
+                  {!s.fromWeekly && (
+                    <button type="button" className="ghost" disabled={busy} onClick={() => void remove(s.id)}>
+                      {t("admin.cancel")}
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </article>
+      </div>
 
       {checkInId && qrUrl && (
-        <article className="card" style={{ gridColumn: "1 / -1" }}>
-          <h2>{t("schedule.checkinTitle")}</h2>
+        <article className="coach-panel" style={{ marginTop: "1.2rem" }}>
+          <h3>{t("schedule.checkinTitle")}</h3>
           <p className="muted">{t("schedule.checkinLead")}</p>
           <div className="coach-qr-wrap">
             <img src={qrUrl} alt="check-in QR" className="coach-qr-img" />
@@ -177,6 +311,53 @@ export function CoachSchedulePanel({ onChanged }: { onChanged?: () => void }) {
   );
 }
 
+export function CoachHistoryPanel() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
+  const [traineeTotal, setTraineeTotal] = useState(0);
+  const [sessions, setSessions] = useState<
+    Awaited<ReturnType<typeof api.coachSessionsHistory>>["sessions"]
+  >([]);
+
+  useEffect(() => {
+    void api
+      .coachSessionsHistory()
+      .then((r) => {
+        setSessions(r.sessions);
+        setTraineeTotal(r.traineeTotal);
+      })
+      .catch(() => setSessions([]));
+  }, []);
+
+  return (
+    <div className="coach-panel">
+      <h3>{t("schedule.historyTitle")}</h3>
+      <p className="muted">{t("schedule.historyLead")}</p>
+      {sessions.length === 0 && <p className="muted">{t("schedule.historyEmpty")}</p>}
+      <ul className="coach-session-list">
+        {sessions.map((s) => (
+          <li key={s.id} className="coach-session-item">
+            <div className="coach-session-main">
+              <strong>
+                {s.title}
+                {s.fromWeekly ? <span className="coach-pill">{t("schedule.fromWeekly")}</span> : null}
+              </strong>
+              <span className="muted">{formatDt(s.startsAt, locale)}</span>
+            </div>
+            <div className="coach-history-stat">
+              <b>
+                {s.presentCount}
+                {traineeTotal > 0 ? ` / ${traineeTotal}` : ""}
+              </b>
+              <span className="muted">{t("schedule.historyPresent")}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function TraineeSchedulePage() {
   const { t, i18n } = useTranslation();
   const { user, loading } = useAuth();
@@ -184,7 +365,8 @@ export function TraineeSchedulePage() {
   const [data, setData] = useState<Awaited<ReturnType<typeof api.mySchedule>> | null>(null);
 
   useEffect(() => {
-    if (user) void api.mySchedule().then(setData).catch(() => setData({ coach: null, sessions: [] }));
+    if (user)
+      void api.mySchedule().then(setData).catch(() => setData({ coach: null, sessions: [], weeklySlots: [] }));
   }, [user]);
 
   if (loading) return null;
@@ -213,14 +395,39 @@ export function TraineeSchedulePage() {
           <button type="button">{t("nav.checkin")}</button>
         </Link>
       </div>
-      <div className="card">
+
+      {data?.coach && (data.weeklySlots?.length ?? 0) > 0 && (
+        <div className="coach-panel" style={{ marginBottom: "1.2rem" }}>
+          <h2>{t("schedule.weeklyList")}</h2>
+          <ul className="coach-session-list">
+            {data.weeklySlots.map((s) => (
+              <li key={s.id} className="coach-session-item">
+                <div className="coach-session-main">
+                  <strong>{s.title}</strong>
+                  <span className="muted">
+                    {weekdayLabel(t, s.weekday)} · {s.startHm}–{s.endHm}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="coach-panel">
+        <h2>{t("schedule.listTitle")}</h2>
         {data?.sessions.length === 0 && <p className="muted">{t("schedule.emptyTrainee")}</p>}
-        <ul className="list">
+        <ul className="coach-session-list">
           {data?.sessions.map((s) => (
-            <li key={s.id}>
-              <strong>{s.title}</strong>
-              <div className="muted">
-                {formatDt(s.startsAt, locale)} — {formatDt(s.endsAt, locale)}
+            <li key={s.id} className="coach-session-item">
+              <div className="coach-session-main">
+                <strong>
+                  {s.title}
+                  {s.fromWeekly ? <span className="coach-pill">{t("schedule.fromWeekly")}</span> : null}
+                </strong>
+                <span className="muted">
+                  {formatDt(s.startsAt, locale)} — {formatDt(s.endsAt, locale)}
+                </span>
               </div>
               <span className="badge">{s.attended ? t("schedule.attended") : t("schedule.notAttended")}</span>
             </li>
@@ -377,6 +584,17 @@ export function NotificationsPage() {
       const title = String(n.payload.title ?? "");
       const when = n.payload.startsAt ? formatDt(String(n.payload.startsAt), locale) : "";
       return t("schedule.notifSession", { title, when });
+    }
+    if (n.type === "WEEKLY_SCHEDULE_UPDATED") {
+      const title = String(n.payload.title ?? "");
+      const weekday = Number(n.payload.weekday ?? 0);
+      const startHm = String(n.payload.startHm ?? "");
+      const endHm = String(n.payload.endHm ?? "");
+      return t("schedule.notifWeekly", {
+        title,
+        day: weekday >= 1 && weekday <= 7 ? weekdayLabel(t, weekday) : "—",
+        time: `${startHm}–${endHm}`,
+      });
     }
     return n.type;
   }

@@ -306,7 +306,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .coach-meta {
   display: grid;
   gap: 0.55rem;
-  margin: 0;
+  margin: 0 0 1rem;
 }
 .coach-meta > div {
   display: grid;
@@ -318,7 +318,186 @@ button:disabled { opacity: 0.5; cursor: default; }
   color: var(--muted);
   font-size: 0.9rem;
 }
-.coach-qr-card .coach-qr-wrap {
+.coach-cabinet-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.2rem;
+}
+.coach-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+.coach-stat {
+  min-width: 6.5rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(155, 35, 53, 0.08), rgba(20, 24, 28, 0.04));
+  border: 1px solid rgba(20, 24, 28, 0.08);
+}
+.coach-stat b {
+  display: block;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+.coach-stat span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.coach-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1.2rem;
+  padding: 0.35rem;
+  border-radius: 16px;
+  background: rgba(20, 24, 28, 0.04);
+  border: 1px solid rgba(20, 24, 28, 0.06);
+}
+.coach-tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0.55rem 0.95rem;
+  border-radius: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+.coach-tabs button.active {
+  background: var(--bg);
+  box-shadow: 0 1px 0 rgba(20, 24, 28, 0.06);
+  color: var(--accent, #9b2335);
+  font-weight: 600;
+}
+.coach-tab-body {
+  animation: coach-fade 0.28s ease;
+}
+@keyframes coach-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.coach-panel-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 860px) {
+  .coach-panel-grid { grid-template-columns: 1fr; }
+}
+.coach-panel {
+  padding: 1.15rem 1.2rem 1.25rem;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.28)),
+    var(--bg);
+  border: 1px solid rgba(20, 24, 28, 0.08);
+}
+.coach-panel h3,
+.coach-panel h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+}
+.coach-form {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+.coach-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+.coach-session-list {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.coach-session-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(20, 24, 28, 0.08);
+}
+.coach-session-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.coach-session-main {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+.coach-session-main strong {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.coach-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.coach-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(155, 35, 53, 0.1);
+  color: var(--accent, #9b2335);
+}
+.coach-history-stat {
+  text-align: right;
+  min-width: 4.5rem;
+}
+.coach-history-stat b {
+  display: block;
+  font-size: 1.15rem;
+}
+.coach-trainee-list {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.coach-trainee-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(20, 24, 28, 0.08);
+}
+.coach-trainee-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.coach-trainee-list li > div {
+  display: grid;
+  gap: 0.15rem;
+}
+.coach-next-title {
+  display: block;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.8rem;
+  margin: 0.35rem 0 0.2rem;
+}
+.coach-qr-card .coach-qr-wrap,
+.coach-panel .coach-qr-wrap {
   display: flex;
   flex-wrap: wrap;
   gap: 1.2rem;

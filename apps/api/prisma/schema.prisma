@@ -343,6 +343,7 @@ model Class {
   translations ClassI18n[]
   members      ClassMember[]
   sessions     ClassSession[]
+  weeklySlots  WeeklySlot[]
 }
 
 model ClassI18n {
@@ -363,19 +364,38 @@ model ClassMember {
   @@id([classId, traineeId])
 }
 
+/** Постоянное расписание: день недели + время (Бишкек). */
+model WeeklySlot {
+  id        String         @id @default(uuid()) @db.Uuid
+  classId   String         @db.Uuid
+  /** ISO weekday: 1=Пн … 7=Вс */
+  weekday   Int
+  startHm   String
+  endHm     String
+  title     String         @default("Тренировка")
+  isActive  Boolean        @default(true)
+  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  sessions  ClassSession[]
+
+  @@index([classId, weekday])
+}
+
 model ClassSession {
-  id        String             @id @default(uuid()) @db.Uuid
-  classId   String             @db.Uuid
-  title     String             @default("")
-  startsAt  DateTime
-  endsAt    DateTime
-  status    String             @default("SCHEDULED")
-  lockedAt  DateTime?
-  class     Class              @relation(fields: [classId], references: [id], onDelete: Restrict)
-  attendance AttendanceRecord[]
+  id           String             @id @default(uuid()) @db.Uuid
+  classId      String             @db.Uuid
+  weeklySlotId String?            @db.Uuid
+  title        String             @default("")
+  startsAt     DateTime
+  endsAt       DateTime
+  status       String             @default("SCHEDULED")
+  lockedAt     DateTime?
+  class        Class              @relation(fields: [classId], references: [id], onDelete: Restrict)
+  weeklySlot   WeeklySlot?        @relation(fields: [weeklySlotId], references: [id], onDelete: SetNull)
+  attendance   AttendanceRecord[]
 
   @@index([classId, startsAt])
   @@index([startsAt])
+  @@index([weeklySlotId, startsAt])
 }
 
 model AttendanceRecord {

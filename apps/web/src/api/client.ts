@@ -207,6 +207,7 @@ export const api = {
   }),
   coachSessions: () =>
     request<{
+      classId: string;
       sessions: {
         id: string;
         title: string;
@@ -214,8 +215,66 @@ export const api = {
         endsAt: string;
         status: string;
         presentCount: number;
+        fromWeekly: boolean;
       }[];
     }>("/api/coach/sessions"),
+  coachSessionsHistory: () =>
+    request<{
+      traineeTotal: number;
+      sessions: {
+        id: string;
+        title: string;
+        startsAt: string;
+        endsAt: string;
+        status: string;
+        presentCount: number;
+        fromWeekly: boolean;
+      }[];
+    }>("/api/coach/sessions/history"),
+  coachWeeklySlots: () =>
+    request<{
+      classId: string;
+      slots: {
+        id: string;
+        weekday: number;
+        startHm: string;
+        endHm: string;
+        title: string;
+        isActive: boolean;
+      }[];
+    }>("/api/coach/weekly-slots"),
+  coachCreateWeeklySlot: (data: {
+    weekday: number;
+    startHm: string;
+    endHm: string;
+    title: string;
+  }) =>
+    request<{
+      slot: {
+        id: string;
+        weekday: number;
+        startHm: string;
+        endHm: string;
+        title: string;
+        isActive: boolean;
+      };
+    }>("/api/coach/weekly-slots", { method: "POST", body: JSON.stringify(data) }),
+  coachPatchWeeklySlot: (
+    id: string,
+    data: Partial<{
+      weekday: number;
+      startHm: string;
+      endHm: string;
+      title: string;
+      isActive: boolean;
+    }>,
+  ) =>
+    request(`/api/coach/weekly-slots/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  coachDeleteWeeklySlot: (id: string) =>
+    request(`/api/coach/weekly-slots/${encodeURIComponent(id)}`, { method: "DELETE" }),
   coachCreateSession: (data: { title: string; startsAt: string; endsAt: string }) =>
     request<{ session: { id: string; title: string; startsAt: string; endsAt: string } }>(
       "/api/coach/sessions",
@@ -244,12 +303,20 @@ export const api = {
         sportRu: string | null;
         sportKy: string | null;
       } | null;
+      weeklySlots: {
+        id: string;
+        weekday: number;
+        startHm: string;
+        endHm: string;
+        title: string;
+      }[];
       sessions: {
         id: string;
         title: string;
         startsAt: string;
         endsAt: string;
         status: string;
+        fromWeekly: boolean;
         attended: boolean;
         markedAt: string | null;
       }[];

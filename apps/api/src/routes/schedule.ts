@@ -5,6 +5,9 @@ import { requireAuth, requireRole } from "../lib/auth.js";
 import {
   addTraineeToCoachClass,
   ensureCoachClass,
+  ensureUpcomingFromWeeklySlots,
+  isValidWeekday,
+  normalizeHm,
   notifyCoachTrainees,
   syncClassMembersFromRelations,
 } from "../services/schedule.js";
@@ -58,12 +61,18 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
     const user = requireRole(request, reply, ["COACH"]);
     if (!user) return;
     const cls = await ensureCoachClass(user.id);
-    const from = DateTime.now().setZone(BISHKEK).minus({ days: 1 }).toJSDate();
+    await ensureUpcomingFromWeeklySlots(cls.id);
+    const from = DateTime.now().setZone(BISHKEK).minus({ hours: 2 }).toJSDate();
     const sessions = await prisma.classSession.findMany({
-      where: { classId: cls.id, startsAt: { gte: from } },
+      where: {
+        classId: cls.id,
+        startsAt: { gte: from },
+        status: { not: "CANCELED" },
+      },
       orderBy: { startsAt: "asc" },
       take: 60,
       include: {
+        weeklySlot: { select: { id: true } },
         _count: { select: { attendance: { where: { present: true } } } },
       },
     });
@@ -76,8 +85,171 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
         endsAt: s.endsAt,
         status: s.status,
         presentCount: s._count.attendance,
+        fromWeekly: Boolean(s.weeklySlotId),
       })),
     };
+  });
+
+  app.get("/api/coach/sessions/history", async (request, reply) => {
+    const user = requireRole(request, reply, ["COACH"]);
+    if (!user) return;
+    const cls = await ensureCoachClass(user.id);
+    const now = new Date();
+    const traineeTotal = await prisma.coachingRelation.count({
+      where: { coachId: user.id, status: "ACTIVE" },
+    });
+    const sessions = await prisma.classSession.findMany({
+      where: {
+        classId: cls.id,
+        endsAt: { lt: now },
+        status: { not: "CANCELED" },
+      },
+      orderBy: { startsAt: "desc" },
+      take: 80,
+      include: {
+        _count: { select: { attendance: { where: { present: true } } } },
+      },
+    });
+    return {
+      traineeTotal,
+      sessions: sessions.map((s) => ({
+        id: s.id,
+        title: s.title,
+        startsAt: s.startsAt,
+        endsAt: s.endsAt,
+        status: s.status,
+        presentCount: s._count.attendance,
+        fromWeekly: Boolean(s.weeklySlotId),
+      })),
+    };
+  });
+
+  app.get("/api/coach/weekly-slots", async (request, reply) => {
+    const user = requireRole(request, reply, ["COACH"]);
+    if (!user) return;
+    const cls = await ensureCoachClass(user.id);
+    const slots = await prisma.weeklySlot.findMany({
+      where: { classId: cls.id },
+      orderBy: [{ weekday: "asc" }, { startHm: "asc" }],
+    });
+    return {
+      classId: cls.id,
+      slots: slots.map((s) => ({
+        id: s.id,
+        weekday: s.weekday,
+        startHm: s.startHm,
+        endHm: s.endHm,
+        title: s.title,
+        isActive: s.isActive,
+      })),
+    };
+  });
+
+  app.post("/api/coach/weekly-slots", async (request, reply) => {
+    const user = requireRole(request, reply, ["COACH"]);
+    if (!user) return;
+    const body = request.body as {
+      weekday?: number;
+      startHm?: string;
+      endHm?: string;
+      title?: string;
+    };
+    const weekday = Number(body.weekday);
+    if (!isValidWeekday(weekday)) return reply.code(400).send({ error: "INVALID_WEEKDAY" });
+    const startHm = normalizeHm(String(body.startHm ?? ""));
+    const endHm = normalizeHm(String(body.endHm ?? ""));
+    if (!startHm || !endHm || endHm <= startHm) {
+      return reply.code(400).send({ error: "INVALID_TIME" });
+    }
+    const title = text(body.title, 160) || "Тренировка";
+    const cls = await ensureCoachClass(user.id);
+    const slot = await prisma.weeklySlot.create({
+      data: {
+        classId: cls.id,
+        weekday,
+        startHm,
+        endHm,
+        title,
+        isActive: true,
+      },
+    });
+    await ensureUpcomingFromWeeklySlots(cls.id);
+    const coachName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Тренер";
+    await notifyCoachTrainees(user.id, "WEEKLY_SCHEDULE_UPDATED", {
+      title,
+      weekday,
+      startHm,
+      endHm,
+      coachName,
+    });
+    return { slot };
+  });
+
+  app.patch("/api/coach/weekly-slots/:id", async (request, reply) => {
+    const user = requireRole(request, reply, ["COACH"]);
+    if (!user) return;
+    const { id } = request.params as { id: string };
+    const body = request.body as {
+      weekday?: number;
+      startHm?: string;
+      endHm?: string;
+      title?: string;
+      isActive?: boolean;
+    };
+    const existing = await prisma.weeklySlot.findFirst({
+      where: { id, class: { coachId: user.id } },
+    });
+    if (!existing) return reply.code(404).send({ error: "NOT_FOUND" });
+
+    const weekday =
+      body.weekday !== undefined ? Number(body.weekday) : existing.weekday;
+    if (!isValidWeekday(weekday)) return reply.code(400).send({ error: "INVALID_WEEKDAY" });
+    const startHm =
+      body.startHm !== undefined
+        ? normalizeHm(String(body.startHm))
+        : existing.startHm;
+    const endHm =
+      body.endHm !== undefined ? normalizeHm(String(body.endHm)) : existing.endHm;
+    if (!startHm || !endHm || endHm <= startHm) {
+      return reply.code(400).send({ error: "INVALID_TIME" });
+    }
+
+    const slot = await prisma.weeklySlot.update({
+      where: { id },
+      data: {
+        weekday,
+        startHm,
+        endHm,
+        title: body.title !== undefined ? text(body.title, 160) || existing.title : existing.title,
+        ...(body.isActive !== undefined ? { isActive: Boolean(body.isActive) } : {}),
+      },
+    });
+    await ensureUpcomingFromWeeklySlots(existing.classId);
+    return { slot };
+  });
+
+  app.delete("/api/coach/weekly-slots/:id", async (request, reply) => {
+    const user = requireRole(request, reply, ["COACH"]);
+    if (!user) return;
+    const { id } = request.params as { id: string };
+    const existing = await prisma.weeklySlot.findFirst({
+      where: { id, class: { coachId: user.id } },
+    });
+    if (!existing) return reply.code(404).send({ error: "NOT_FOUND" });
+
+    const now = new Date();
+    await prisma.classSession.deleteMany({
+      where: {
+        weeklySlotId: id,
+        startsAt: { gt: now },
+        attendance: { none: {} },
+      },
+    });
+    await prisma.weeklySlot.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    return { ok: true };
   });
 
   app.post("/api/coach/sessions", async (request, reply) => {
@@ -279,13 +451,21 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
       },
     });
     if (!relation) {
-      return { coach: null, sessions: [] };
+      return { coach: null, sessions: [], weeklySlots: [] };
     }
+
+    const cls = await ensureCoachClass(relation.coachId);
+    await ensureUpcomingFromWeeklySlots(cls.id);
+
+    const weeklySlots = await prisma.weeklySlot.findMany({
+      where: { classId: cls.id, isActive: true },
+      orderBy: [{ weekday: "asc" }, { startHm: "asc" }],
+    });
 
     const from = DateTime.now().setZone(BISHKEK).minus({ hours: 2 }).toJSDate();
     const sessions = await prisma.classSession.findMany({
       where: {
-        class: { coachId: relation.coachId, isActive: true },
+        classId: cls.id,
         startsAt: { gte: from },
         status: { not: "CANCELED" },
       },
@@ -301,12 +481,20 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 
     return {
       coach: relation.coach,
+      weeklySlots: weeklySlots.map((s) => ({
+        id: s.id,
+        weekday: s.weekday,
+        startHm: s.startHm,
+        endHm: s.endHm,
+        title: s.title,
+      })),
       sessions: sessions.map((s) => ({
         id: s.id,
         title: s.title,
         startsAt: s.startsAt,
         endsAt: s.endsAt,
         status: s.status,
+        fromWeekly: Boolean(s.weeklySlotId),
         attended: s.attendance[0]?.present ?? false,
         markedAt: s.attendance[0]?.markedAt ?? null,
       })),
