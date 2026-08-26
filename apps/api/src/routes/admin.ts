@@ -114,6 +114,9 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     const now = new Date();
     const succeeded = { status: "SUCCEEDED" as const };
 
+    const soloWhere = { ...succeeded, coachId: null };
+    const withCoachWhere = { ...succeeded, coachId: { not: null } };
+
     const [
       users,
       trainees,
@@ -126,8 +129,10 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       succeededCount,
       paid,
       shares,
-      withCoachPayments,
-      soloPayments,
+      soloCount,
+      withCoachCount,
+      soloAgg,
+      withCoachAgg,
       activeMemberships,
       activeRelations,
       operatorLedger,
@@ -153,8 +158,26 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           operatorShareKgs: true,
         },
       }),
-      prisma.payment.count({ where: { ...succeeded, coachId: { not: null } } }),
-      prisma.payment.count({ where: { ...succeeded, coachId: null } }),
+      prisma.payment.count({ where: soloWhere }),
+      prisma.payment.count({ where: withCoachWhere }),
+      prisma.payment.aggregate({
+        where: soloWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.aggregate({
+        where: withCoachWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
       prisma.membershipPeriod.count({
         where: { status: "ACTIVE", endsAtExclusive: { gt: now } },
       }),
@@ -182,13 +205,29 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       coachShareKgs,
       operatorShareKgs,
       operatorLedgerKgs: operatorLedger._sum.signedAmount ?? 0,
-      withCoachPayments,
-      soloPayments,
+      withCoachPayments: withCoachCount,
+      soloPayments: soloCount,
       activeMemberships,
       activeRelations,
       rates: {
         solo: { traineePct: 82, coachPct: 0, operatorPct: 18 },
         withCoach: { traineePct: 32, coachPct: 50, operatorPct: 18 },
+      },
+      byMode: {
+        solo: {
+          count: soloCount,
+          paidKgs: soloAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: soloAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: soloAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: soloAgg._sum.operatorShareKgs ?? 0,
+        },
+        withCoach: {
+          count: withCoachCount,
+          paidKgs: withCoachAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: withCoachAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: withCoachAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: withCoachAgg._sum.operatorShareKgs ?? 0,
+        },
       },
     };
   });

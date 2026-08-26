@@ -591,6 +591,21 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
 .admin-rates-list strong {
   font-size: 0.95rem;
 }
+.admin-mode-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.9rem;
+}
+@media (max-width: 900px) {
+  .admin-mode-grid { grid-template-columns: 1fr; }
+}
+.admin-mode-card h3 {
+  margin: 0 0 0.25rem;
+}
+.admin-mode-card .stats {
+  margin-top: 0.9rem;
+}
 .admin-photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

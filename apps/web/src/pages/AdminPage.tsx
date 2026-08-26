@@ -122,24 +122,88 @@ function Overview() {
             <b>{data.operatorShareKgs}</b>
             <span>{t("admin.operatorShareKgs")}</span>
           </div>
+          <div className="stat">
+            <b>{data.succeededPayments}</b>
+            <span>{t("admin.statSucceeded")}</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>{t("admin.statsByMode")}</h2>
+        <p className="muted">{t("admin.ratesLead")}</p>
+        <div className="admin-mode-grid">
+          <article className="card admin-mode-card">
+            <h3>{t("admin.ratesSolo")}</h3>
+            <p className="muted">
+              {t("admin.ratesLine", {
+                trainee: data.rates.solo.traineePct,
+                coach: data.rates.solo.coachPct,
+                operator: data.rates.solo.operatorPct,
+              })}
+            </p>
+            <div className="stats">
+              <div className="stat">
+                <b>{data.byMode.solo.count}</b>
+                <span>{t("admin.modePayments")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.solo.paidKgs}</b>
+                <span>{t("admin.modePaid")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.solo.traineeShareKgs}</b>
+                <span>{t("admin.colTraineeShare")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.solo.coachShareKgs}</b>
+                <span>{t("admin.colCoachShare")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.solo.operatorShareKgs}</b>
+                <span>{t("admin.colOperatorShare")}</span>
+              </div>
+            </div>
+          </article>
+
+          <article className="card admin-mode-card">
+            <h3>{t("admin.ratesWithCoach")}</h3>
+            <p className="muted">
+              {t("admin.ratesLine", {
+                trainee: data.rates.withCoach.traineePct,
+                coach: data.rates.withCoach.coachPct,
+                operator: data.rates.withCoach.operatorPct,
+              })}
+            </p>
+            <div className="stats">
+              <div className="stat">
+                <b>{data.byMode.withCoach.count}</b>
+                <span>{t("admin.modePayments")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.withCoach.paidKgs}</b>
+                <span>{t("admin.modePaid")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.withCoach.traineeShareKgs}</b>
+                <span>{t("admin.colTraineeShare")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.withCoach.coachShareKgs}</b>
+                <span>{t("admin.colCoachShare")}</span>
+              </div>
+              <div className="stat">
+                <b>{data.byMode.withCoach.operatorShareKgs}</b>
+                <span>{t("admin.colOperatorShare")}</span>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 
       <section>
         <h2>{t("admin.statsPayments")}</h2>
         <div className="stats">
-          <div className="stat">
-            <b>{data.succeededPayments}</b>
-            <span>{t("admin.statSucceeded")}</span>
-          </div>
-          <div className="stat">
-            <b>{data.soloPayments}</b>
-            <span>{t("admin.statSolo")}</span>
-          </div>
-          <div className="stat">
-            <b>{data.withCoachPayments}</b>
-            <span>{t("admin.statWithCoach")}</span>
-          </div>
           <div className="stat">
             <b>{data.pendingPayments}</b>
             <span>{t("admin.statPending")}</span>
@@ -153,33 +217,6 @@ function Overview() {
             <span>{t("admin.statAllPayments")}</span>
           </div>
         </div>
-      </section>
-
-      <section className="card admin-rates">
-        <h2>{t("admin.ratesTitle")}</h2>
-        <p className="muted">{t("admin.ratesLead")}</p>
-        <ul className="admin-rates-list">
-          <li>
-            <strong>{t("admin.ratesSolo")}</strong>
-            <span>
-              {t("admin.ratesLine", {
-                trainee: data.rates.solo.traineePct,
-                coach: data.rates.solo.coachPct,
-                operator: data.rates.solo.operatorPct,
-              })}
-            </span>
-          </li>
-          <li>
-            <strong>{t("admin.ratesWithCoach")}</strong>
-            <span>
-              {t("admin.ratesLine", {
-                trainee: data.rates.withCoach.traineePct,
-                coach: data.rates.withCoach.coachPct,
-                operator: data.rates.withCoach.operatorPct,
-              })}
-            </span>
-          </li>
-        </ul>
       </section>
     </div>
   );

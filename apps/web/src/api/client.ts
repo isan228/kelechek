@@ -407,6 +407,22 @@ export const api = {
         solo: { traineePct: number; coachPct: number; operatorPct: number };
         withCoach: { traineePct: number; coachPct: number; operatorPct: number };
       };
+      byMode: {
+        solo: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+        withCoach: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+      };
     }>("/api/admin/overview"),
   adminCoaches: () =>
     request<{
