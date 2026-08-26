@@ -91,6 +91,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         lastName: true,
         bioRu: true,
         bioKy: true,
+        sportRu: true,
+        sportKy: true,
         photoUrl: true,
       },
     });
@@ -100,6 +102,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         firstName: c.firstName,
         lastName: c.lastName,
         bio: (locale === "ky" ? c.bioKy : c.bioRu) || c.bioRu || c.bioKy || null,
+        sport: (locale === "ky" ? c.sportKy : c.sportRu) || c.sportRu || c.sportKy || null,
         photoUrl: c.photoUrl,
       })),
     };
@@ -245,6 +248,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       phone?: string;
       bioRu?: string;
       bioKy?: string;
+      sportRu?: string;
+      sportKy?: string;
       photoUrl?: string;
     };
     const login = body.login ? normalizeLogin(body.login) : null;
@@ -284,6 +289,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         lastName,
         bioRu: text(body.bioRu, 2000) || null,
         bioKy: text(body.bioKy, 2000) || null,
+        sportRu: text(body.sportRu, 120) || null,
+        sportKy: text(body.sportKy, 120) || null,
         photoUrl: text(body.photoUrl, 500) || null,
         roles: [UserRole.COACH],
         locale: Locale.ru,

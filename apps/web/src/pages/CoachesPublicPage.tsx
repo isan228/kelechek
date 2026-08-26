@@ -9,7 +9,7 @@ export function CoachesPublicPage() {
   const { s, photo } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [coaches, setCoaches] = useState<
-    { id: string; firstName: string | null; lastName: string | null; bio: string | null; photoUrl: string | null }[]
+    { id: string; firstName: string | null; lastName: string | null; bio: string | null; sport: string | null; photoUrl: string | null }[]
   >([]);
   const fallbacks = [photo("honor"), photo("discipline"), photo("youth")];
 
@@ -36,6 +36,7 @@ export function CoachesPublicPage() {
               <img src={c.photoUrl || fallbacks[i % fallbacks.length]} alt="" />
               <div className="pad">
                 <h3>{[c.firstName, c.lastName].filter(Boolean).join(" ") || s("coaches.unnamed")}</h3>
+                {c.sport && <span className="badge">{c.sport}</span>}
                 <p className="muted">{c.bio || s("coaches.cardLead")}</p>
               </div>
             </article>

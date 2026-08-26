@@ -280,6 +280,8 @@ function CoachesTab({ onSaved }: { onSaved: () => void }) {
     phone: "",
     bioRu: "",
     bioKy: "",
+    sportRu: "",
+    sportKy: "",
   });
 
   async function load() {
@@ -302,6 +304,8 @@ function CoachesTab({ onSaved }: { onSaved: () => void }) {
         phone: form.phone || undefined,
         bioRu: form.bioRu || undefined,
         bioKy: form.bioKy || undefined,
+        sportRu: form.sportRu || undefined,
+        sportKy: form.sportKy || undefined,
       });
       setForm({
         login: "",
@@ -311,6 +315,8 @@ function CoachesTab({ onSaved }: { onSaved: () => void }) {
         phone: "",
         bioRu: "",
         bioKy: "",
+        sportRu: "",
+        sportKy: "",
       });
       setOpenForm(false);
       await load();
@@ -392,6 +398,14 @@ function CoachesTab({ onSaved }: { onSaved: () => void }) {
           <label>
             {t("admin.bioKy")}
             <textarea value={form.bioKy} onChange={(e) => setForm({ ...form, bioKy: e.target.value })} />
+          </label>
+          <label>
+            {t("coachCabinet.sportRu")}
+            <input value={form.sportRu} onChange={(e) => setForm({ ...form, sportRu: e.target.value })} />
+          </label>
+          <label>
+            {t("coachCabinet.sportKy")}
+            <input value={form.sportKy} onChange={(e) => setForm({ ...form, sportKy: e.target.value })} />
           </label>
           <div className="row" style={{ marginTop: "1rem" }}>
             <button type="submit" disabled={busy}>

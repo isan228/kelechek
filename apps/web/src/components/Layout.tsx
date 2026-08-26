@@ -60,7 +60,10 @@ export function Layout() {
             <NavLink to="/coaches" onClick={close}>{t("nav.coaches")}</NavLink>
             {user && !isCoachOnly && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
             {user && !isCoachOnly && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
+            {isTrainee && <NavLink to="/schedule" onClick={close}>{t("nav.schedule")}</NavLink>}
             {isTrainee && <NavLink to="/join" onClick={close}>{t("nav.scanCoach")}</NavLink>}
+            {isTrainee && <NavLink to="/checkin" onClick={close}>{t("nav.checkin")}</NavLink>}
+            {user && <NavLink to="/notifications" onClick={close}>{t("nav.notifications")}</NavLink>}
             {isCoach && <NavLink to="/coach" onClick={close}>{t("nav.wards")}</NavLink>}
             {user && <NavLink to="/profile" onClick={close}>{t("nav.profile")}</NavLink>}
             {isAdmin && <NavLink to="/admin" onClick={close}>{t("nav.admin")}</NavLink>}

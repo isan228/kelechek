@@ -175,6 +175,8 @@ export const api = {
         lastName: string | null;
         bioRu: string | null;
         bioKy: string | null;
+        sportRu: string | null;
+        sportKy: string | null;
         photoUrl: string | null;
         locale: "ru" | "ky";
         createdAt: string;
@@ -192,6 +194,87 @@ export const api = {
         membershipEndsAt: string | null;
       }[];
     }>("/api/coach/dashboard"),
+  coachPatchProfile: (data: {
+    sportRu?: string;
+    sportKy?: string;
+    bioRu?: string;
+    bioKy?: string;
+    firstName?: string;
+    lastName?: string;
+  }) => request<{ coach: Record<string, unknown> }>("/api/coach/profile", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  }),
+  coachSessions: () =>
+    request<{
+      sessions: {
+        id: string;
+        title: string;
+        startsAt: string;
+        endsAt: string;
+        status: string;
+        presentCount: number;
+      }[];
+    }>("/api/coach/sessions"),
+  coachCreateSession: (data: { title: string; startsAt: string; endsAt: string }) =>
+    request<{ session: { id: string; title: string; startsAt: string; endsAt: string } }>(
+      "/api/coach/sessions",
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+  coachDeleteSession: (id: string) =>
+    request(`/api/coach/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  coachSessionQr: (id: string) =>
+    request<{
+      session: { id: string; title: string; startsAt: string; endsAt: string };
+      joinUrl: string;
+      present: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        phone: string;
+        markedAt: string;
+      }[];
+    }>(`/api/coach/sessions/${encodeURIComponent(id)}/qr`),
+  mySchedule: () =>
+    request<{
+      coach: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        sportRu: string | null;
+        sportKy: string | null;
+      } | null;
+      sessions: {
+        id: string;
+        title: string;
+        startsAt: string;
+        endsAt: string;
+        status: string;
+        attended: boolean;
+        markedAt: string | null;
+      }[];
+    }>("/api/me/schedule"),
+  checkIn: (token: string) =>
+    request<{
+      ok: true;
+      already: boolean;
+      session: { id: string; title: string; startsAt?: string };
+    }>("/api/checkin", { method: "POST", body: JSON.stringify({ token }) }),
+  notifications: () =>
+    request<{
+      unread: number;
+      notifications: {
+        id: string;
+        type: string;
+        payload: Record<string, unknown>;
+        readAt: string | null;
+        createdAt: string;
+      }[];
+    }>("/api/me/notifications"),
+  notificationsReadAll: () =>
+    request("/api/me/notifications/read-all", { method: "POST" }),
+  notificationRead: (id: string) =>
+    request(`/api/me/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }),
   coachQr: () =>
     request<{
       token: string;
@@ -217,9 +300,22 @@ export const api = {
         firstName: string | null;
         lastName: string | null;
         bio: string | null;
+        sport: string | null;
         photoUrl: string | null;
       }[];
     }>(`/api/coaches?locale=${locale}`),
+  adminCreateCoach: (data: {
+    login: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    bioRu?: string;
+    bioKy?: string;
+    sportRu?: string;
+    sportKy?: string;
+    photoUrl?: string;
+  }) => request("/api/admin/coaches", { method: "POST", body: JSON.stringify(data) }),
   adminOverview: () =>
     request<{
       users: number;
@@ -245,16 +341,6 @@ export const api = {
         traineeCount: number;
       }[];
     }>("/api/admin/coaches"),
-  adminCreateCoach: (data: {
-    login: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-    bioRu?: string;
-    bioKy?: string;
-    photoUrl?: string;
-  }) => request("/api/admin/coaches", { method: "POST", body: JSON.stringify(data) }),
   adminUsers: (q = "") =>
     request<{
       users: {

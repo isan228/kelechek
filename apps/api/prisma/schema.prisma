@@ -111,6 +111,8 @@ model User {
   lastName        String?
   bioRu           String?
   bioKy           String?
+  sportRu         String?
+  sportKy         String?
   photoUrl        String?
   pinEncrypted    String?
   createdAt       DateTime   @default(now())
@@ -364,12 +366,16 @@ model ClassMember {
 model ClassSession {
   id        String             @id @default(uuid()) @db.Uuid
   classId   String             @db.Uuid
+  title     String             @default("")
   startsAt  DateTime
   endsAt    DateTime
-  status    String
+  status    String             @default("SCHEDULED")
   lockedAt  DateTime?
   class     Class              @relation(fields: [classId], references: [id], onDelete: Restrict)
   attendance AttendanceRecord[]
+
+  @@index([classId, startsAt])
+  @@index([startsAt])
 }
 
 model AttendanceRecord {

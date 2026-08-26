@@ -226,6 +226,8 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
         lastName: true,
         bioRu: true,
         bioKy: true,
+        sportRu: true,
+        sportKy: true,
         photoUrl: true,
         locale: true,
         createdAt: true,

@@ -12,6 +12,11 @@ import { CabinetPage, GoalPage } from "./pages/CabinetPages";
 import { BalancePage } from "./pages/PayPage";
 import { CoachPage, InvitesPage, ProfilePage } from "./pages/MiscPages";
 import { JoinCoachPage } from "./pages/JoinCoachPage";
+import {
+  CheckInPage,
+  NotificationsPage,
+  TraineeSchedulePage,
+} from "./pages/SchedulePages";
 import { AdminPage } from "./pages/AdminPage";
 import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
 
@@ -43,6 +48,7 @@ export function App() {
         <Route path="/workouts/:id" element={<WorkoutItemPage />} />
         <Route path="/coaches" element={<CoachesPublicPage />} />
         <Route path="/join" element={<JoinCoachPage />} />
+        <Route path="/checkin" element={<CheckInPage />} />
         <Route path="/goal" element={<GoalPage />} />
         <Route
           path="/login"
@@ -72,6 +78,8 @@ export function App() {
         <Route element={<Guard />}>
           <Route path="/cabinet" element={<CabinetPage />} />
           <Route path="/progress" element={<BalancePage />} />
+          <Route path="/schedule" element={<TraineeSchedulePage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/invites" element={<InvitesPage />} />
           <Route path="/coach" element={<CoachPage />} />
           <Route path="/profile" element={<ProfilePage />} />

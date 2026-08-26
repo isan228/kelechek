@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import QRCode from "qrcode";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { CoachSchedulePanel } from "./SchedulePages";
 
 function displayName(person: {
   firstName: string | null;
@@ -84,6 +85,8 @@ export function CoachPage() {
   const [qr, setQr] = useState<{ joinUrl: string; day: string; validUntil: string; dataUrl: string } | null>(
     null,
   );
+  const [sportRu, setSportRu] = useState("");
+  const [sportKy, setSportKy] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -101,6 +104,8 @@ export function CoachPage() {
   async function load() {
     const res = await api.coachDashboard();
     setData(res);
+    setSportRu(res.coach.sportRu ?? "");
+    setSportKy(res.coach.sportKy ?? "");
   }
 
   useEffect(() => {
@@ -209,19 +214,44 @@ export function CoachPage() {
               <dt>{t("coachCabinet.since")}</dt>
               <dd>{formatDate(coach?.createdAt ?? null, locale)}</dd>
             </div>
+            <div>
+              <dt>{t("coachCabinet.sport")}</dt>
+              <dd>{(locale === "ky" ? coach?.sportKy || coach?.sportRu : coach?.sportRu || coach?.sportKy) || "—"}</dd>
+            </div>
           </dl>
-          {(coach?.bioRu || coach?.bioKy) && (
-            <p className="muted" style={{ marginTop: "0.8rem" }}>
-              {locale === "ky" ? coach.bioKy || coach.bioRu : coach.bioRu || coach.bioKy}
-            </p>
-          )}
-          <div className="row" style={{ marginTop: "1rem" }}>
+          <label>
+            {t("coachCabinet.sportRu")}
+            <input value={sportRu} onChange={(e) => setSportRu(e.target.value)} placeholder="бокс, борьба…" />
+          </label>
+          <label>
+            {t("coachCabinet.sportKy")}
+            <input value={sportKy} onChange={(e) => setSportKy(e.target.value)} />
+          </label>
+          <div className="row" style={{ marginTop: "0.8rem" }}>
+            <button
+              type="button"
+              className="ghost"
+              disabled={busy}
+              onClick={() => {
+                void api
+                  .coachPatchProfile({ sportRu, sportKy })
+                  .then(() => load())
+                  .then(() => setMsg(t("profile.saved")));
+              }}
+            >
+              {t("coachCabinet.saveSport")}
+            </button>
             <Link to="/profile">
               <button type="button" className="ghost">
                 {t("nav.profile")}
               </button>
             </Link>
           </div>
+          {(coach?.bioRu || coach?.bioKy) && (
+            <p className="muted" style={{ marginTop: "0.8rem" }}>
+              {locale === "ky" ? coach.bioKy || coach.bioRu : coach.bioRu || coach.bioKy}
+            </p>
+          )}
         </article>
 
         <article className="card">
@@ -240,6 +270,9 @@ export function CoachPage() {
           {err && <p className="error">{err}</p>}
         </article>
       </div>
+
+      <h2 style={{ marginTop: "1.6rem" }}>{t("schedule.sectionTitle")}</h2>
+      <CoachSchedulePanel />
 
       <section className="card" style={{ marginTop: "1.4rem" }}>
         <h2>{t("coachCabinet.listTitle")}</h2>
