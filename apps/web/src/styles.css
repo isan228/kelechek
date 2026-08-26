@@ -318,9 +318,28 @@ button:disabled { opacity: 0.5; cursor: default; }
   color: var(--muted);
   font-size: 0.9rem;
 }
-.coach-meta dd {
-  margin: 0;
-  font-weight: 600;
+.coach-qr-card .coach-qr-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+.coach-qr-img {
+  width: min(280px, 100%);
+  height: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+.qr-reader {
+  margin-top: 0.8rem;
+  overflow: hidden;
+  border-radius: 12px;
+  max-width: 360px;
+}
+.qr-reader video {
+  border-radius: 12px;
 }
 .price {
   font-family: "Cormorant Garamond", serif;

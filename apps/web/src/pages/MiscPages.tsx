@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import QRCode from "qrcode";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -80,9 +81,22 @@ export function CoachPage() {
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [phone, setPhone] = useState("+996");
   const [data, setData] = useState<Awaited<ReturnType<typeof api.coachDashboard>> | null>(null);
+  const [qr, setQr] = useState<{ joinUrl: string; day: string; validUntil: string; dataUrl: string } | null>(
+    null,
+  );
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  async function loadQr() {
+    const res = await api.coachQr();
+    const dataUrl = await QRCode.toDataURL(res.joinUrl, {
+      width: 320,
+      margin: 2,
+      errorCorrectionLevel: "M",
+    });
+    setQr({ joinUrl: res.joinUrl, day: res.day, validUntil: res.validUntil, dataUrl });
+  }
 
   async function load() {
     const res = await api.coachDashboard();
@@ -92,6 +106,7 @@ export function CoachPage() {
   useEffect(() => {
     if (user?.roles.includes("COACH") || user?.roles.includes("ADMIN")) {
       void load().catch(() => setData(null));
+      void loadQr().catch(() => setQr(null));
     }
   }, [user]);
 
@@ -148,6 +163,27 @@ export function CoachPage() {
           <span>{t("coachCabinet.pending")}</span>
         </div>
       </div>
+
+      <article className="card coach-qr-card" style={{ marginTop: "1.4rem" }}>
+        <h2>{t("coachCabinet.qrTitle")}</h2>
+        <p className="muted">{t("coachCabinet.qrLead")}</p>
+        {qr ? (
+          <div className="coach-qr-wrap">
+            <img src={qr.dataUrl} alt="QR" className="coach-qr-img" />
+            <div>
+              <p>
+                <strong>{t("coachCabinet.qrDay")}:</strong> {qr.day}
+              </p>
+              <p className="muted">{t("coachCabinet.qrUntil", { time: formatDate(qr.validUntil, locale) })}</p>
+              <button type="button" className="ghost" onClick={() => void loadQr()}>
+                {t("coachCabinet.qrRefresh")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="muted">{t("admin.loading")}</p>
+        )}
+      </article>
 
       <div className="grid two" style={{ marginTop: "1.4rem" }}>
         <article className="card">

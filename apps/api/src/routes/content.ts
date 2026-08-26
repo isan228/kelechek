@@ -2,7 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireRole } from "../lib/auth.js";
 import { isContentAccessible } from "../services/access.js";
-import { endRelation, respondInvitation, sendInvitation } from "../services/invitations.js";
+import { endRelation, linkTraineeToCoach, respondInvitation, sendInvitation } from "../services/invitations.js";
+import { issueCoachDayToken, verifyCoachDayToken, webOrigin } from "../services/coachQr.js";
 import { normalizePhone } from "../services/otp.js";
 
 function pickI18n<T extends { locale: string }>(rows: T[], locale: string): T | undefined {
@@ -137,6 +138,56 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
     try {
       const result = await sendInvitation(user.id, phone);
       return result;
+    } catch (err) {
+      const status = (err as { statusCode?: number }).statusCode ?? 500;
+      return reply.code(status).send({ error: (err as Error).message });
+    }
+  });
+
+  app.get("/api/coach/qr", async (request, reply) => {
+    const user = requireRole(request, reply, ["COACH", "ADMIN"]);
+    if (!user) return;
+    const { token, day, validUntil } = issueCoachDayToken(user.id);
+    const joinUrl = `${webOrigin()}/join?t=${encodeURIComponent(token)}`;
+    return {
+      token,
+      day,
+      validUntil,
+      joinUrl,
+      coach: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    };
+  });
+
+  app.post("/api/join/coach", async (request, reply) => {
+    const user = requireRole(request, reply, ["TRAINEE"]);
+    if (!user) return;
+    const body = request.body as { token?: string; confirmReplace?: boolean };
+    const raw = (body.token ?? "").trim();
+    if (!raw) return reply.code(400).send({ error: "TOKEN_REQUIRED" });
+
+    // QR может содержать полный URL /join?t=...
+    let token = raw;
+    try {
+      if (raw.includes("t=")) {
+        const u = new URL(raw, webOrigin());
+        token = u.searchParams.get("t") || raw;
+      }
+    } catch {
+      /* plain token */
+    }
+
+    const parsed = verifyCoachDayToken(token);
+    if (!parsed) {
+      return reply.code(400).send({ error: "INVALID_OR_EXPIRED_QR" });
+    }
+
+    try {
+      const result = await linkTraineeToCoach(user.id, parsed.coachId, Boolean(body.confirmReplace));
+      return { ok: true, ...result };
     } catch (err) {
       const status = (err as { statusCode?: number }).statusCode ?? 500;
       return reply.code(status).send({ error: (err as Error).message });

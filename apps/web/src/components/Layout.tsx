@@ -13,6 +13,7 @@ export function Layout() {
   const [open, setOpen] = useState(false);
   const isCoach = user?.roles.includes("COACH");
   const isAdmin = user?.roles.includes("ADMIN");
+  const isTrainee = user?.roles.includes("TRAINEE");
   const isCoachOnly = Boolean(isCoach && !user?.roles.includes("TRAINEE") && !isAdmin);
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
 
@@ -59,6 +60,7 @@ export function Layout() {
             <NavLink to="/coaches" onClick={close}>{t("nav.coaches")}</NavLink>
             {user && !isCoachOnly && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
             {user && !isCoachOnly && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
+            {isTrainee && <NavLink to="/join" onClick={close}>{t("nav.scanCoach")}</NavLink>}
             {isCoach && <NavLink to="/coach" onClick={close}>{t("nav.wards")}</NavLink>}
             {user && <NavLink to="/profile" onClick={close}>{t("nav.profile")}</NavLink>}
             {isAdmin && <NavLink to="/admin" onClick={close}>{t("nav.admin")}</NavLink>}

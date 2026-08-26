@@ -11,6 +11,7 @@ import { CoachesPublicPage } from "./pages/CoachesPublicPage";
 import { CabinetPage, GoalPage } from "./pages/CabinetPages";
 import { BalancePage } from "./pages/PayPage";
 import { CoachPage, InvitesPage, ProfilePage } from "./pages/MiscPages";
+import { JoinCoachPage } from "./pages/JoinCoachPage";
 import { AdminPage } from "./pages/AdminPage";
 import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
 
@@ -41,6 +42,7 @@ export function App() {
         <Route path="/workouts" element={<WorkoutsPage />} />
         <Route path="/workouts/:id" element={<WorkoutItemPage />} />
         <Route path="/coaches" element={<CoachesPublicPage />} />
+        <Route path="/join" element={<JoinCoachPage />} />
         <Route path="/goal" element={<GoalPage />} />
         <Route
           path="/login"

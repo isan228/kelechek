@@ -70,45 +70,10 @@ export async function respondInvitation(
     });
   }
 
-  return prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${traineeId}))`;
-
-    const current = await tx.coachingRelation.findFirst({
-      where: { traineeId, status: "ACTIVE" },
-    });
-    if (current && !confirmReplace) {
-      throw Object.assign(new Error("CONFIRM_REPLACE_REQUIRED"), { statusCode: 409 });
-    }
-
-    if (current) {
-      await tx.coachingRelation.update({
-        where: { id: current.id },
-        data: { status: "ENDED", endedAt: new Date(), endReason: "REPLACED" },
-      });
-      await tx.coachCounter.updateMany({
-        where: { coachId: current.coachId, activeRelationCount: { gt: 0 } },
-        data: { activeRelationCount: { decrement: 1 } },
-      });
-    }
-
-    await tx.coachingRelation.create({
-      data: {
-        coachId: invite.coachId,
-        traineeId,
-        status: "ACTIVE",
-        startedAt: new Date(),
-        invitationId: invite.id,
-      },
-    });
-    await tx.coachCounter.upsert({
-      where: { coachId: invite.coachId },
-      create: { coachId: invite.coachId, activeRelationCount: 1 },
-      update: { activeRelationCount: { increment: 1 } },
-    });
-    return tx.coachingInvitation.update({
-      where: { id: invite.id },
-      data: { status: "ACCEPTED", respondedAt: new Date() },
-    });
+  await linkTraineeToCoach(traineeId, invite.coachId, confirmReplace, invite.id);
+  return prisma.coachingInvitation.update({
+    where: { id: invite.id },
+    data: { status: "ACCEPTED", respondedAt: new Date() },
   });
 }
 
@@ -143,3 +108,78 @@ export async function endRelation(userId: string, asAdmin = false, traineeId?: s
     });
   });
 }
+
+/** Привязка ученика к тренеру (QR или принятие приглашения). */
+export async function linkTraineeToCoach(
+  traineeId: string,
+  coachId: string,
+  confirmReplace: boolean,
+  invitationId?: string,
+) {
+  if (traineeId === coachId) {
+    throw Object.assign(new Error("CANNOT_LINK_SELF"), { statusCode: 400 });
+  }
+
+  const coach = await prisma.user.findFirst({
+    where: {
+      id: coachId,
+      deletedAt: null,
+      status: "ACTIVE",
+      roles: { has: "COACH" },
+    },
+  });
+  if (!coach) {
+    throw Object.assign(new Error("COACH_NOT_FOUND"), { statusCode: 404 });
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${traineeId}))`;
+
+    const current = await tx.coachingRelation.findFirst({
+      where: { traineeId, status: "ACTIVE" },
+    });
+    if (current?.coachId === coachId) {
+      return { alreadyLinked: true as const, coachId };
+    }
+    if (current && !confirmReplace) {
+      throw Object.assign(new Error("CONFIRM_REPLACE_REQUIRED"), { statusCode: 409 });
+    }
+
+    if (current) {
+      await tx.coachingRelation.update({
+        where: { id: current.id },
+        data: { status: "ENDED", endedAt: new Date(), endReason: "REPLACED" },
+      });
+      await tx.coachCounter.updateMany({
+        where: { coachId: current.coachId, activeRelationCount: { gt: 0 } },
+        data: { activeRelationCount: { decrement: 1 } },
+      });
+    }
+
+    await tx.coachingRelation.create({
+      data: {
+        coachId,
+        traineeId,
+        status: "ACTIVE",
+        startedAt: new Date(),
+        invitationId: invitationId ?? null,
+      },
+    });
+    await tx.coachCounter.upsert({
+      where: { coachId },
+      create: { coachId, activeRelationCount: 1 },
+      update: { activeRelationCount: { increment: 1 } },
+    });
+
+    return {
+      alreadyLinked: false as const,
+      coachId,
+      coach: {
+        id: coach.id,
+        firstName: coach.firstName,
+        lastName: coach.lastName,
+      },
+    };
+  });
+}
+

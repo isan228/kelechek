@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
@@ -10,6 +10,8 @@ export function LoginPage() {
   const { photo } = useSiteCopy();
   const { setUser } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const nextPath = params.get("next");
   const [mode, setMode] = useState<"login" | "register">("login");
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +39,8 @@ export function LoginPage() {
       if (mode === "login") {
         const res = await api.login(login, password);
         setUser(res.user);
-        if (res.user.roles.includes("ADMIN")) navigate("/admin");
+        if (nextPath && nextPath.startsWith("/")) navigate(nextPath);
+        else if (res.user.roles.includes("ADMIN")) navigate("/admin");
         else if (res.user.roles.includes("COACH")) navigate("/coach");
         else navigate("/cabinet");
         return;

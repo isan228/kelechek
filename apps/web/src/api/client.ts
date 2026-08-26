@@ -192,6 +192,24 @@ export const api = {
         membershipEndsAt: string | null;
       }[];
     }>("/api/coach/dashboard"),
+  coachQr: () =>
+    request<{
+      token: string;
+      day: string;
+      validUntil: string;
+      joinUrl: string;
+      coach: { id: string; firstName: string | null; lastName: string | null };
+    }>("/api/coach/qr"),
+  joinCoach: (token: string, confirmReplace = false) =>
+    request<{
+      ok: true;
+      alreadyLinked: boolean;
+      coachId: string;
+      coach?: { id: string; firstName: string | null; lastName: string | null };
+    }>("/api/join/coach", {
+      method: "POST",
+      body: JSON.stringify({ token, confirmReplace }),
+    }),
   publicCoaches: (locale = "ru") =>
     request<{
       coaches: {
