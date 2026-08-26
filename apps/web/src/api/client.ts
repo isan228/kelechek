@@ -383,6 +383,25 @@ export const api = {
     sportKy?: string;
     photoUrl?: string;
   }) => request("/api/admin/coaches", { method: "POST", body: JSON.stringify(data) }),
+  adminCreateAccountant: (data: {
+    login: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+  }) => request("/api/admin/accountants", { method: "POST", body: JSON.stringify(data) }),
+  adminAccountants: () =>
+    request<{
+      accountants: {
+        id: string;
+        login: string | null;
+        phone: string;
+        firstName: string | null;
+        lastName: string | null;
+        status: string;
+        createdAt: string;
+      }[];
+    }>("/api/admin/accountants"),
   adminOverview: () =>
     request<{
       users: number;
@@ -709,4 +728,90 @@ export const api = {
         }[];
       }[];
     }>("/api/admin/accounting"),
+  gallery: () =>
+    request<{
+      items: { id: string; imageUrl: string; captionRu: string; captionKy: string }[];
+    }>("/api/gallery"),
+  news: (locale = "ru") =>
+    request<{
+      posts: {
+        id: string;
+        coverUrl: string | null;
+        publishedAt: string;
+        title: string;
+        summary: string;
+      }[];
+    }>(`/api/news?locale=${locale}`),
+  newsPost: (id: string, locale = "ru") =>
+    request<{
+      post: {
+        id: string;
+        coverUrl: string | null;
+        publishedAt: string;
+        title: string;
+        summary: string;
+        body: string;
+      };
+    }>(`/api/news/${encodeURIComponent(id)}?locale=${locale}`),
+  adminGallery: () =>
+    request<{
+      items: {
+        id: string;
+        imageUrl: string;
+        captionRu: string;
+        captionKy: string;
+        sortOrder: number;
+        isActive: boolean;
+      }[];
+    }>("/api/admin/gallery"),
+  adminCreateGallery: (data: {
+    imageUrl: string;
+    captionRu?: string;
+    captionKy?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+  }) => request("/api/admin/gallery", { method: "POST", body: JSON.stringify(data) }),
+  adminPatchGallery: (
+    id: string,
+    data: Partial<{
+      imageUrl: string;
+      captionRu: string;
+      captionKy: string;
+      sortOrder: number;
+      isActive: boolean;
+    }>,
+  ) =>
+    request(`/api/admin/gallery/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  adminDeleteGallery: (id: string) =>
+    request(`/api/admin/gallery/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  adminNews: () =>
+    request<{
+      posts: {
+        id: string;
+        coverUrl: string | null;
+        status: string;
+        publishedAt: string | null;
+        createdAt: string;
+        ru: { title: string; summary: string; body: string };
+        ky: { title: string; summary: string; body: string };
+      }[];
+    }>("/api/admin/news"),
+  adminSaveNews: (
+    id: string | null,
+    data: {
+      coverUrl?: string;
+      status: string;
+      ru: { title: string; summary: string; body: string };
+      ky: { title: string; summary: string; body: string };
+    },
+  ) =>
+    request(id ? `/api/admin/news/${encodeURIComponent(id)}` : "/api/admin/news", {
+      method: id ? "PATCH" : "POST",
+      body: JSON.stringify(data),
+    }),
+  adminDeleteNews: (id: string) =>
+    request(`/api/admin/news/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };

@@ -17,6 +17,7 @@ enum UserRole {
   COACH
   ADMIN
   CONTENT_EDITOR
+  ACCOUNTANT
 }
 
 enum UserStatus {
@@ -736,4 +737,39 @@ model SensitiveAccessLog {
   subjectId String   @db.Uuid
   purpose   String
   at        DateTime @default(now())
+}
+
+model GalleryItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  imageUrl   String
+  captionRu  String   @default("")
+  captionKy  String   @default("")
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([isActive, sortOrder])
+}
+
+model NewsPost {
+  id          String        @id @default(uuid()) @db.Uuid
+  coverUrl    String?
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  translations NewsPostI18n[]
+
+  @@index([status, publishedAt])
+}
+
+model NewsPostI18n {
+  postId  String   @db.Uuid
+  locale  Locale
+  title   String
+  summary String
+  body    String   @default("")
+  post    NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, locale])
 }

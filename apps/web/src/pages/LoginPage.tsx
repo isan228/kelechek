@@ -41,6 +41,7 @@ export function LoginPage() {
         setUser(res.user);
         if (nextPath && nextPath.startsWith("/")) navigate(nextPath);
         else if (res.user.roles.includes("ADMIN")) navigate("/admin");
+        else if (res.user.roles.includes("ACCOUNTANT")) navigate("/accounting");
         else if (res.user.roles.includes("COACH")) navigate("/coach");
         else navigate("/cabinet");
         return;

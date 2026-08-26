@@ -39,7 +39,7 @@ async function saveUploadedImage(
   return `/api/media/${name}`;
 }
 
-const ROLES: UserRole[] = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"];
+const ROLES: UserRole[] = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR", "ACCOUNTANT"];
 const STATUSES: UserStatus[] = ["ACTIVE", "BLOCKED"];
 const CONTENT_TYPES: ContentType[] = ["ARTICLE", "EXERCISE", "PROGRAM"];
 const CONTENT_STATUSES: ContentStatus[] = [
@@ -430,6 +430,79 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
+  app.post("/api/admin/accountants", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN"]);
+    if (!admin) return;
+    const body = request.body as {
+      login?: string;
+      password?: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+    };
+    const login = body.login ? normalizeLogin(body.login) : null;
+    if (!login) return reply.code(400).send({ error: "INVALID_LOGIN" });
+    if (!body.password || !validatePassword(body.password)) {
+      return reply.code(400).send({ error: "INVALID_PASSWORD" });
+    }
+    const firstName = text(body.firstName, 80);
+    const lastName = text(body.lastName, 80);
+    if (!firstName || !lastName) return reply.code(400).send({ error: "NAME_REQUIRED" });
+
+    let phone = body.phone ? normalizePhone(body.phone) : null;
+    if (!phone) {
+      for (let i = 0; i < 8; i++) {
+        const candidate = `+9967${String(Math.floor(10000000 + Math.random() * 89999999))}`;
+        const taken = await prisma.user.findFirst({ where: { phone: candidate } });
+        if (!taken) {
+          phone = candidate;
+          break;
+        }
+      }
+    }
+    if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
+
+    const exists = await prisma.user.findFirst({
+      where: { OR: [{ phone }, { login }] },
+    });
+    if (exists?.login === login) return reply.code(409).send({ error: "LOGIN_TAKEN" });
+    if (exists?.phone === phone) return reply.code(409).send({ error: "PHONE_TAKEN" });
+
+    const user = await prisma.user.create({
+      data: {
+        phone,
+        login,
+        passwordHash: await hashPassword(body.password),
+        firstName,
+        lastName,
+        roles: [UserRole.ACCOUNTANT],
+        locale: Locale.ru,
+        phoneVerifiedAt: new Date(),
+      },
+    });
+    return { user };
+  });
+
+  app.get("/api/admin/accountants", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN"]);
+    if (!admin) return;
+    const accountants = await prisma.user.findMany({
+      where: { roles: { has: "ACCOUNTANT" }, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        login: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+    return { accountants };
+  });
+
 
   app.patch("/api/admin/users/:id", async (request, reply) => {
     const admin = requireRole(request, reply, ["ADMIN"]);
@@ -775,7 +848,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/payments", async (request, reply) => {
-    const admin = requireRole(request, reply, ["ADMIN"]);
+    const admin = requireRole(request, reply, ["ADMIN", "ACCOUNTANT"]);
     if (!admin) return;
     const payments = await prisma.payment.findMany({
       where: { status: "SUCCEEDED" },
@@ -839,7 +912,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
   /** Полная бухгалтерия: итоги, режимы, месяцы, счета, журнал «кто кому зачем». */
   app.get("/api/admin/accounting", async (request, reply) => {
-    const admin = requireRole(request, reply, ["ADMIN"]);
+    const admin = requireRole(request, reply, ["ADMIN", "ACCOUNTANT"]);
     if (!admin) return;
 
     const succeeded = { status: "SUCCEEDED" as const };

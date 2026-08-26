@@ -13,8 +13,10 @@ export function Layout() {
   const [open, setOpen] = useState(false);
   const isCoach = user?.roles.includes("COACH");
   const isAdmin = user?.roles.includes("ADMIN");
+  const isAccountant = user?.roles.includes("ACCOUNTANT");
   const isTrainee = user?.roles.includes("TRAINEE");
-  const isCoachOnly = Boolean(isCoach && !user?.roles.includes("TRAINEE") && !isAdmin);
+  const isAccountantOnly = Boolean(isAccountant && !isAdmin && !isCoach && !isTrainee);
+  const isCoachOnly = Boolean(isCoach && !user?.roles.includes("TRAINEE") && !isAdmin && !isAccountant);
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
 
   async function switchLang(next: "ru" | "ky") {
@@ -45,7 +47,7 @@ export function Layout() {
     <div className="site">
       <header className="site-header">
         <div className="wrap">
-          <NavLink to="/" className="brand" onClick={close}>
+          <NavLink to={isAccountantOnly ? "/accounting" : "/"} className="brand" onClick={close}>
             <img src="/ornament.svg" alt="" />
             {s("appName")}
           </NavLink>
@@ -53,20 +55,32 @@ export function Layout() {
             ☰
           </button>
           <nav className={`nav ${open ? "open" : ""}`}>
-            <NavLink to="/" onClick={close}>{t("nav.home")}</NavLink>
-            <NavLink to="/about" onClick={close}>{t("nav.about")}</NavLink>
-            <NavLink to="/memberships" onClick={close}>{t("nav.memberships")}</NavLink>
-            <NavLink to="/workouts" onClick={close}>{t("nav.workouts")}</NavLink>
-            <NavLink to="/coaches" onClick={close}>{t("nav.coaches")}</NavLink>
-            {user && !isCoachOnly && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
-            {user && !isCoachOnly && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
-            {isTrainee && <NavLink to="/schedule" onClick={close}>{t("nav.schedule")}</NavLink>}
-            {isTrainee && <NavLink to="/join" onClick={close}>{t("nav.scanCoach")}</NavLink>}
-            {isTrainee && <NavLink to="/checkin" onClick={close}>{t("nav.checkin")}</NavLink>}
-            {user && <NavLink to="/notifications" onClick={close}>{t("nav.notifications")}</NavLink>}
-            {isCoach && <NavLink to="/coach" onClick={close}>{t("nav.wards")}</NavLink>}
-            {user && <NavLink to="/profile" onClick={close}>{t("nav.profile")}</NavLink>}
-            {isAdmin && <NavLink to="/admin" onClick={close}>{t("nav.admin")}</NavLink>}
+            {isAccountantOnly ? (
+              <>
+                <NavLink to="/accounting" onClick={close}>{t("nav.accounting")}</NavLink>
+                <NavLink to="/profile" onClick={close}>{t("nav.profile")}</NavLink>
+              </>
+            ) : (
+              <>
+                <NavLink to="/" onClick={close}>{t("nav.home")}</NavLink>
+                <NavLink to="/about" onClick={close}>{t("nav.about")}</NavLink>
+                <NavLink to="/memberships" onClick={close}>{t("nav.memberships")}</NavLink>
+                <NavLink to="/workouts" onClick={close}>{t("nav.workouts")}</NavLink>
+                <NavLink to="/coaches" onClick={close}>{t("nav.coaches")}</NavLink>
+                <NavLink to="/gallery" onClick={close}>{t("nav.gallery")}</NavLink>
+                <NavLink to="/news" onClick={close}>{t("nav.news")}</NavLink>
+                {user && !isCoachOnly && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
+                {user && !isCoachOnly && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
+                {isTrainee && <NavLink to="/schedule" onClick={close}>{t("nav.schedule")}</NavLink>}
+                {isTrainee && <NavLink to="/join" onClick={close}>{t("nav.scanCoach")}</NavLink>}
+                {isTrainee && <NavLink to="/checkin" onClick={close}>{t("nav.checkin")}</NavLink>}
+                {user && <NavLink to="/notifications" onClick={close}>{t("nav.notifications")}</NavLink>}
+                {isCoach && <NavLink to="/coach" onClick={close}>{t("nav.wards")}</NavLink>}
+                {user && <NavLink to="/profile" onClick={close}>{t("nav.profile")}</NavLink>}
+                {isAdmin && <NavLink to="/admin" onClick={close}>{t("nav.admin")}</NavLink>}
+                {isAccountant && !isAdmin && <NavLink to="/accounting" onClick={close}>{t("nav.accounting")}</NavLink>}
+              </>
+            )}
             <span className="lang-switch">
               <button type="button" className={`lang-btn ${locale === "ru" ? "on" : ""}`} onClick={() => void switchLang("ru")}>
                 RU
@@ -90,32 +104,34 @@ export function Layout() {
       <main className="site-main">
         <Outlet />
       </main>
-      <footer className="site-footer">
-        <div className="wrap footer-grid">
-          <div>
-            <div className="brand" style={{ color: "#f4efe6" }}>
-              <img src="/ornament.svg" alt="" />
-              {s("appName")}
+      {!isAccountantOnly && (
+        <footer className="site-footer">
+          <div className="wrap footer-grid">
+            <div>
+              <div className="brand" style={{ color: "#f4efe6" }}>
+                <img src="/ornament.svg" alt="" />
+                {s("appName")}
+              </div>
+              <p>{s("footer.tag")}</p>
             </div>
-            <p>{s("footer.tag")}</p>
+            <div>
+              <NavLink to="/about">{t("nav.about")}</NavLink>
+              <br />
+              <NavLink to="/memberships">{t("nav.memberships")}</NavLink>
+              <br />
+              <NavLink to="/workouts">{t("nav.workouts")}</NavLink>
+            </div>
+            <div>
+              <NavLink to="/coaches">{t("nav.coaches")}</NavLink>
+              <br />
+              <NavLink to="/goal">{t("nav.goal")}</NavLink>
+            </div>
           </div>
-          <div>
-            <NavLink to="/about">{t("nav.about")}</NavLink>
-            <br />
-            <NavLink to="/memberships">{t("nav.memberships")}</NavLink>
-            <br />
-            <NavLink to="/workouts">{t("nav.workouts")}</NavLink>
+          <div className="wrap">
+            <p className="disclaimer">{s("disclaimer")}</p>
           </div>
-          <div>
-            <NavLink to="/coaches">{t("nav.coaches")}</NavLink>
-            <br />
-            <NavLink to="/goal">{t("nav.goal")}</NavLink>
-          </div>
-        </div>
-        <div className="wrap">
-          <p className="disclaimer">{s("disclaimer")}</p>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

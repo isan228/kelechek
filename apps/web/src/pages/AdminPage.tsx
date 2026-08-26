@@ -4,9 +4,21 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
+import { AccountingPanel } from "./AccountingPage";
 
-type Tab = "home" | "site" | "photos" | "users" | "coaches" | "tariffs" | "content" | "accounting";
-const ROLES = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"] as const;
+type Tab =
+  | "home"
+  | "site"
+  | "photos"
+  | "gallery"
+  | "news"
+  | "users"
+  | "coaches"
+  | "accountants"
+  | "tariffs"
+  | "content"
+  | "accounting";
+const ROLES = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR", "ACCOUNTANT"] as const;
 const TYPES = ["ARTICLE", "EXERCISE", "PROGRAM"] as const;
 const STATUSES = ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"] as const;
 
@@ -40,7 +52,7 @@ export function AdminPage() {
       <h1>{t("admin.title")}</h1>
       <p className="muted">{t("admin.lead")}</p>
       <div className="admin-tabs">
-        {(["home", "site", "photos", "users", "coaches", "tariffs", "content", "accounting"] as Tab[]).map((id) => (
+        {(["home", "site", "photos", "gallery", "news", "users", "coaches", "accountants", "tariffs", "content", "accounting"] as Tab[]).map((id) => (
           <button
             key={id}
             type="button"
@@ -58,11 +70,14 @@ export function AdminPage() {
       {tab === "home" && <Overview />}
       {tab === "site" && <SiteTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "photos" && <PhotosTab onSaved={() => setMsg(t("profile.saved"))} />}
+      {tab === "gallery" && <GalleryAdminTab onSaved={() => setMsg(t("profile.saved"))} />}
+      {tab === "news" && <NewsAdminTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "users" && <UsersTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "coaches" && <CoachesTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "tariffs" && <TariffsTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "content" && <ContentTab onSaved={() => setMsg(t("profile.saved"))} />}
-      {tab === "accounting" && <AccountingTab />}
+      {tab === "accountants" && <AccountantsTab onSaved={() => setMsg(t("profile.saved"))} />}
+      {tab === "accounting" && <AccountingPanel />}
     </div>
   );
 }
@@ -584,6 +599,153 @@ function CoachesTab({ onSaved }: { onSaved: () => void }) {
   );
 }
 
+function AccountantsTab({ onSaved }: { onSaved: () => void }) {
+  const { t } = useTranslation();
+  const [rows, setRows] = useState<Awaited<ReturnType<typeof api.adminAccountants>>["accountants"]>([]);
+  const [openForm, setOpenForm] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    login: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+  });
+
+  async function load() {
+    setRows((await api.adminAccountants()).accountants);
+  }
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function create(e: FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setBusy(true);
+    try {
+      await api.adminCreateAccountant({
+        login: form.login,
+        password: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone || undefined,
+      });
+      setForm({ login: "", password: "", firstName: "", lastName: "", phone: "" });
+      setOpenForm(false);
+      await load();
+      onSaved();
+    } catch (ex) {
+      const msg = ex instanceof Error ? ex.message : "error";
+      if (msg === "LOGIN_TAKEN") setErr(t("auth.loginTaken"));
+      else if (msg === "PHONE_TAKEN") setErr(t("auth.phoneTaken"));
+      else if (msg === "INVALID_LOGIN") setErr(t("auth.invalidLogin"));
+      else if (msg === "INVALID_PASSWORD") setErr(t("auth.invalidPassword"));
+      else if (msg === "NAME_REQUIRED") setErr(t("admin.coachNameRequired"));
+      else setErr(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <p className="muted">{t("admin.accountantLead")}</p>
+      <div className="row" style={{ marginBottom: "1rem" }}>
+        <button type="button" onClick={() => setOpenForm((v) => !v)}>
+          {t("admin.createAccountant")}
+        </button>
+      </div>
+      {openForm && (
+        <form className="card admin-form" onSubmit={(e) => void create(e)}>
+          <h3>{t("admin.createAccountant")}</h3>
+          {err && <p className="error">{err}</p>}
+          <div className="grid two">
+            <label>
+              {t("auth.login")} *
+              <input
+                value={form.login}
+                onChange={(e) => setForm({ ...form, login: e.target.value })}
+                required
+                autoComplete="off"
+              />
+            </label>
+            <label>
+              {t("auth.password")} *
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+                autoComplete="new-password"
+              />
+            </label>
+            <label>
+              {t("profile.firstName")} *
+              <input
+                value={form.firstName}
+                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              {t("profile.lastName")} *
+              <input
+                value={form.lastName}
+                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              {t("auth.phone")} ({t("admin.optional")})
+              <input
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="+996…"
+              />
+            </label>
+          </div>
+          <div className="row" style={{ marginTop: "1rem" }}>
+            <button type="submit" disabled={busy}>
+              {busy ? t("admin.saving") : t("profile.save")}
+            </button>
+            <button type="button" className="ghost" onClick={() => setOpenForm(false)}>
+              {t("admin.cancel")}
+            </button>
+          </div>
+        </form>
+      )}
+      <div className="table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>{t("auth.login")}</th>
+              <th>{t("coachCabinet.colName")}</th>
+              <th>{t("auth.phone")}</th>
+              <th>{t("admin.status")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td>{row.login || "—"}</td>
+                <td>{[row.firstName, row.lastName].filter(Boolean).join(" ") || "—"}</td>
+                <td>{row.phone}</td>
+                <td>{row.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {rows.length === 0 && <p className="muted">{t("admin.emptyAccountants")}</p>}
+      </div>
+      <p className="muted" style={{ marginTop: "0.8rem" }}>
+        {t("admin.accountantEditHint")}
+      </p>
+    </>
+  );
+}
+
 function TariffsTab({ onSaved }: { onSaved: () => void }) {
   const { t } = useTranslation();
   const [rows, setRows] = useState<Awaited<ReturnType<typeof api.adminTariffs>>["tariffs"]>([]);
@@ -1001,319 +1163,239 @@ function PhotosTab({ onSaved }: { onSaved: () => void }) {
   );
 }
 
-function displayPerson(p: {
-  firstName: string | null;
-  lastName: string | null;
-  phone?: string;
-  login?: string | null;
-}) {
-  return [p.firstName, p.lastName].filter(Boolean).join(" ") || p.login || p.phone || "—";
-}
+function GalleryAdminTab({ onSaved }: { onSaved: () => void }) {
+  const { t } = useTranslation();
+  const [items, setItems] = useState<Awaited<ReturnType<typeof api.adminGallery>>["items"]>([]);
+  const [busy, setBusy] = useState(false);
+  const [captionRu, setCaptionRu] = useState("");
+  const [captionKy, setCaptionKy] = useState("");
 
-function AccountingTab() {
-  const { t, i18n } = useTranslation();
-  const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
-  const [data, setData] = useState<Awaited<ReturnType<typeof api.adminAccounting>> | null>(null);
-  const [sub, setSub] = useState<"summary" | "journal" | "coaches" | "trainees" | "months">("summary");
-  const [openId, setOpenId] = useState<string | null>(null);
-
+  async function load() {
+    setItems((await api.adminGallery()).items);
+  }
   useEffect(() => {
-    void api.adminAccounting().then(setData).catch(() => setData(null));
+    void load().catch(() => setItems([]));
   }, []);
 
-  if (!data) return <p className="muted">{t("admin.loading")}</p>;
-
-  const subs: { id: typeof sub; label: string }[] = [
-    { id: "summary", label: t("admin.accSubSummary") },
-    { id: "journal", label: t("admin.accSubJournal") },
-    { id: "months", label: t("admin.accSubMonths") },
-    { id: "coaches", label: t("admin.accSubCoaches") },
-    { id: "trainees", label: t("admin.accSubTrainees") },
-  ];
+  async function upload(file: File) {
+    setBusy(true);
+    try {
+      const up = await api.adminUploadMedia(file);
+      await api.adminCreateGallery({
+        imageUrl: up.url,
+        captionRu,
+        captionKy,
+        sortOrder: items.length,
+      });
+      setCaptionRu("");
+      setCaptionKy("");
+      await load();
+      onSaved();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
-    <div className="admin-accounting">
-      <p className="muted">{t("admin.accountingLead")}</p>
-      <div className="admin-tabs" style={{ marginTop: "0.8rem" }}>
-        {subs.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            className={sub === s.id ? "" : "ghost"}
-            onClick={() => setSub(s.id)}
-          >
-            {s.label}
-          </button>
+    <div>
+      <p className="muted">{t("admin.galleryLead")}</p>
+      <div className="card admin-form">
+        <label>
+          {t("admin.captionRu")}
+          <input value={captionRu} onChange={(e) => setCaptionRu(e.target.value)} />
+        </label>
+        <label>
+          {t("admin.captionKy")}
+          <input value={captionKy} onChange={(e) => setCaptionKy(e.target.value)} />
+        </label>
+        <label>
+          {t("admin.uploadPhoto")}
+          <input
+            type="file"
+            accept="image/*"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void upload(file);
+            }}
+          />
+        </label>
+      </div>
+      <div className="admin-photo-grid" style={{ marginTop: "1rem" }}>
+        {items.map((item) => (
+          <article className="admin-photo-card" key={item.id}>
+            <img src={item.imageUrl} alt="" />
+            <div className="pad">
+              <p className="muted">{item.captionRu || item.captionKy || "—"}</p>
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy}
+                onClick={() =>
+                  void api.adminDeleteGallery(item.id).then(load).then(onSaved)
+                }
+              >
+                {t("admin.archive")}
+              </button>
+            </div>
+          </article>
         ))}
       </div>
-
-      {sub === "summary" && (
-        <div className="admin-stats">
-          <section>
-            <h2>{t("admin.accTotals")}</h2>
-            <div className="stats">
-              <div className="stat">
-                <b>{data.totals.succeededPayments}</b>
-                <span>{t("admin.statSucceeded")}</span>
-              </div>
-              <div className="stat">
-                <b>{data.totals.paidKgs}</b>
-                <span>{t("admin.paidKgs")}</span>
-              </div>
-              <div className="stat">
-                <b>{data.totals.traineeShareKgs}</b>
-                <span>{t("admin.traineeShareKgs")}</span>
-              </div>
-              <div className="stat">
-                <b>{data.totals.coachShareKgs}</b>
-                <span>{t("admin.coachShareKgs")}</span>
-              </div>
-              <div className="stat">
-                <b>{data.totals.operatorShareKgs}</b>
-                <span>{t("admin.operatorShareKgs")}</span>
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <h2>{t("admin.statsByMode")}</h2>
-            <div className="admin-mode-grid">
-              <article className="card admin-mode-card">
-                <h3>{t("admin.ratesSolo")}</h3>
-                <p className="muted">
-                  {t("admin.ratesLine", {
-                    trainee: data.rates.solo.traineePct,
-                    coach: data.rates.solo.coachPct,
-                    operator: data.rates.solo.operatorPct,
-                  })}
-                </p>
-                <div className="stats">
-                  <div className="stat">
-                    <b>{data.byMode.solo.count}</b>
-                    <span>{t("admin.modePayments")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.solo.paidKgs}</b>
-                    <span>{t("admin.modePaid")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.solo.traineeShareKgs}</b>
-                    <span>{t("admin.colTraineeShare")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.solo.coachShareKgs}</b>
-                    <span>{t("admin.colCoachShare")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.solo.operatorShareKgs}</b>
-                    <span>{t("admin.colOperatorShare")}</span>
-                  </div>
-                </div>
-              </article>
-              <article className="card admin-mode-card">
-                <h3>{t("admin.ratesWithCoach")}</h3>
-                <p className="muted">
-                  {t("admin.ratesLine", {
-                    trainee: data.rates.withCoach.traineePct,
-                    coach: data.rates.withCoach.coachPct,
-                    operator: data.rates.withCoach.operatorPct,
-                  })}
-                </p>
-                <div className="stats">
-                  <div className="stat">
-                    <b>{data.byMode.withCoach.count}</b>
-                    <span>{t("admin.modePayments")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.withCoach.paidKgs}</b>
-                    <span>{t("admin.modePaid")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.withCoach.traineeShareKgs}</b>
-                    <span>{t("admin.colTraineeShare")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.withCoach.coachShareKgs}</b>
-                    <span>{t("admin.colCoachShare")}</span>
-                  </div>
-                  <div className="stat">
-                    <b>{data.byMode.withCoach.operatorShareKgs}</b>
-                    <span>{t("admin.colOperatorShare")}</span>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {sub === "journal" && (
-        <div>
-          <p className="muted" style={{ marginBottom: "1rem" }}>
-            {t("admin.journalLead")}
-          </p>
-          {data.journal.length === 0 && <p className="muted">{t("admin.emptyPayments")}</p>}
-          <div className="admin-journal">
-            {data.journal.map((entry) => {
-              const open = openId === entry.id;
-              return (
-                <article key={entry.id} className="card admin-journal-card">
-                  <button
-                    type="button"
-                    className="admin-journal-head"
-                    onClick={() => setOpenId(open ? null : entry.id)}
-                  >
-                    <div>
-                      <strong>
-                        {entry.amountKgs} сом · {entry.tariffName || t("admin.tab.tariffs")}
-                      </strong>
-                      <div className="muted">
-                        {new Date(entry.at).toLocaleString(locale === "ky" ? "ky-KG" : "ru-KG")} ·{" "}
-                        {entry.reasonText}
-                      </div>
-                      <div className="muted">
-                        {t("admin.accWho")}: {displayPerson(entry.payer)} ({entry.payer.phone})
-                        {entry.coach
-                          ? ` · ${t("admin.accCoach")}: ${displayPerson(entry.coach)}`
-                          : ""}
-                      </div>
-                    </div>
-                    <span className="admin-journal-toggle">{open ? "−" : "+"}</span>
-                  </button>
-                  {open && (
-                    <div className="admin-journal-body">
-                      <div className="table-wrap">
-                        <table className="admin-table">
-                          <thead>
-                            <tr>
-                              <th>{t("admin.accAccount")}</th>
-                              <th>{t("admin.accWhom")}</th>
-                              <th>{t("admin.accAmount")}</th>
-                              <th>{t("admin.accWhy")}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {entry.lines.map((line, idx) => (
-                              <tr key={`${entry.id}-${idx}`}>
-                                <td>
-                                  {line.account === "TRAINEE"
-                                    ? t("admin.accAccountTrainee")
-                                    : line.account === "COACH"
-                                      ? t("admin.accAccountCoach")
-                                      : t("admin.accAccountOperator")}
-                                </td>
-                                <td>
-                                  {line.party
-                                    ? `${displayPerson(line.party)}${line.party.phone ? ` · ${line.party.phone}` : ""}`
-                                    : t("admin.accOperatorSelf")}
-                                </td>
-                                <td>+{line.amountKgs}</td>
-                                <td>{line.why}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {sub === "months" && (
-        <div className="table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>{t("admin.accMonth")}</th>
-                <th>{t("admin.modePayments")}</th>
-                <th>{t("admin.statSolo")}</th>
-                <th>{t("admin.statWithCoach")}</th>
-                <th>{t("admin.modePaid")}</th>
-                <th>{t("admin.colTraineeShare")}</th>
-                <th>{t("admin.colCoachShare")}</th>
-                <th>{t("admin.colOperatorShare")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.monthly.map((m) => (
-                <tr key={m.month}>
-                  <td>{m.month}</td>
-                  <td>{m.count}</td>
-                  <td>{m.soloCount}</td>
-                  <td>{m.withCoachCount}</td>
-                  <td>{m.paidKgs}</td>
-                  <td>{m.traineeShareKgs}</td>
-                  <td>{m.coachShareKgs}</td>
-                  <td>{m.operatorShareKgs}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {data.monthly.length === 0 && <p className="muted">{t("admin.emptyPayments")}</p>}
-        </div>
-      )}
-
-      {sub === "coaches" && (
-        <div className="table-wrap">
-          <p className="muted" style={{ marginBottom: "0.8rem" }}>
-            {t("admin.coachAccountsLead")}
-          </p>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>{t("admin.accCoach")}</th>
-                <th>{t("auth.phone")}</th>
-                <th>{t("admin.coachEarned")}</th>
-                <th>{t("admin.accEntries")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.coachAccounts.map((row) => (
-                <tr key={row.coach.id}>
-                  <td>{displayPerson(row.coach)}</td>
-                  <td>{row.coach.phone}</td>
-                  <td>{row.earnedKgs}</td>
-                  <td>{row.entries}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {data.coachAccounts.length === 0 && <p className="muted">{t("admin.emptyAccounts")}</p>}
-        </div>
-      )}
-
-      {sub === "trainees" && (
-        <div className="table-wrap">
-          <p className="muted" style={{ marginBottom: "0.8rem" }}>
-            {t("admin.traineeAccountsLead")}
-          </p>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>{t("admin.payer")}</th>
-                <th>{t("auth.phone")}</th>
-                <th>{t("admin.traineeBalance")}</th>
-                <th>{t("admin.accEntries")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.traineeAccounts.map((row) => (
-                <tr key={row.trainee.id}>
-                  <td>{displayPerson(row.trainee)}</td>
-                  <td>{row.trainee.phone}</td>
-                  <td>{row.balanceKgs}</td>
-                  <td>{row.entries}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {data.traineeAccounts.length === 0 && <p className="muted">{t("admin.emptyAccounts")}</p>}
-        </div>
-      )}
     </div>
   );
 }
+
+function NewsAdminTab({ onSaved }: { onSaved: () => void }) {
+  const { t } = useTranslation();
+  const [rows, setRows] = useState<Awaited<ReturnType<typeof api.adminNews>>["posts"]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    coverUrl: "",
+    status: "PUBLISHED",
+    ru: { title: "", summary: "", body: "" },
+    ky: { title: "", summary: "", body: "" },
+  });
+
+  async function load() {
+    setRows((await api.adminNews()).posts);
+  }
+  useEffect(() => {
+    void load().catch(() => setRows([]));
+  }, []);
+
+  function open(row?: (typeof rows)[0]) {
+    if (!row) {
+      setEditId("new");
+      setForm({
+        coverUrl: "",
+        status: "PUBLISHED",
+        ru: { title: "", summary: "", body: "" },
+        ky: { title: "", summary: "", body: "" },
+      });
+      return;
+    }
+    setEditId(row.id);
+    setForm({
+      coverUrl: row.coverUrl ?? "",
+      status: row.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
+      ru: { title: row.ru.title, summary: row.ru.summary, body: row.ru.body },
+      ky: { title: row.ky.title, summary: row.ky.summary, body: row.ky.body },
+    });
+  }
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await api.adminSaveNews(editId === "new" ? null : editId, form);
+      setEditId(null);
+      await load();
+      onSaved();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <p className="muted">{t("admin.newsLead")}</p>
+      <button type="button" onClick={() => open()}>
+        {t("admin.createNews")}
+      </button>
+      {editId && (
+        <form className="card admin-form" onSubmit={(e) => void save(e)} style={{ marginTop: "1rem" }}>
+          <label>
+            {t("admin.status")}
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <option value="PUBLISHED">PUBLISHED</option>
+              <option value="DRAFT">DRAFT</option>
+            </select>
+          </label>
+          <label>
+            {t("admin.photoUrl")}
+            <input value={form.coverUrl} onChange={(e) => setForm({ ...form, coverUrl: e.target.value })} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                void api.adminUploadMedia(file).then((r) => setForm((f) => ({ ...f, coverUrl: r.url })));
+              }}
+            />
+          </label>
+          {(["ru", "ky"] as const).map((loc) => (
+            <div key={loc}>
+              <h3>{loc.toUpperCase()}</h3>
+              <label>
+                {t("admin.heading")}
+                <input
+                  value={form[loc].title}
+                  onChange={(e) => setForm({ ...form, [loc]: { ...form[loc], title: e.target.value } })}
+                />
+              </label>
+              <label>
+                {t("admin.summary")}
+                <textarea
+                  value={form[loc].summary}
+                  onChange={(e) => setForm({ ...form, [loc]: { ...form[loc], summary: e.target.value } })}
+                />
+              </label>
+              <label>
+                {t("admin.body")}
+                <textarea
+                  className="tall"
+                  value={form[loc].body}
+                  onChange={(e) => setForm({ ...form, [loc]: { ...form[loc], body: e.target.value } })}
+                />
+              </label>
+            </div>
+          ))}
+          <div className="row">
+            <button type="submit" disabled={busy}>
+              {busy ? t("admin.saving") : t("profile.save")}
+            </button>
+            <button type="button" className="ghost" onClick={() => setEditId(null)}>
+              {t("admin.cancel")}
+            </button>
+          </div>
+        </form>
+      )}
+      <div className="table-wrap" style={{ marginTop: "1rem" }}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>{t("admin.heading")}</th>
+              <th>{t("admin.status")}</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td>{row.ru.title || row.ky.title}</td>
+                <td>{row.status}</td>
+                <td>
+                  <button type="button" className="ghost" onClick={() => open(row)}>
+                    {t("admin.edit")}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => void api.adminDeleteNews(row.id).then(load).then(onSaved)}
+                  >
+                    {t("admin.archive")}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
