@@ -7,3 +7,5 @@ export {
   COACH_BPS,
 } from "./finance/distribute.js";
 export type { PaymentDistribution } from "./finance/distribute.js";
+export { SITE_TEXT_GROUPS, SITE_TEXT_KEYS } from "./siteTexts.js";
+export type { SiteTextField, SiteTextGroup } from "./siteTexts.js";

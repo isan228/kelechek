@@ -1,6 +1,7 @@
 import "../src/loadEnv.js";
 import { Prisma, PrismaClient, ContentStatus, ContentType, Locale, UserRole } from "@prisma/client";
 import { hashPassword } from "../src/services/password.js";
+import { ensureSiteTexts } from "./ensureSiteTexts.js";
 
 const prisma = new PrismaClient();
 
@@ -39,6 +40,9 @@ async function ensureDemoUsers() {
       roles: [UserRole.COACH],
       firstName: "Айбек",
       lastName: "Тренер",
+      bioRu: "Силовая работа и постановка техники. Ведёт группы в городе.",
+      bioKy: "Күч жана техника. Шаарда топторду алып барат.",
+      photoUrl: "/photos/kyrgyzstan_sport_future_02.png",
       locale: Locale.ru,
       phoneVerifiedAt: new Date(),
       coachCounter: { create: { activeRelationCount: 0 } },
@@ -46,12 +50,16 @@ async function ensureDemoUsers() {
     update: {
       login: "coach",
       passwordHash: coachHash,
+      bioRu: "Силовая работа и постановка техники. Ведёт группы в городе.",
+      bioKy: "Күч жана техника. Шаарда топторду алып барат.",
+      photoUrl: "/photos/kyrgyzstan_sport_future_02.png",
     },
   });
 }
 
 async function main() {
   await ensureDemoUsers();
+  await ensureSiteTexts(prisma);
   if ((await prisma.tariff.count()) > 0) {
     console.log("Seed skipped: data already present. Admin login:", process.env.ADMIN_LOGIN ?? "admin");
     return;

@@ -46,6 +46,12 @@ export const api = {
       body: JSON.stringify({ login, password }),
     }),
   logout: () => request("/api/auth/logout", { method: "GET" }),
+  siteTexts: (locale = "ru") =>
+    request<{
+      locale: string;
+      texts: Record<string, string>;
+      groups: { id: string; titleRu: string; fields: { key: string; labelRu: string; multiline?: boolean }[] }[];
+    }>(`/api/site-texts?locale=${locale}`),
   patchMe: (data: Partial<Pick<ApiUser, "locale" | "firstName" | "lastName">>) =>
     request<{ user: ApiUser }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
   tariffs: (locale = "ru") =>
@@ -134,8 +140,16 @@ export const api = {
         relationStartedAt: string;
       }[];
     }>("/api/coach/trainees"),
-  publicCoaches: () =>
-    request<{ coaches: { id: string; firstName: string | null; lastName: string | null }[] }>("/api/coaches"),
+  publicCoaches: (locale = "ru") =>
+    request<{
+      coaches: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        bio: string | null;
+        photoUrl: string | null;
+      }[];
+    }>(`/api/coaches?locale=${locale}`),
   adminOverview: () =>
     request<{
       users: number;
@@ -153,6 +167,9 @@ export const api = {
         login: string | null;
         firstName: string | null;
         lastName: string | null;
+        bioRu: string | null;
+        bioKy: string | null;
+        photoUrl: string | null;
         locale: "ru" | "ky";
         roles: string[];
         status: string;
@@ -165,6 +182,9 @@ export const api = {
     password?: string;
     firstName?: string;
     lastName?: string;
+    bioRu?: string;
+    bioKy?: string;
+    photoUrl?: string;
     roles: string[];
   }) => request("/api/admin/users", { method: "POST", body: JSON.stringify(data) }),
   adminPatchUser: (
@@ -175,11 +195,21 @@ export const api = {
       phone: string;
       login: string;
       password: string;
+      bioRu: string;
+      bioKy: string;
+      photoUrl: string;
       roles: string[];
       status: string;
       locale: string;
     }>,
   ) => request(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  adminSiteTexts: () =>
+    request<{
+      groups: { id: string; titleRu: string; fields: { key: string; labelRu: string; multiline?: boolean }[] }[];
+      texts: Record<string, { ru: string; ky: string }>;
+    }>("/api/admin/site-texts"),
+  adminSaveSiteTexts: (items: { key: string; locale: "ru" | "ky"; value: string }[]) =>
+    request("/api/admin/site-texts", { method: "PUT", body: JSON.stringify({ items }) }),
   adminTariffs: () =>
     request<{
       tariffs: {

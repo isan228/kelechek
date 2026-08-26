@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { photos } from "../photos";
+import { useSiteCopy } from "../content/SiteCopyProvider";
 
 const COVER: Record<string, string> = {
   ARTICLE: photos.city,
@@ -13,6 +14,7 @@ const COVER: Record<string, string> = {
 
 export function WorkoutsPage() {
   const { t, i18n } = useTranslation();
+  const { s } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [data, setData] = useState<Awaited<ReturnType<typeof api.content>> | null>(null);
 
@@ -25,8 +27,8 @@ export function WorkoutsPage() {
       <div className="page-hero">
         <div className="wrap">
           <p className="kicker">{t("nav.workouts")}</p>
-          <h1>{t("content.title")}</h1>
-          <p className="lead">{data && !data.canReadBody ? t("content.locked") : t("content.openLead")}</p>
+          <h1>{s("content.title")}</h1>
+          <p className="lead">{data && !data.canReadBody ? s("content.locked") : s("content.openLead")}</p>
         </div>
       </div>
       <section className="section" style={{ paddingTop: 0 }}>
@@ -38,7 +40,7 @@ export function WorkoutsPage() {
                 <span className="badge">{item.type}</span>
                 <h3>{item.title}</h3>
                 <p className="muted">{item.summary}</p>
-                <Link to={`/workouts/${item.id}`}>{t("content.open")}</Link>
+                <Link to={`/workouts/${item.id}`}>{s("content.open")}</Link>
               </div>
             </article>
           ))}
@@ -50,6 +52,7 @@ export function WorkoutsPage() {
 
 export function WorkoutItemPage() {
   const { t, i18n } = useTranslation();
+  const { s } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const { id } = useParams();
@@ -66,20 +69,20 @@ export function WorkoutItemPage() {
       <article className="card">
         <p className="kicker">{item.type}</p>
         <h1>{item.title}</h1>
-        <p className="muted">{t("disclaimer")}</p>
-        {item.type === "EXERCISE" && <p>{t("content.exerciseWarning")}</p>}
+        <p className="muted">{s("disclaimer")}</p>
+        {item.type === "EXERCISE" && <p>{s("content.exerciseWarning")}</p>}
         {item.bodyAvailable ? (
           <>
             <div className="rich" dangerouslySetInnerHTML={{ __html: item.bodyRich ?? "" }} />
             {item.contraindications && (
               <p>
-                <strong>{t("content.contraindications")}:</strong> {item.contraindications}
+                <strong>{s("content.contraindications")}:</strong> {item.contraindications}
               </p>
             )}
           </>
         ) : (
           <p>
-            {t("content.payToRead")} —{" "}
+            {s("content.payToRead")} —{" "}
             <Link to={user ? "/memberships" : "/login"}>{t("home.payCta")}</Link>
           </p>
         )}

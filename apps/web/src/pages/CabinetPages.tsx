@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { photos } from "../photos";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { useSiteCopy } from "../content/SiteCopyProvider";
 
 function formatSom(value: number, locale: string) {
   return new Intl.NumberFormat(locale === "ky" ? "ky-KG" : "ru-KG", { maximumFractionDigits: 0 }).format(value);
@@ -11,6 +12,7 @@ function formatSom(value: number, locale: string) {
 
 export function CabinetPage() {
   const { t, i18n } = useTranslation();
+  const { s } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [data, setData] = useState<Awaited<ReturnType<typeof api.balance>> | null>(null);
@@ -30,7 +32,7 @@ export function CabinetPage() {
     <div className="wrap section">
       <p className="kicker">{t("nav.cabinet")}</p>
       <h1>
-        {user?.firstName ? `${t("home.greeting")}, ${user.firstName}` : t("cabinet.title")}
+        {user?.firstName ? `${t("home.greeting")}, ${user.firstName}` : s("cabinet.title")}
       </h1>
       <div className="cabinet-grid">
         <article className="card">
@@ -58,8 +60,8 @@ export function CabinetPage() {
           </div>
         </article>
         <article className="card">
-          <h3>{t("cabinet.next")}</h3>
-          <p className="muted">{t("cabinet.nextLead")}</p>
+          <h3>{s("cabinet.next")}</h3>
+          <p className="muted">{s("cabinet.nextLead")}</p>
           <div className="cta-row">
             <Link to="/memberships">
               <button type="button">{t("nav.memberships")}</button>
@@ -95,6 +97,7 @@ export function CabinetPage() {
 
 export function GoalPage() {
   const { t, i18n } = useTranslation();
+  const { s } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [data, setData] = useState<Awaited<ReturnType<typeof api.balance>> | null>(null);
@@ -110,12 +113,12 @@ export function GoalPage() {
   return (
     <div className="wrap section">
       <p className="kicker">{t("nav.goal")}</p>
-      <h1>{t("goal.title")}</h1>
-      <p className="lead">{t("goal.lead")}</p>
+      <h1>{s("goal.title")}</h1>
+      <p className="lead">{s("goal.lead")}</p>
       <article className="card photo">
         <img src={photos.medal} alt="" />
         <div className="pad">
-        <h3>{t("goal.bar")}</h3>
+        <h3>{s("goal.bar")}</h3>
         <div className="progress-ring">
           <span style={{ width: `${pct}%` }} />
         </div>
@@ -123,9 +126,9 @@ export function GoalPage() {
           {formatSom(have, locale)} / {formatSom(min, locale)} сом
         </p>
         <ul className="points">
-          <li>{t("goal.r1")}</li>
-          <li>{t("goal.r2")}</li>
-          <li>{t("goal.r3")}</li>
+          <li>{s("goal.r1")}</li>
+          <li>{s("goal.r2")}</li>
+          <li>{s("goal.r3")}</li>
         </ul>
         </div>
       </article>

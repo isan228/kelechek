@@ -3,9 +3,11 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
 import { api } from "../api/client";
+import { useSiteCopy } from "../content/SiteCopyProvider";
 
 export function Layout() {
   const { t, i18n } = useTranslation();
+  const { s } = useSiteCopy();
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -43,7 +45,7 @@ export function Layout() {
         <div className="wrap">
           <NavLink to="/" className="brand" onClick={close}>
             <img src="/ornament.svg" alt="" />
-            {t("appName")}
+            {s("appName")}
           </NavLink>
           <button className="menu-btn" type="button" aria-label="menu" onClick={() => setOpen((v) => !v)}>
             ☰
@@ -86,9 +88,9 @@ export function Layout() {
           <div>
             <div className="brand" style={{ color: "#f4efe6" }}>
               <img src="/ornament.svg" alt="" />
-              {t("appName")}
+              {s("appName")}
             </div>
-            <p>{t("footer.tag")}</p>
+            <p>{s("footer.tag")}</p>
           </div>
           <div>
             <NavLink to="/about">{t("nav.about")}</NavLink>
@@ -104,7 +106,7 @@ export function Layout() {
           </div>
         </div>
         <div className="wrap">
-          <p className="disclaimer">{t("disclaimer")}</p>
+          <p className="disclaimer">{s("disclaimer")}</p>
         </div>
       </footer>
     </div>

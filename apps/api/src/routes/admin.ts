@@ -4,6 +4,8 @@ import { prisma } from "../lib/prisma.js";
 import { requireRole } from "../lib/auth.js";
 import { normalizePhone } from "../services/otp.js";
 import { hashPassword, normalizeLogin, validatePassword } from "../services/password.js";
+import { getSiteTextsMap, upsertSiteTexts } from "../services/siteTexts.js";
+import { SITE_TEXT_GROUPS } from "@kelech/shared";
 
 const ROLES: UserRole[] = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"];
 const STATUSES: UserStatus[] = ["ACTIVE", "BLOCKED"];
@@ -32,14 +34,38 @@ function text(v: unknown, max = 4000): string {
 }
 
 export async function registerAdminRoutes(app: FastifyInstance) {
-  app.get("/api/coaches", async () => {
+  app.get("/api/site-texts", async (request) => {
+    const q = request.query as { locale?: string };
+    const locale = q.locale === "ky" ? Locale.ky : Locale.ru;
+    const texts = await getSiteTextsMap(locale);
+    return { locale, texts, groups: SITE_TEXT_GROUPS };
+  });
+
+  app.get("/api/coaches", async (request) => {
+    const q = request.query as { locale?: string };
+    const locale = q.locale === "ky" ? "ky" : "ru";
     const coaches = await prisma.user.findMany({
       where: { roles: { has: "COACH" }, status: "ACTIVE", deletedAt: null },
       orderBy: { createdAt: "asc" },
       take: 50,
-      select: { id: true, firstName: true, lastName: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        bioRu: true,
+        bioKy: true,
+        photoUrl: true,
+      },
     });
-    return { coaches };
+    return {
+      coaches: coaches.map((c) => ({
+        id: c.id,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        bio: (locale === "ky" ? c.bioKy : c.bioRu) || c.bioRu || c.bioKy || null,
+        photoUrl: c.photoUrl,
+      })),
+    };
   });
 
   app.get("/api/admin/overview", async (request, reply) => {
@@ -90,6 +116,9 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         login: true,
         firstName: true,
         lastName: true,
+        bioRu: true,
+        bioKy: true,
+        photoUrl: true,
         locale: true,
         roles: true,
         status: true,
@@ -108,6 +137,9 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       password?: string;
       firstName?: string;
       lastName?: string;
+      bioRu?: string;
+      bioKy?: string;
+      photoUrl?: string;
       roles?: unknown;
       locale?: string;
     };
@@ -130,6 +162,9 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         passwordHash: body.password ? await hashPassword(body.password) : null,
         firstName: text(body.firstName, 80) || null,
         lastName: text(body.lastName, 80) || null,
+        bioRu: text(body.bioRu, 2000) || null,
+        bioKy: text(body.bioKy, 2000) || null,
+        photoUrl: text(body.photoUrl, 500) || null,
         roles: asRoles(body.roles),
         locale: body.locale === "ky" ? Locale.ky : Locale.ru,
         phoneVerifiedAt: new Date(),
@@ -155,6 +190,9 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       phone?: string;
       login?: string;
       password?: string;
+      bioRu?: string;
+      bioKy?: string;
+      photoUrl?: string;
       roles?: unknown;
       status?: string;
       locale?: string;
@@ -168,12 +206,18 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       phone?: string;
       login?: string | null;
       passwordHash?: string;
+      bioRu?: string | null;
+      bioKy?: string | null;
+      photoUrl?: string | null;
       roles?: UserRole[];
       status?: UserStatus;
       locale?: Locale;
     } = {};
     if (body.firstName !== undefined) data.firstName = text(body.firstName, 80) || null;
     if (body.lastName !== undefined) data.lastName = text(body.lastName, 80) || null;
+    if (body.bioRu !== undefined) data.bioRu = text(body.bioRu, 2000) || null;
+    if (body.bioKy !== undefined) data.bioKy = text(body.bioKy, 2000) || null;
+    if (body.photoUrl !== undefined) data.photoUrl = text(body.photoUrl, 500) || null;
     if (body.locale === "ru" || body.locale === "ky") data.locale = body.locale;
     if (body.status && STATUSES.includes(body.status as UserStatus)) {
       data.status = body.status as UserStatus;
@@ -501,5 +545,34 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         tariffName: pickTr(p.tariff.translations, "ru")?.name ?? "",
       })),
     };
+  });
+
+  app.get("/api/admin/site-texts", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN", "CONTENT_EDITOR"]);
+    if (!admin) return;
+    const rows = await prisma.siteText.findMany();
+    const byKey: Record<string, { ru: string; ky: string }> = {};
+    for (const row of rows) {
+      if (!byKey[row.key]) byKey[row.key] = { ru: "", ky: "" };
+      byKey[row.key][row.locale] = row.value;
+    }
+    return { groups: SITE_TEXT_GROUPS, texts: byKey };
+  });
+
+  app.put("/api/admin/site-texts", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN", "CONTENT_EDITOR"]);
+    if (!admin) return;
+    const body = request.body as {
+      items?: { key: string; locale: "ru" | "ky"; value: string }[];
+    };
+    const items = (body.items ?? [])
+      .filter((i) => i.key && (i.locale === "ru" || i.locale === "ky"))
+      .map((i) => ({
+        key: i.key,
+        locale: i.locale === "ky" ? Locale.ky : Locale.ru,
+        value: text(i.value, 8000),
+      }));
+    const saved = await upsertSiteTexts(items);
+    return { ok: true, saved };
   });
 }

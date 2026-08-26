@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { photos } from "../photos";
+import { useSiteCopy } from "../content/SiteCopyProvider";
 
 function formatSom(value: number, locale: string) {
   return new Intl.NumberFormat(locale === "ky" ? "ky-KG" : "ru-KG", { maximumFractionDigits: 0 }).format(value);
@@ -11,6 +12,7 @@ function formatSom(value: number, locale: string) {
 
 export function MembershipsPage() {
   const { t, i18n } = useTranslation();
+  const { s } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [tariffs, setTariffs] = useState<Awaited<ReturnType<typeof api.tariffs>>["tariffs"]>([]);
@@ -36,8 +38,8 @@ export function MembershipsPage() {
       <div className="page-hero">
         <div className="wrap">
           <p className="kicker">{t("nav.memberships")}</p>
-          <h1>{t("pay.title")}</h1>
-          <p className="lead">{t("pay.pageLead")}</p>
+          <h1>{s("pay.title")}</h1>
+          <p className="lead">{s("pay.pageLead")}</p>
         </div>
       </div>
       <section className="section" style={{ paddingTop: 0 }}>

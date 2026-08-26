@@ -3,8 +3,9 @@ import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { useSiteCopy } from "../content/SiteCopyProvider";
 
-type Tab = "home" | "users" | "tariffs" | "content" | "payments";
+type Tab = "home" | "site" | "users" | "tariffs" | "content" | "payments";
 const ROLES = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"] as const;
 const TYPES = ["ARTICLE", "EXERCISE", "PROGRAM"] as const;
 const STATUSES = ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"] as const;
@@ -39,7 +40,7 @@ export function AdminPage() {
       <h1>{t("admin.title")}</h1>
       <p className="muted">{t("admin.lead")}</p>
       <div className="admin-tabs">
-        {(["home", "users", "tariffs", "content", "payments"] as Tab[]).map((id) => (
+        {(["home", "site", "users", "tariffs", "content", "payments"] as Tab[]).map((id) => (
           <button
             key={id}
             type="button"
@@ -55,6 +56,7 @@ export function AdminPage() {
       </div>
       {msg && <p className="ok">{msg}</p>}
       {tab === "home" && <Overview />}
+      {tab === "site" && <SiteTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "users" && <UsersTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "tariffs" && <TariffsTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "content" && <ContentTab onSaved={() => setMsg(t("profile.saved"))} />}
@@ -95,6 +97,9 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
     password: "",
     firstName: "",
     lastName: "",
+    bioRu: "",
+    bioKy: "",
+    photoUrl: "",
     status: "ACTIVE",
     roles: ["TRAINEE"] as string[],
   });
@@ -116,6 +121,9 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
         password: "",
         firstName: "",
         lastName: "",
+        bioRu: "",
+        bioKy: "",
+        photoUrl: "",
         status: "ACTIVE",
         roles: ["TRAINEE"],
       });
@@ -128,6 +136,9 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
       password: "",
       firstName: row.firstName ?? "",
       lastName: row.lastName ?? "",
+      bioRu: row.bioRu ?? "",
+      bioKy: row.bioKy ?? "",
+      photoUrl: row.photoUrl ?? "",
       status: row.status,
       roles: row.roles,
     });
@@ -174,6 +185,9 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
           <label>{t("auth.phone")}<input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
           <label>{t("profile.firstName")}<input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} /></label>
           <label>{t("profile.lastName")}<input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} /></label>
+          <label>{t("admin.bioRu")}<textarea value={form.bioRu} onChange={(e) => setForm({ ...form, bioRu: e.target.value })} /></label>
+          <label>{t("admin.bioKy")}<textarea value={form.bioKy} onChange={(e) => setForm({ ...form, bioKy: e.target.value })} /></label>
+          <label>{t("admin.photoUrl")}<input value={form.photoUrl} onChange={(e) => setForm({ ...form, photoUrl: e.target.value })} placeholder="/photos/…" /></label>
           <label>
             {t("admin.status")}
             <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
@@ -450,6 +464,112 @@ function ContentTab({ onSaved }: { onSaved: () => void }) {
         </table>
       </div>
     </>
+  );
+}
+
+function SiteTab({ onSaved }: { onSaved: () => void }) {
+  const { t } = useTranslation();
+  const { refresh } = useSiteCopy();
+  const [groups, setGroups] = useState<
+    { id: string; titleRu: string; fields: { key: string; labelRu: string; multiline?: boolean }[] }[]
+  >([]);
+  const [texts, setTexts] = useState<Record<string, { ru: string; ky: string }>>({});
+  const [groupId, setGroupId] = useState("landing");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void api.adminSiteTexts().then((r) => {
+      setGroups(r.groups);
+      setTexts(r.texts);
+      if (r.groups[0]) setGroupId(r.groups[0].id);
+    });
+  }, []);
+
+  function setField(key: string, locale: "ru" | "ky", value: string) {
+    setTexts((prev) => ({
+      ...prev,
+      [key]: { ru: prev[key]?.ru ?? "", ky: prev[key]?.ky ?? "", [locale]: value },
+    }));
+  }
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setBusy(true);
+    try {
+      const group = groups.find((g) => g.id === groupId);
+      const items: { key: string; locale: "ru" | "ky"; value: string }[] = [];
+      for (const field of group?.fields ?? []) {
+        items.push({ key: field.key, locale: "ru", value: texts[field.key]?.ru ?? "" });
+        items.push({ key: field.key, locale: "ky", value: texts[field.key]?.ky ?? "" });
+      }
+      await api.adminSaveSiteTexts(items);
+      await refresh();
+      onSaved();
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const group = groups.find((g) => g.id === groupId);
+
+  return (
+    <form className="card admin-form" onSubmit={(e) => void save(e)}>
+      <p className="muted">{t("admin.siteLead")}</p>
+      <div className="admin-tabs" style={{ marginTop: "0.8rem" }}>
+        {groups.map((g) => (
+          <button
+            key={g.id}
+            type="button"
+            className={groupId === g.id ? "" : "ghost"}
+            onClick={() => setGroupId(g.id)}
+          >
+            {g.titleRu}
+          </button>
+        ))}
+      </div>
+      {err && <p className="error">{err}</p>}
+      {group?.fields.map((field) => (
+        <div key={field.key} className="grid two" style={{ marginTop: "1rem" }}>
+          <label>
+            {field.labelRu} (RU)
+            {field.multiline ? (
+              <textarea
+                value={texts[field.key]?.ru ?? ""}
+                onChange={(e) => setField(field.key, "ru", e.target.value)}
+              />
+            ) : (
+              <input
+                value={texts[field.key]?.ru ?? ""}
+                onChange={(e) => setField(field.key, "ru", e.target.value)}
+              />
+            )}
+          </label>
+          <label>
+            {field.labelRu} (KY)
+            {field.multiline ? (
+              <textarea
+                value={texts[field.key]?.ky ?? ""}
+                onChange={(e) => setField(field.key, "ky", e.target.value)}
+              />
+            ) : (
+              <input
+                value={texts[field.key]?.ky ?? ""}
+                onChange={(e) => setField(field.key, "ky", e.target.value)}
+              />
+            )}
+          </label>
+        </div>
+      ))}
+      <div className="row" style={{ marginTop: "1.2rem" }}>
+        <button type="submit" disabled={busy}>
+          {busy ? t("admin.saving") : t("profile.save")}
+        </button>
+      </div>
+    </form>
   );
 }
 
