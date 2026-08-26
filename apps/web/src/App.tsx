@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { Layout } from "./components/Layout";
 import { LoginPage } from "./pages/LoginPage";
+import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { HomePage } from "./pages/HomePage";
 import { AboutPage } from "./pages/AboutPage";
 import { MembershipsPage } from "./pages/MembershipsPage";
@@ -19,6 +20,14 @@ function Guard() {
   return <Outlet />;
 }
 
+function AdminGuard() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/admin/login" replace />;
+  if (!user.roles.includes("ADMIN")) return <Navigate to="/cabinet" replace />;
+  return <Outlet />;
+}
+
 export function App() {
   const { user, loading } = useAuth();
   return (
@@ -33,7 +42,19 @@ export function App() {
         <Route path="/goal" element={<GoalPage />} />
         <Route
           path="/login"
-          element={user && !loading ? <Navigate to={user.roles.includes("ADMIN") ? "/admin" : "/cabinet"} replace /> : <LoginPage />}
+          element={
+            user && !loading ? (
+              <Navigate to={user.roles.includes("ADMIN") ? "/admin" : "/cabinet"} replace />
+            ) : (
+              <LoginPage />
+            )
+          }
+        />
+        <Route
+          path="/admin/login"
+          element={
+            user?.roles.includes("ADMIN") && !loading ? <Navigate to="/admin" replace /> : <AdminLoginPage />
+          }
         />
         <Route element={<Guard />}>
           <Route path="/cabinet" element={<CabinetPage />} />
@@ -41,6 +62,8 @@ export function App() {
           <Route path="/invites" element={<InvitesPage />} />
           <Route path="/coach" element={<CoachPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+        <Route element={<AdminGuard />}>
           <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Route>

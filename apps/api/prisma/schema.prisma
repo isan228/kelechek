@@ -102,6 +102,8 @@ model User {
   phone           String     @unique
   phoneVerifiedAt DateTime?
   email           String?
+  login           String?    @unique
+  passwordHash    String?
   locale          Locale     @default(ru)
   roles           UserRole[]
   status          UserStatus @default(ACTIVE)

@@ -1,28 +1,41 @@
 import "../src/loadEnv.js";
 import { Prisma, PrismaClient, ContentStatus, ContentType, Locale, UserRole } from "@prisma/client";
+import { hashPassword } from "../src/services/password.js";
 
 const prisma = new PrismaClient();
 
 async function ensureDemoUsers() {
+  const adminLogin = (process.env.ADMIN_LOGIN ?? "admin").trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "kelechek2026";
+  const adminHash = await hashPassword(adminPassword);
+
   await prisma.user.upsert({
     where: { phone: "+996700000000" },
     create: {
       phone: "+996700000000",
+      login: adminLogin,
+      passwordHash: adminHash,
       roles: [UserRole.ADMIN, UserRole.CONTENT_EDITOR],
       firstName: "Админ",
       locale: Locale.ru,
       phoneVerifiedAt: new Date(),
     },
     update: {
+      login: adminLogin,
+      passwordHash: adminHash,
       roles: [UserRole.ADMIN, UserRole.CONTENT_EDITOR],
       status: "ACTIVE",
       deletedAt: null,
     },
   });
+
+  const coachHash = await hashPassword("coach123");
   await prisma.user.upsert({
     where: { phone: "+996700000001" },
     create: {
       phone: "+996700000001",
+      login: "coach",
+      passwordHash: coachHash,
       roles: [UserRole.COACH],
       firstName: "Айбек",
       lastName: "Тренер",
@@ -30,14 +43,17 @@ async function ensureDemoUsers() {
       phoneVerifiedAt: new Date(),
       coachCounter: { create: { activeRelationCount: 0 } },
     },
-    update: {},
+    update: {
+      login: "coach",
+      passwordHash: coachHash,
+    },
   });
 }
 
 async function main() {
   await ensureDemoUsers();
   if ((await prisma.tariff.count()) > 0) {
-    console.log("Seed skipped: data already present. Admin +996700000000");
+    console.log("Seed skipped: data already present. Admin login:", process.env.ADMIN_LOGIN ?? "admin");
     return;
   }
 
@@ -102,31 +118,7 @@ async function main() {
     ],
   });
 
-  const editor = await prisma.user.upsert({
-    where: { phone: "+996700000000" },
-    create: {
-      phone: "+996700000000",
-      roles: [UserRole.ADMIN, UserRole.CONTENT_EDITOR],
-      firstName: "Админ",
-      locale: Locale.ru,
-      phoneVerifiedAt: new Date(),
-    },
-    update: {},
-  });
-
-  await prisma.user.upsert({
-    where: { phone: "+996700000001" },
-    create: {
-      phone: "+996700000001",
-      roles: [UserRole.COACH],
-      firstName: "Айбек",
-      lastName: "Тренер",
-      locale: Locale.ru,
-      phoneVerifiedAt: new Date(),
-      coachCounter: { create: { activeRelationCount: 0 } },
-    },
-    update: {},
-  });
+  const editor = await prisma.user.findUniqueOrThrow({ where: { phone: "+996700000000" } });
 
   await prisma.contentItem.create({
     data: {
@@ -195,7 +187,8 @@ async function main() {
   });
 
   console.log("Seed OK. Tariff", tariff.id);
-  console.log("Demo phones: +996700000000 admin, +996700000001 coach. OTP printed in API log.");
+  console.log("Admin: /admin/login —", process.env.ADMIN_LOGIN ?? "admin", "/", process.env.ADMIN_PASSWORD ?? "kelechek2026");
+  console.log("Coach login: coach / coach123");
 }
 
 main()

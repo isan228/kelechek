@@ -28,16 +28,18 @@ cp "$ENV_BACKUP" "$ENV_FILE"
 rm -f "$ENV_BACKUP"
 chmod 600 "$ENV_FILE"
 
-# SMS ещё нет — код на экране; сайт по HTTP — cookie без Secure
-if grep -q '^OTP_DEV_ECHO=' "$ENV_FILE"; then
-  sed -i 's/^OTP_DEV_ECHO=.*/OTP_DEV_ECHO=true/' "$ENV_FILE"
-else
-  echo "OTP_DEV_ECHO=true" >> "$ENV_FILE"
-fi
+# Сайт по HTTP — cookie без Secure. Админ-логин по умолчанию.
+sed -i '/^OTP_DEV_ECHO=/d' "$ENV_FILE" || true
 if grep -q '^COOKIE_SECURE=' "$ENV_FILE"; then
   sed -i 's/^COOKIE_SECURE=.*/COOKIE_SECURE=false/' "$ENV_FILE"
 else
   echo "COOKIE_SECURE=false" >> "$ENV_FILE"
+fi
+if ! grep -q '^ADMIN_LOGIN=' "$ENV_FILE"; then
+  echo "ADMIN_LOGIN=admin" >> "$ENV_FILE"
+fi
+if ! grep -q '^ADMIN_PASSWORD=' "$ENV_FILE"; then
+  echo "ADMIN_PASSWORD=kelechek2026" >> "$ENV_FILE"
 fi
 
 ln -sfn "$ENV_FILE" "$ROOT/.env"

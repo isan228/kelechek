@@ -3,6 +3,7 @@ import { ContentStatus, ContentType, Locale, UserRole, UserStatus } from "@prism
 import { prisma } from "../lib/prisma.js";
 import { requireRole } from "../lib/auth.js";
 import { normalizePhone } from "../services/otp.js";
+import { hashPassword, normalizeLogin, validatePassword } from "../services/password.js";
 
 const ROLES: UserRole[] = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"];
 const STATUSES: UserStatus[] = ["ACTIVE", "BLOCKED"];
@@ -75,6 +76,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
             deletedAt: null,
             OR: [
               { phone: { contains: q } },
+              { login: { contains: q, mode: "insensitive" } },
               { firstName: { contains: q, mode: "insensitive" } },
               { lastName: { contains: q, mode: "insensitive" } },
             ],
@@ -85,6 +87,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       select: {
         id: true,
         phone: true,
+        login: true,
         firstName: true,
         lastName: true,
         locale: true,
@@ -101,6 +104,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     if (!admin) return;
     const body = request.body as {
       phone?: string;
+      login?: string;
+      password?: string;
       firstName?: string;
       lastName?: string;
       roles?: unknown;
@@ -108,11 +113,21 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
     const phone = body.phone ? normalizePhone(body.phone) : null;
     if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
-    const exists = await prisma.user.findUnique({ where: { phone } });
-    if (exists) return reply.code(409).send({ error: "PHONE_TAKEN" });
+    const login = body.login ? normalizeLogin(body.login) : null;
+    if (body.login && !login) return reply.code(400).send({ error: "INVALID_LOGIN" });
+    if (body.password && !validatePassword(body.password)) {
+      return reply.code(400).send({ error: "INVALID_PASSWORD" });
+    }
+    const exists = await prisma.user.findFirst({
+      where: { OR: [{ phone }, ...(login ? [{ login }] : [])] },
+    });
+    if (exists?.phone === phone) return reply.code(409).send({ error: "PHONE_TAKEN" });
+    if (login && exists?.login === login) return reply.code(409).send({ error: "LOGIN_TAKEN" });
     const user = await prisma.user.create({
       data: {
         phone,
+        login,
+        passwordHash: body.password ? await hashPassword(body.password) : null,
         firstName: text(body.firstName, 80) || null,
         lastName: text(body.lastName, 80) || null,
         roles: asRoles(body.roles),
@@ -138,6 +153,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       firstName?: string;
       lastName?: string;
       phone?: string;
+      login?: string;
+      password?: string;
       roles?: unknown;
       status?: string;
       locale?: string;
@@ -149,6 +166,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       firstName?: string | null;
       lastName?: string | null;
       phone?: string;
+      login?: string | null;
+      passwordHash?: string;
       roles?: UserRole[];
       status?: UserStatus;
       locale?: Locale;
@@ -170,6 +189,19 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       const phone = normalizePhone(body.phone);
       if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
       data.phone = phone;
+    }
+    if (body.login !== undefined) {
+      if (!body.login) {
+        data.login = null;
+      } else {
+        const login = normalizeLogin(body.login);
+        if (!login) return reply.code(400).send({ error: "INVALID_LOGIN" });
+        data.login = login;
+      }
+    }
+    if (body.password) {
+      if (!validatePassword(body.password)) return reply.code(400).send({ error: "INVALID_PASSWORD" });
+      data.passwordHash = await hashPassword(body.password);
     }
 
     try {

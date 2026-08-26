@@ -30,7 +30,7 @@ export function AdminPage() {
   const [msg, setMsg] = useState<string | null>(null);
 
   if (loading) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/admin/login" replace />;
   if (!user.roles.includes("ADMIN")) return <Navigate to="/cabinet" replace />;
 
   return (
@@ -91,6 +91,8 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
   const [editId, setEditId] = useState<string | "new" | null>(null);
   const [form, setForm] = useState({
     phone: "+996",
+    login: "",
+    password: "",
     firstName: "",
     lastName: "",
     status: "ACTIVE",
@@ -108,12 +110,22 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
   function open(row?: (typeof rows)[0]) {
     if (!row) {
       setEditId("new");
-      setForm({ phone: "+996", firstName: "", lastName: "", status: "ACTIVE", roles: ["TRAINEE"] });
+      setForm({
+        phone: "+996",
+        login: "",
+        password: "",
+        firstName: "",
+        lastName: "",
+        status: "ACTIVE",
+        roles: ["TRAINEE"],
+      });
       return;
     }
     setEditId(row.id);
     setForm({
       phone: row.phone,
+      login: row.login ?? "",
+      password: "",
       firstName: row.firstName ?? "",
       lastName: row.lastName ?? "",
       status: row.status,
@@ -135,7 +147,8 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
       if (editId === "new") {
         await api.adminCreateUser(form);
       } else if (editId) {
-        await api.adminPatchUser(editId, form);
+        const { password, ...rest } = form;
+        await api.adminPatchUser(editId, password ? form : rest);
       }
       setEditId(null);
       onSaved();
@@ -156,6 +169,8 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
         <form className="card admin-form" onSubmit={(e) => void save(e)}>
           <h3>{editId === "new" ? t("admin.createUser") : t("admin.editUser")}</h3>
           {err && <p className="error">{err}</p>}
+          <label>{t("auth.login")}<input value={form.login} onChange={(e) => setForm({ ...form, login: e.target.value })} /></label>
+          <label>{t("auth.password")}<input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder={editId === "new" ? "" : t("admin.passwordOptional")} /></label>
           <label>{t("auth.phone")}<input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
           <label>{t("profile.firstName")}<input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} /></label>
           <label>{t("profile.lastName")}<input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} /></label>
@@ -190,6 +205,7 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
         <table className="admin-table">
           <thead>
             <tr>
+              <th>{t("auth.login")}</th>
               <th>{t("auth.phone")}</th>
               <th>{t("profile.firstName")}</th>
               <th>{t("admin.roles")}</th>
@@ -200,6 +216,7 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
+                <td>{row.login || "—"}</td>
                 <td>{row.phone}</td>
                 <td>{[row.firstName, row.lastName].filter(Boolean).join(" ") || "—"}</td>
                 <td>{row.roles.join(", ")}</td>

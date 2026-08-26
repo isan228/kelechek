@@ -1,6 +1,7 @@
 export type ApiUser = {
   id: string;
   phone: string;
+  login?: string | null;
   locale: "ru" | "ky";
   roles: string[];
   firstName: string | null;
@@ -29,17 +30,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   me: () => request<{ user: ApiUser }>("/api/me"),
-  requestOtp: (phone: string) =>
-    request<{ ok: boolean; devCode?: string }>("/api/auth/otp/request", {
+  login: (login: string, password: string) =>
+    request<{ user: ApiUser }>("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ login, password }),
     }),
-  verifyOtp: (phone: string, code: string) =>
-    request<{ user: ApiUser }>("/api/auth/otp/verify", {
+  register: (data: { login: string; password: string; phone: string; firstName?: string }) =>
+    request<{ user: ApiUser }>("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ phone, code }),
+      body: JSON.stringify(data),
     }),
-  logout: () => request("/api/auth/logout", { method: "POST", body: "{}" }),
+  adminLogin: (login: string, password: string) =>
+    request<{ user: ApiUser }>("/api/auth/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ login, password }),
+    }),
+  logout: () => request("/api/auth/logout", { method: "GET" }),
   patchMe: (data: Partial<Pick<ApiUser, "locale" | "firstName" | "lastName">>) =>
     request<{ user: ApiUser }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
   tariffs: (locale = "ru") =>
@@ -144,6 +150,7 @@ export const api = {
       users: {
         id: string;
         phone: string;
+        login: string | null;
         firstName: string | null;
         lastName: string | null;
         locale: "ru" | "ky";
@@ -154,6 +161,8 @@ export const api = {
     }>(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   adminCreateUser: (data: {
     phone: string;
+    login?: string;
+    password?: string;
     firstName?: string;
     lastName?: string;
     roles: string[];
@@ -164,6 +173,8 @@ export const api = {
       firstName: string;
       lastName: string;
       phone: string;
+      login: string;
+      password: string;
       roles: string[];
       status: string;
       locale: string;

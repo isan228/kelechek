@@ -2,58 +2,136 @@ import type { FastifyInstance } from "fastify";
 import { Locale, UserRole } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, setSessionCookie, clearSessionCookie, signSession } from "../lib/auth.js";
-import { normalizePhone, requestOtp, verifyOtp } from "../services/otp.js";
+import { normalizePhone } from "../services/otp.js";
+import {
+  hashPassword,
+  normalizeLogin,
+  validatePassword,
+  verifyPassword,
+} from "../services/password.js";
+
+function publicUser(user: {
+  id: string;
+  phone: string;
+  locale: Locale;
+  roles: UserRole[];
+  firstName: string | null;
+  lastName: string | null;
+  login?: string | null;
+}) {
+  return {
+    id: user.id,
+    phone: user.phone,
+    login: user.login ?? null,
+    locale: user.locale,
+    roles: user.roles,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  };
+}
 
 export async function registerAuthRoutes(app: FastifyInstance) {
-  app.post("/api/auth/otp/request", async (request, reply) => {
-    const body = request.body as { phone?: string };
+  app.post("/api/auth/register", async (request, reply) => {
+    const body = request.body as {
+      login?: string;
+      password?: string;
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+    };
+    const login = body.login ? normalizeLogin(body.login) : null;
+    const password = body.password ?? "";
     const phone = body.phone ? normalizePhone(body.phone) : null;
-    if (!phone) {
-      return reply.code(400).send({ error: "INVALID_PHONE" });
-    }
-    try {
-      const result = await requestOtp(phone);
-      return { ok: true, ...result };
-    } catch (err) {
-      const status = (err as { statusCode?: number }).statusCode ?? 500;
-      return reply.code(status).send({ error: (err as Error).message });
-    }
-  });
+    if (!login) return reply.code(400).send({ error: "INVALID_LOGIN" });
+    if (!validatePassword(password)) return reply.code(400).send({ error: "INVALID_PASSWORD" });
+    if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
 
-  app.post("/api/auth/otp/verify", async (request, reply) => {
-    const body = request.body as { phone?: string; code?: string };
-    const phone = body.phone ? normalizePhone(body.phone) : null;
-    const code = body.code?.trim() ?? "";
-    if (!phone || !/^\d{6}$/.test(code)) {
-      return reply.code(400).send({ error: "INVALID_REQUEST" });
-    }
-    const ok = await verifyOtp(phone, code);
-    if (!ok) {
-      return reply.code(401).send({ error: "INVALID_OTP" });
-    }
+    const taken = await prisma.user.findFirst({
+      where: { OR: [{ login }, { phone }] },
+    });
+    if (taken?.login === login) return reply.code(409).send({ error: "LOGIN_TAKEN" });
+    if (taken?.phone === phone) return reply.code(409).send({ error: "PHONE_TAKEN" });
 
-    const user = await prisma.user.upsert({
-      where: { phone },
-      create: {
+    const user = await prisma.user.create({
+      data: {
+        login,
         phone,
+        passwordHash: await hashPassword(password),
         phoneVerifiedAt: new Date(),
+        firstName: (body.firstName ?? "").trim().slice(0, 80) || null,
+        lastName: (body.lastName ?? "").trim().slice(0, 80) || null,
         roles: [UserRole.TRAINEE],
         locale: Locale.ru,
       },
-      update: { phoneVerifiedAt: new Date() },
     });
 
     setSessionCookie(reply, signSession(user.id));
-    return {
-      user: {
-        id: user.id,
-        phone: user.phone,
-        locale: user.locale,
-        roles: user.roles,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-    };
+    return { user: publicUser(user) };
+  });
+
+  app.post("/api/auth/login", async (request, reply) => {
+    const body = request.body as { login?: string; password?: string };
+    const login = body.login ? normalizeLogin(body.login) : null;
+    const password = body.password ?? "";
+    if (!login || !password) return reply.code(400).send({ error: "INVALID_REQUEST" });
+
+    const user = await prisma.user.findFirst({
+      where: { login, deletedAt: null },
+    });
+    if (!user?.passwordHash || user.status !== "ACTIVE") {
+      return reply.code(401).send({ error: "BAD_CREDENTIALS" });
+    }
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) return reply.code(401).send({ error: "BAD_CREDENTIALS" });
+
+    setSessionCookie(reply, signSession(user.id));
+    return { user: publicUser(user) };
+  });
+
+  app.post("/api/auth/admin/login", async (request, reply) => {
+    const body = request.body as { login?: string; password?: string };
+    const expectedLogin = (process.env.ADMIN_LOGIN ?? "admin").trim().toLowerCase();
+    const expectedPassword = process.env.ADMIN_PASSWORD ?? "kelechek2026";
+    const login = (body.login ?? "").trim().toLowerCase();
+    const password = body.password ?? "";
+
+    if (login !== expectedLogin || password !== expectedPassword) {
+      return reply.code(401).send({ error: "BAD_CREDENTIALS" });
+    }
+
+    let admin = await prisma.user.findFirst({
+      where: { roles: { has: UserRole.ADMIN }, deletedAt: null },
+      orderBy: { createdAt: "asc" },
+    });
+    if (!admin) {
+      admin = await prisma.user.create({
+        data: {
+          phone: "+996700000000",
+          login: expectedLogin,
+          passwordHash: await hashPassword(expectedPassword),
+          roles: [UserRole.ADMIN, UserRole.CONTENT_EDITOR],
+          firstName: "Админ",
+          locale: Locale.ru,
+          phoneVerifiedAt: new Date(),
+        },
+      });
+    } else {
+      admin = await prisma.user.update({
+        where: { id: admin.id },
+        data: {
+          login: expectedLogin,
+          passwordHash: await hashPassword(expectedPassword),
+          roles: admin.roles.includes(UserRole.ADMIN)
+            ? admin.roles
+            : [...admin.roles, UserRole.ADMIN],
+          status: "ACTIVE",
+          deletedAt: null,
+        },
+      });
+    }
+
+    setSessionCookie(reply, signSession(admin.id));
+    return { user: publicUser(admin) };
   });
 
   app.post("/api/auth/logout", async (_request, reply) => {
@@ -61,10 +139,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.get("/api/auth/logout", async (_request, reply) => {
+    clearSessionCookie(reply);
+    return { ok: true };
+  });
+
   app.get("/api/me", async (request, reply) => {
     const user = requireAuth(request, reply);
     if (!user) return;
-    return { user };
+    const full = await prisma.user.findUnique({ where: { id: user.id } });
+    return { user: publicUser({ ...user, login: full?.login ?? null }) };
   });
 
   app.patch("/api/me", async (request, reply) => {
@@ -97,15 +181,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       firstName: updated.firstName,
       lastName: updated.lastName,
     };
-    return {
-      user: {
-        id: updated.id,
-        phone: updated.phone,
-        locale: updated.locale,
-        roles: updated.roles,
-        firstName: updated.firstName,
-        lastName: updated.lastName,
-      },
-    };
+    return { user: publicUser(updated) };
   });
 }

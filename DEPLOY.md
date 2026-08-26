@@ -136,7 +136,7 @@ bash /var/www/kelechek/scripts/update.sh
 ## 6. Что ещё сменить на проде
 
 - `JWT_SECRET` — длинная случайная строка (setup уже генерирует).
-- Пока нет SMS: `OTP_DEV_ECHO=true` — код входа виден на экране. `update.sh` сам ставит это.
+- `ADMIN_LOGIN` / `ADMIN_PASSWORD` — вход в `/admin/login` (по умолчанию `admin` / `kelechek2026`).
 - Сайт по HTTP (IP, без сертификата): `COOKIE_SECURE=false`, иначе браузер не сохранит сессию.
 - `MOCK_PAYMENTS=true` — пока нет банка; после интеграции шлюза выключить.
-- Seed (`npm run db:seed`) создаёт демо-номера; на боевом можно не запускать повторно.
+- Seed создаёт админа и тренера; на боевом можно не запускать повторно.
