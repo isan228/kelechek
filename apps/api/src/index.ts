@@ -2,12 +2,17 @@ import "./loadEnv.js";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
+import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
 import { prisma } from "./lib/prisma.js";
 import { loadUserFromRequest } from "./lib/auth.js";
+import { ensureUploadsDir, UPLOADS_DIR } from "./lib/uploads.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerFinanceRoutes } from "./routes/finance.js";
 import { registerContentRoutes, registerInvitationRoutes } from "./routes/content.js";
 import { registerAdminRoutes } from "./routes/admin.js";
+
+ensureUploadsDir();
 
 const app = Fastify({
   logger: true,
@@ -18,6 +23,14 @@ await app.register(cookie);
 await app.register(cors, {
   origin: true,
   credentials: true,
+});
+await app.register(multipart, {
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+await app.register(fastifyStatic, {
+  root: UPLOADS_DIR,
+  prefix: "/api/media/",
+  decorateReply: false,
 });
 
 app.addHook("onRequest", async (request) => {

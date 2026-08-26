@@ -5,7 +5,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
-type Tab = "home" | "site" | "users" | "tariffs" | "content" | "payments";
+type Tab = "home" | "site" | "photos" | "users" | "tariffs" | "content" | "payments";
 const ROLES = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"] as const;
 const TYPES = ["ARTICLE", "EXERCISE", "PROGRAM"] as const;
 const STATUSES = ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"] as const;
@@ -40,7 +40,7 @@ export function AdminPage() {
       <h1>{t("admin.title")}</h1>
       <p className="muted">{t("admin.lead")}</p>
       <div className="admin-tabs">
-        {(["home", "site", "users", "tariffs", "content", "payments"] as Tab[]).map((id) => (
+        {(["home", "site", "photos", "users", "tariffs", "content", "payments"] as Tab[]).map((id) => (
           <button
             key={id}
             type="button"
@@ -57,6 +57,7 @@ export function AdminPage() {
       {msg && <p className="ok">{msg}</p>}
       {tab === "home" && <Overview />}
       {tab === "site" && <SiteTab onSaved={() => setMsg(t("profile.saved"))} />}
+      {tab === "photos" && <PhotosTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "users" && <UsersTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "tariffs" && <TariffsTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "content" && <ContentTab onSaved={() => setMsg(t("profile.saved"))} />}
@@ -187,7 +188,24 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
           <label>{t("profile.lastName")}<input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} /></label>
           <label>{t("admin.bioRu")}<textarea value={form.bioRu} onChange={(e) => setForm({ ...form, bioRu: e.target.value })} /></label>
           <label>{t("admin.bioKy")}<textarea value={form.bioKy} onChange={(e) => setForm({ ...form, bioKy: e.target.value })} /></label>
-          <label>{t("admin.photoUrl")}<input value={form.photoUrl} onChange={(e) => setForm({ ...form, photoUrl: e.target.value })} placeholder="/photos/…" /></label>
+          <label>
+            {t("admin.photoUrl")}
+            <input value={form.photoUrl} onChange={(e) => setForm({ ...form, photoUrl: e.target.value })} placeholder="/photos/… или /api/media/…" />
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              style={{ marginTop: "0.5rem" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                void api
+                  .adminUploadMedia(file)
+                  .then((r) => setForm((f) => ({ ...f, photoUrl: r.url })))
+                  .catch((ex) => setErr(ex instanceof Error ? ex.message : "error"));
+              }}
+            />
+          </label>
           <label>
             {t("admin.status")}
             <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
@@ -570,6 +588,97 @@ function SiteTab({ onSaved }: { onSaved: () => void }) {
         </button>
       </div>
     </form>
+  );
+}
+
+function PhotosTab({ onSaved }: { onSaved: () => void }) {
+  const { t } = useTranslation();
+  const { refresh } = useSiteCopy();
+  const [slots, setSlots] = useState<{ key: string; labelRu: string; defaultUrl: string }[]>([]);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function load() {
+    const r = await api.adminSitePhotos();
+    setSlots(r.slots);
+    setPhotos(r.photos);
+  }
+
+  useEffect(() => {
+    void load().catch(() => setErr("error"));
+  }, []);
+
+  async function upload(key: string, file: File) {
+    setErr(null);
+    setBusyKey(key);
+    try {
+      const r = await api.adminUploadSitePhoto(key, file);
+      setPhotos((p) => ({ ...p, [key]: r.url }));
+      await refresh();
+      onSaved();
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : "error");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function reset(key: string) {
+    setErr(null);
+    setBusyKey(key);
+    try {
+      const r = await api.adminResetSitePhoto(key);
+      setPhotos((p) => ({ ...p, [key]: r.url }));
+      await refresh();
+      onSaved();
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : "error");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  return (
+    <div className="card admin-form">
+      <p className="muted">{t("admin.photosLead")}</p>
+      {err && <p className="error">{err}</p>}
+      <div className="admin-photo-grid">
+        {slots.map((slot) => (
+          <article key={slot.key} className="admin-photo-card">
+            <img src={photos[slot.key] || slot.defaultUrl} alt="" />
+            <div className="pad">
+              <h3>{slot.labelRu}</h3>
+              <p className="muted" style={{ fontSize: "0.85rem" }}>{slot.key}</p>
+              <div className="row" style={{ marginTop: "0.6rem", flexWrap: "wrap", gap: "0.4rem" }}>
+                <label className="ghost" style={{ cursor: "pointer", padding: "0.45rem 0.8rem" }}>
+                  {busyKey === slot.key ? t("admin.saving") : t("admin.uploadPhoto")}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    hidden
+                    disabled={busyKey === slot.key}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) void upload(slot.key, file);
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={busyKey === slot.key}
+                  onClick={() => void reset(slot.key)}
+                >
+                  {t("admin.resetPhoto")}
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
   );
 }
 

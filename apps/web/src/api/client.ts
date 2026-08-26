@@ -52,6 +52,11 @@ export const api = {
       texts: Record<string, string>;
       groups: { id: string; titleRu: string; fields: { key: string; labelRu: string; multiline?: boolean }[] }[];
     }>(`/api/site-texts?locale=${locale}`),
+  sitePhotos: () =>
+    request<{
+      photos: Record<string, string>;
+      slots: { key: string; labelRu: string; defaultUrl: string }[];
+    }>("/api/site-photos"),
   patchMe: (data: Partial<Pick<ApiUser, "locale" | "firstName" | "lastName">>) =>
     request<{ user: ApiUser }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
   tariffs: (locale = "ru") =>
@@ -210,6 +215,43 @@ export const api = {
     }>("/api/admin/site-texts"),
   adminSaveSiteTexts: (items: { key: string; locale: "ru" | "ky"; value: string }[]) =>
     request("/api/admin/site-texts", { method: "PUT", body: JSON.stringify({ items }) }),
+  adminSitePhotos: () =>
+    request<{
+      slots: { key: string; labelRu: string; defaultUrl: string }[];
+      photos: Record<string, string>;
+    }>("/api/admin/site-photos"),
+  adminUploadSitePhoto: async (key: string, file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch(`/api/admin/site-photos/${encodeURIComponent(key)}`, {
+      method: "POST",
+      credentials: "include",
+      body,
+    });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error ?? `HTTP_${res.status}`);
+    }
+    return res.json() as Promise<{ ok: true; key: string; url: string }>;
+  },
+  adminResetSitePhoto: (key: string) =>
+    request<{ ok: true; key: string; url: string }>(`/api/admin/site-photos/${encodeURIComponent(key)}/reset`, {
+      method: "POST",
+    }),
+  adminUploadMedia: async (file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch("/api/admin/media", {
+      method: "POST",
+      credentials: "include",
+      body,
+    });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error ?? `HTTP_${res.status}`);
+    }
+    return res.json() as Promise<{ ok: true; url: string }>;
+  },
   adminTariffs: () =>
     request<{
       tariffs: {

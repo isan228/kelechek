@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSiteCopy } from "../content/SiteCopyProvider";
-import { photos } from "../photos";
 
 export function AboutPage() {
   const { t } = useTranslation();
-  const { s } = useSiteCopy();
+  const { s, photo } = useSiteCopy();
   return (
     <>
       <div className="page-hero">
@@ -17,7 +16,7 @@ export function AboutPage() {
       </div>
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap split">
-          <img src={photos.traditions} alt="" />
+          <img src={photo("traditions")} alt="" />
           <div>
             <h2>{s("about.ideaTitle")}</h2>
             <p className="lead">{s("about.idea")}</p>

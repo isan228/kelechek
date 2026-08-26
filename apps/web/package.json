@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@kelech/shared": "^0.1.0",
     "i18next": "^25.4.2",
     "i18next-icu": "^2.4.0",
     "intl-messageformat": "^10.7.16",

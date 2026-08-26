@@ -1,11 +1,43 @@
-import type { FastifyInstance } from "fastify";
+import { createWriteStream } from "node:fs";
+import { extname, join } from "node:path";
+import { pipeline } from "node:stream/promises";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ContentStatus, ContentType, Locale, UserRole, UserStatus } from "@prisma/client";
+import { DEFAULT_PHOTOS, SITE_PHOTO_KEYS, SITE_PHOTO_SLOTS, SITE_TEXT_GROUPS } from "@kelech/shared";
 import { prisma } from "../lib/prisma.js";
 import { requireRole } from "../lib/auth.js";
+import { ensureUploadsDir, UPLOADS_DIR } from "../lib/uploads.js";
 import { normalizePhone } from "../services/otp.js";
 import { hashPassword, normalizeLogin, validatePassword } from "../services/password.js";
+import { getSitePhotosMap, setSitePhotoUrl } from "../services/siteAssets.js";
 import { getSiteTextsMap, upsertSiteTexts } from "../services/siteTexts.js";
-import { SITE_TEXT_GROUPS } from "@kelech/shared";
+
+const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
+
+async function saveUploadedImage(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  prefix: string,
+): Promise<string | null> {
+  const part = await request.file();
+  if (!part) {
+    void reply.code(400).send({ error: "NO_FILE" });
+    return null;
+  }
+  if (!part.mimetype.startsWith("image/")) {
+    void reply.code(400).send({ error: "NOT_IMAGE" });
+    return null;
+  }
+  const ext = extname(part.filename || "").toLowerCase() || ".jpg";
+  if (!IMAGE_EXT.has(ext)) {
+    void reply.code(400).send({ error: "BAD_EXT" });
+    return null;
+  }
+  ensureUploadsDir();
+  const name = `${prefix}-${Date.now()}${ext === ".jpeg" ? ".jpg" : ext}`;
+  await pipeline(part.file, createWriteStream(join(UPLOADS_DIR, name)));
+  return `/api/media/${name}`;
+}
 
 const ROLES: UserRole[] = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"];
 const STATUSES: UserStatus[] = ["ACTIVE", "BLOCKED"];
@@ -39,6 +71,11 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     const locale = q.locale === "ky" ? Locale.ky : Locale.ru;
     const texts = await getSiteTextsMap(locale);
     return { locale, texts, groups: SITE_TEXT_GROUPS };
+  });
+
+  app.get("/api/site-photos", async () => {
+    const photos = await getSitePhotosMap();
+    return { photos, slots: SITE_PHOTO_SLOTS };
   });
 
   app.get("/api/coaches", async (request) => {
@@ -574,5 +611,45 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       }));
     const saved = await upsertSiteTexts(items);
     return { ok: true, saved };
+  });
+
+  app.get("/api/admin/site-photos", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN", "CONTENT_EDITOR"]);
+    if (!admin) return;
+    const photos = await getSitePhotosMap();
+    return { slots: SITE_PHOTO_SLOTS, photos };
+  });
+
+  app.post("/api/admin/site-photos/:key", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN", "CONTENT_EDITOR"]);
+    if (!admin) return;
+    const key = (request.params as { key: string }).key;
+    if (!(SITE_PHOTO_KEYS as string[]).includes(key)) {
+      return reply.code(400).send({ error: "UNKNOWN_SLOT" });
+    }
+    const url = await saveUploadedImage(request, reply, `site-${key}`);
+    if (!url) return;
+    await setSitePhotoUrl(key, url);
+    return { ok: true, key, url };
+  });
+
+  app.post("/api/admin/site-photos/:key/reset", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN", "CONTENT_EDITOR"]);
+    if (!admin) return;
+    const key = (request.params as { key: string }).key;
+    if (!(SITE_PHOTO_KEYS as string[]).includes(key)) {
+      return reply.code(400).send({ error: "UNKNOWN_SLOT" });
+    }
+    const url = DEFAULT_PHOTOS[key] ?? "";
+    await setSitePhotoUrl(key, url);
+    return { ok: true, key, url };
+  });
+
+  app.post("/api/admin/media", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN", "CONTENT_EDITOR"]);
+    if (!admin) return;
+    const url = await saveUploadedImage(request, reply, "media");
+    if (!url) return;
+    return { ok: true, url };
   });
 }

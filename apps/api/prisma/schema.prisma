@@ -518,6 +518,12 @@ model SiteText {
   @@index([locale])
 }
 
+model SiteAsset {
+  key       String   @id
+  url       String
+  updatedAt DateTime @updatedAt
+}
+
 model UserDebt {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid

@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
-import { photos } from "../photos";
 
 export function HomePage() {
-  const { s } = useSiteCopy();
+  const { s, photo } = useSiteCopy();
   const { user } = useAuth();
   const startTo = user ? "/memberships" : "/login";
 
@@ -12,7 +11,7 @@ export function HomePage() {
     <>
       <section className="hero">
         <div className="hero-media">
-          <img src={photos.hero} alt="" />
+          <img src={photo("hero")} alt="" />
         </div>
         <img className="hero-ornament" src="/ornament.svg" alt="" />
         <div className="hero-inner">
@@ -82,7 +81,7 @@ export function HomePage() {
               </Link>
             </div>
           </div>
-          <img src={photos.movement} alt="" />
+          <img src={photo("movement")} alt="" />
         </div>
       </section>
 
@@ -90,7 +89,7 @@ export function HomePage() {
         <div className="wrap">
           <div className="grid two">
             <article className="card photo">
-              <img src={photos.goals} alt="" />
+              <img src={photo("goals")} alt="" />
               <div className="pad">
                 <span className="badge">{s("landing.card1b")}</span>
                 <h3>{s("landing.card1t")}</h3>
@@ -98,7 +97,7 @@ export function HomePage() {
               </div>
             </article>
             <article className="card photo">
-              <img src={photos.discipline} alt="" />
+              <img src={photo("discipline")} alt="" />
               <div className="pad">
                 <span className="badge">{s("landing.card2b")}</span>
                 <h3>{s("landing.card2t")}</h3>

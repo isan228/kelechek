@@ -13,3 +13,4 @@ apps/web/dist
 deploy/config.local.ps1
 deploy/config.local.sh
 .github-deploy-key
+uploads/

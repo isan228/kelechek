@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { photos } from "../photos";
 import { api } from "../api/client";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
-const FALLBACK_PHOTOS = [photos.honor, photos.discipline, photos.youth];
-
 export function CoachesPublicPage() {
   const { t, i18n } = useTranslation();
-  const { s } = useSiteCopy();
+  const { s, photo } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [coaches, setCoaches] = useState<
     { id: string; firstName: string | null; lastName: string | null; bio: string | null; photoUrl: string | null }[]
   >([]);
+  const fallbacks = [photo("honor"), photo("discipline"), photo("youth")];
 
   useEffect(() => {
     void api
@@ -35,7 +33,7 @@ export function CoachesPublicPage() {
         <div className="wrap grid three">
           {coaches.map((c, i) => (
             <article className="card photo coach-card" key={c.id}>
-              <img src={c.photoUrl || FALLBACK_PHOTOS[i % FALLBACK_PHOTOS.length]} alt="" />
+              <img src={c.photoUrl || fallbacks[i % fallbacks.length]} alt="" />
               <div className="pad">
                 <h3>{[c.firstName, c.lastName].filter(Boolean).join(" ") || s("coaches.unnamed")}</h3>
                 <p className="muted">{c.bio || s("coaches.cardLead")}</p>

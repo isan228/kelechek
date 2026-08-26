@@ -2,6 +2,7 @@ import "../src/loadEnv.js";
 import { Prisma, PrismaClient, ContentStatus, ContentType, Locale, UserRole } from "@prisma/client";
 import { hashPassword } from "../src/services/password.js";
 import { ensureSiteTexts } from "./ensureSiteTexts.js";
+import { ensureSiteAssets } from "./ensureSiteAssets.js";
 
 const prisma = new PrismaClient();
 
@@ -60,6 +61,7 @@ async function ensureDemoUsers() {
 async function main() {
   await ensureDemoUsers();
   await ensureSiteTexts(prisma);
+  await ensureSiteAssets(prisma);
   if ((await prisma.tariff.count()) > 0) {
     console.log("Seed skipped: data already present. Admin login:", process.env.ADMIN_LOGIN ?? "admin");
     return;

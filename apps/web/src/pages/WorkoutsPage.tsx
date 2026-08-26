@@ -3,20 +3,18 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { photos } from "../photos";
 import { useSiteCopy } from "../content/SiteCopyProvider";
-
-const COVER: Record<string, string> = {
-  ARTICLE: photos.city,
-  EXERCISE: photos.movement,
-  PROGRAM: photos.medal,
-};
 
 export function WorkoutsPage() {
   const { t, i18n } = useTranslation();
-  const { s } = useSiteCopy();
+  const { s, photo } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [data, setData] = useState<Awaited<ReturnType<typeof api.content>> | null>(null);
+  const cover: Record<string, string> = {
+    ARTICLE: photo("city"),
+    EXERCISE: photo("movement"),
+    PROGRAM: photo("medal"),
+  };
 
   useEffect(() => {
     void api.content(locale).then(setData).catch(() => setData({ canReadBody: false, items: [] }));
@@ -35,7 +33,7 @@ export function WorkoutsPage() {
         <div className="wrap grid three">
           {data?.items.map((item) => (
             <article className="card photo" key={item.id}>
-              <img src={COVER[item.type] ?? COVER.ARTICLE} alt="" />
+              <img src={cover[item.type] ?? cover.ARTICLE} alt="" />
               <div className="pad">
                 <span className="badge">{item.type}</span>
                 <h3>{item.title}</h3>

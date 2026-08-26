@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { photos } from "../photos";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { useSiteCopy } from "../content/SiteCopyProvider";
 
 export function LoginPage() {
   const { t } = useTranslation();
+  const { photo } = useSiteCopy();
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -41,7 +42,7 @@ export function LoginPage() {
   return (
     <div className="wrap section">
       <div className="split">
-        <img className="login-photo" src={photos.city} alt="" />
+        <img className="login-photo" src={photo("city")} alt="" />
         <form className="card" style={{ maxWidth: 440 }} onSubmit={(e) => void submit(e)}>
           <p className="kicker">{t("appName")}</p>
           <h1>{mode === "login" ? t("auth.title") : t("auth.registerTitle")}</h1>

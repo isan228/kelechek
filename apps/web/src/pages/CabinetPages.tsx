@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { photos } from "../photos";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
@@ -97,7 +96,7 @@ export function CabinetPage() {
 
 export function GoalPage() {
   const { t, i18n } = useTranslation();
-  const { s } = useSiteCopy();
+  const { s, photo } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [data, setData] = useState<Awaited<ReturnType<typeof api.balance>> | null>(null);
@@ -116,7 +115,7 @@ export function GoalPage() {
       <h1>{s("goal.title")}</h1>
       <p className="lead">{s("goal.lead")}</p>
       <article className="card photo">
-        <img src={photos.medal} alt="" />
+        <img src={photo("medal")} alt="" />
         <div className="pad">
         <h3>{s("goal.bar")}</h3>
         <div className="progress-ring">

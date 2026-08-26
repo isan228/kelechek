@@ -43,6 +43,7 @@ if ! grep -q '^ADMIN_PASSWORD=' "$ENV_FILE"; then
 fi
 
 ln -sfn "$ENV_FILE" "$ROOT/.env"
+mkdir -p "$ROOT/uploads"
 chown -R kelech:kelech "$ROOT"
 chmod 600 "$ENV_FILE"
 

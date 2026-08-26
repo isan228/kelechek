@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { photos } from "../photos";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
 function formatSom(value: number, locale: string) {
@@ -12,7 +11,7 @@ function formatSom(value: number, locale: string) {
 
 export function MembershipsPage() {
   const { t, i18n } = useTranslation();
-  const { s } = useSiteCopy();
+  const { s, photo } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [tariffs, setTariffs] = useState<Awaited<ReturnType<typeof api.tariffs>>["tariffs"]>([]);
@@ -44,7 +43,7 @@ export function MembershipsPage() {
       </div>
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <img className="page-banner" src={photos.future} alt="" />
+          <img className="page-banner" src={photo("future")} alt="" />
         </div>
         <div className="wrap grid two">
           {tariffs.map((tariff) => (
