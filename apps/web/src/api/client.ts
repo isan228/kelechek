@@ -144,7 +144,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ accept, confirmReplace }),
     }),
-  endRelation: () => request("/api/me/relation/end", { method: "POST" }),
+  endRelation: (traineeId?: string) =>
+    request("/api/me/relation/end", {
+      method: "POST",
+      body: JSON.stringify(traineeId ? { traineeId } : {}),
+    }),
   sendInvite: (phone: string) =>
     request<{ traineeHasCoach: boolean }>("/api/coach/invitations", {
       method: "POST",
@@ -157,9 +161,37 @@ export const api = {
         firstName: string | null;
         lastName: string | null;
         phone: string;
+        login?: string | null;
         relationStartedAt: string;
       }[];
     }>("/api/coach/trainees"),
+  coachDashboard: () =>
+    request<{
+      coach: {
+        id: string;
+        login: string | null;
+        phone: string;
+        firstName: string | null;
+        lastName: string | null;
+        bioRu: string | null;
+        bioKy: string | null;
+        photoUrl: string | null;
+        locale: "ru" | "ky";
+        createdAt: string;
+      };
+      traineeCount: number;
+      earnedKgs: number;
+      pendingInvites: number;
+      trainees: {
+        id: string;
+        login: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        phone: string;
+        relationStartedAt: string;
+        membershipEndsAt: string | null;
+      }[];
+    }>("/api/coach/dashboard"),
   publicCoaches: (locale = "ru") =>
     request<{
       coaches: {
@@ -179,6 +211,32 @@ export const api = {
       payments: number;
       paidKgs: number;
     }>("/api/admin/overview"),
+  adminCoaches: () =>
+    request<{
+      coaches: {
+        id: string;
+        login: string | null;
+        phone: string;
+        firstName: string | null;
+        lastName: string | null;
+        bioRu: string | null;
+        bioKy: string | null;
+        photoUrl: string | null;
+        status: string;
+        createdAt: string;
+        traineeCount: number;
+      }[];
+    }>("/api/admin/coaches"),
+  adminCreateCoach: (data: {
+    login: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    bioRu?: string;
+    bioKy?: string;
+    photoUrl?: string;
+  }) => request("/api/admin/coaches", { method: "POST", body: JSON.stringify(data) }),
   adminUsers: (q = "") =>
     request<{
       users: {
@@ -197,7 +255,7 @@ export const api = {
       }[];
     }>(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   adminCreateUser: (data: {
-    phone: string;
+    phone?: string;
     login?: string;
     password?: string;
     firstName?: string;

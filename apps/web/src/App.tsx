@@ -46,7 +46,16 @@ export function App() {
           path="/login"
           element={
             user && !loading ? (
-              <Navigate to={user.roles.includes("ADMIN") ? "/admin" : "/cabinet"} replace />
+              <Navigate
+                to={
+                  user.roles.includes("ADMIN")
+                    ? "/admin"
+                    : user.roles.includes("COACH")
+                      ? "/coach"
+                      : "/cabinet"
+                }
+                replace
+              />
             ) : (
               <LoginPage />
             )

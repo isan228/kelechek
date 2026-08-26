@@ -13,6 +13,7 @@ export function Layout() {
   const [open, setOpen] = useState(false);
   const isCoach = user?.roles.includes("COACH");
   const isAdmin = user?.roles.includes("ADMIN");
+  const isCoachOnly = Boolean(isCoach && !user?.roles.includes("TRAINEE") && !isAdmin);
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
 
   async function switchLang(next: "ru" | "ky") {
@@ -56,9 +57,10 @@ export function Layout() {
             <NavLink to="/memberships" onClick={close}>{t("nav.memberships")}</NavLink>
             <NavLink to="/workouts" onClick={close}>{t("nav.workouts")}</NavLink>
             <NavLink to="/coaches" onClick={close}>{t("nav.coaches")}</NavLink>
-            {user && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
-            {user && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
+            {user && !isCoachOnly && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
+            {user && !isCoachOnly && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
             {isCoach && <NavLink to="/coach" onClick={close}>{t("nav.wards")}</NavLink>}
+            {user && <NavLink to="/profile" onClick={close}>{t("nav.profile")}</NavLink>}
             {isAdmin && <NavLink to="/admin" onClick={close}>{t("nav.admin")}</NavLink>}
             <span className="lang-switch">
               <button type="button" className={`lang-btn ${locale === "ru" ? "on" : ""}`} onClick={() => void switchLang("ru")}>

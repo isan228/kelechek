@@ -180,13 +180,30 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       roles?: unknown;
       locale?: string;
     };
-    const phone = body.phone ? normalizePhone(body.phone) : null;
-    if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
+    let phone = body.phone ? normalizePhone(body.phone) : null;
+    const roles = asRoles(body.roles);
     const login = body.login ? normalizeLogin(body.login) : null;
     if (body.login && !login) return reply.code(400).send({ error: "INVALID_LOGIN" });
     if (body.password && !validatePassword(body.password)) {
       return reply.code(400).send({ error: "INVALID_PASSWORD" });
     }
+    if (roles.includes("COACH") && (!body.password || !login)) {
+      return reply.code(400).send({ error: "INVALID_PASSWORD" });
+    }
+
+    // Для тренера телефон можно не указывать — сгенерируем уникальный служебный.
+    if (!phone && roles.includes("COACH")) {
+      for (let i = 0; i < 8; i++) {
+        const candidate = `+9967${String(Math.floor(10000000 + Math.random() * 89999999))}`;
+        const taken = await prisma.user.findFirst({ where: { phone: candidate } });
+        if (!taken) {
+          phone = candidate;
+          break;
+        }
+      }
+    }
+    if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
+
     const exists = await prisma.user.findFirst({
       where: { OR: [{ phone }, ...(login ? [{ login }] : [])] },
     });
@@ -202,7 +219,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         bioRu: text(body.bioRu, 2000) || null,
         bioKy: text(body.bioKy, 2000) || null,
         photoUrl: text(body.photoUrl, 500) || null,
-        roles: asRoles(body.roles),
+        roles,
         locale: body.locale === "ky" ? Locale.ky : Locale.ru,
         phoneVerifiedAt: new Date(),
       },
@@ -216,6 +233,96 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     }
     return { user };
   });
+
+  app.post("/api/admin/coaches", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN"]);
+    if (!admin) return;
+    const body = request.body as {
+      login?: string;
+      password?: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      bioRu?: string;
+      bioKy?: string;
+      photoUrl?: string;
+    };
+    const login = body.login ? normalizeLogin(body.login) : null;
+    if (!login) return reply.code(400).send({ error: "INVALID_LOGIN" });
+    if (!body.password || !validatePassword(body.password)) {
+      return reply.code(400).send({ error: "INVALID_PASSWORD" });
+    }
+    const firstName = text(body.firstName, 80);
+    const lastName = text(body.lastName, 80);
+    if (!firstName || !lastName) return reply.code(400).send({ error: "NAME_REQUIRED" });
+
+    let phone = body.phone ? normalizePhone(body.phone) : null;
+    if (!phone) {
+      for (let i = 0; i < 8; i++) {
+        const candidate = `+9967${String(Math.floor(10000000 + Math.random() * 89999999))}`;
+        const taken = await prisma.user.findFirst({ where: { phone: candidate } });
+        if (!taken) {
+          phone = candidate;
+          break;
+        }
+      }
+    }
+    if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
+
+    const exists = await prisma.user.findFirst({
+      where: { OR: [{ phone }, { login }] },
+    });
+    if (exists?.login === login) return reply.code(409).send({ error: "LOGIN_TAKEN" });
+    if (exists?.phone === phone) return reply.code(409).send({ error: "PHONE_TAKEN" });
+
+    const user = await prisma.user.create({
+      data: {
+        phone,
+        login,
+        passwordHash: await hashPassword(body.password),
+        firstName,
+        lastName,
+        bioRu: text(body.bioRu, 2000) || null,
+        bioKy: text(body.bioKy, 2000) || null,
+        photoUrl: text(body.photoUrl, 500) || null,
+        roles: [UserRole.COACH],
+        locale: Locale.ru,
+        phoneVerifiedAt: new Date(),
+        coachCounter: { create: { activeRelationCount: 0 } },
+      },
+    });
+    return { user };
+  });
+
+  app.get("/api/admin/coaches", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN"]);
+    if (!admin) return;
+    const coaches = await prisma.user.findMany({
+      where: { roles: { has: "COACH" }, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        login: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        bioRu: true,
+        bioKy: true,
+        photoUrl: true,
+        status: true,
+        createdAt: true,
+        coachCounter: { select: { activeRelationCount: true } },
+      },
+    });
+    return {
+      coaches: coaches.map((c) => ({
+        ...c,
+        traineeCount: c.coachCounter?.activeRelationCount ?? 0,
+      })),
+    };
+  });
+
 
   app.patch("/api/admin/users/:id", async (request, reply) => {
     const admin = requireRole(request, reply, ["ADMIN"]);

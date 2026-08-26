@@ -1,11 +1,26 @@
 import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 
-function displayName(person: { firstName: string | null; lastName: string | null; phone?: string }) {
+function displayName(person: {
+  firstName: string | null;
+  lastName: string | null;
+  phone?: string;
+  login?: string | null;
+}) {
   const n = [person.firstName, person.lastName].filter(Boolean).join(" ");
-  return n || person.phone || "—";
+  return n || person.login || person.phone || "—";
+}
+
+function formatDate(value: string | null, locale: string) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat(locale === "ky" ? "ky-KG" : "ru-KG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
 export function InvitesPage() {
@@ -60,38 +75,187 @@ export function InvitesPage() {
 }
 
 export function CoachPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { user, loading } = useAuth();
+  const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [phone, setPhone] = useState("+996");
-  const [trainees, setTrainees] = useState<Awaited<ReturnType<typeof api.coachTrainees>>["trainees"]>([]);
+  const [data, setData] = useState<Awaited<ReturnType<typeof api.coachDashboard>> | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    void api.coachTrainees().then((r) => setTrainees(r.trainees));
-  }, []);
-
-  async function send() {
-    const res = await api.sendInvite(phone);
-    setMsg(res.traineeHasCoach ? t("invites.alreadyHasCoach") : t("invites.sent"));
+  async function load() {
+    const res = await api.coachDashboard();
+    setData(res);
   }
 
+  useEffect(() => {
+    if (user?.roles.includes("COACH") || user?.roles.includes("ADMIN")) {
+      void load().catch(() => setData(null));
+    }
+  }, [user]);
+
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.roles.includes("COACH") && !user.roles.includes("ADMIN")) {
+    return <Navigate to="/cabinet" replace />;
+  }
+
+  async function send() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const res = await api.sendInvite(phone);
+      setMsg(res.traineeHasCoach ? t("invites.alreadyHasCoach") : t("invites.sent"));
+      await load();
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : t("errors.generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function detach(traineeId: string) {
+    setBusy(true);
+    try {
+      await api.endRelation(traineeId);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const coach = data?.coach;
+  const name = coach ? displayName(coach) : displayName(user);
+
   return (
-    <section className="card">
-      <h1>{t("invites.coachTitle")}</h1>
-      <input value={phone} onChange={(e) => setPhone(e.target.value)} />
-      <div className="row" style={{ marginTop: "0.8rem" }}>
-        <button type="button" onClick={() => void send()}>
-          {t("invites.send")}
-        </button>
+    <div className="wrap section">
+      <p className="kicker">{t("coachCabinet.kicker")}</p>
+      <h1>{t("coachCabinet.title")}</h1>
+      <p className="lead">{t("coachCabinet.lead", { name })}</p>
+
+      <div className="stats" style={{ marginTop: "1.2rem" }}>
+        <div className="stat">
+          <b>{data?.traineeCount ?? "—"}</b>
+          <span>{t("coachCabinet.trainees")}</span>
+        </div>
+        <div className="stat">
+          <b>{data?.earnedKgs ?? "—"}</b>
+          <span>{t("coachCabinet.earned")}</span>
+        </div>
+        <div className="stat">
+          <b>{data?.pendingInvites ?? "—"}</b>
+          <span>{t("coachCabinet.pending")}</span>
+        </div>
       </div>
-      {msg && <p className="ok">{msg}</p>}
-      <ul className="list">
-        {trainees.map((tr) => (
-          <li key={tr.id}>
-            {displayName(tr)} · {tr.phone}
-          </li>
-        ))}
-      </ul>
-    </section>
+
+      <div className="grid two" style={{ marginTop: "1.4rem" }}>
+        <article className="card">
+          <h2>{t("coachCabinet.about")}</h2>
+          <dl className="coach-meta">
+            <div>
+              <dt>{t("auth.login")}</dt>
+              <dd>{coach?.login ?? user.login ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("profile.firstName")}</dt>
+              <dd>{coach?.firstName ?? user.firstName ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("profile.lastName")}</dt>
+              <dd>{coach?.lastName ?? user.lastName ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("auth.phone")}</dt>
+              <dd>{coach?.phone ?? user.phone ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("coachCabinet.since")}</dt>
+              <dd>{formatDate(coach?.createdAt ?? null, locale)}</dd>
+            </div>
+          </dl>
+          {(coach?.bioRu || coach?.bioKy) && (
+            <p className="muted" style={{ marginTop: "0.8rem" }}>
+              {locale === "ky" ? coach.bioKy || coach.bioRu : coach.bioRu || coach.bioKy}
+            </p>
+          )}
+          <div className="row" style={{ marginTop: "1rem" }}>
+            <Link to="/profile">
+              <button type="button" className="ghost">
+                {t("nav.profile")}
+              </button>
+            </Link>
+          </div>
+        </article>
+
+        <article className="card">
+          <h2>{t("invites.coachTitle")}</h2>
+          <p className="muted">{t("coachCabinet.inviteLead")}</p>
+          <label>
+            {t("auth.phone")}
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </label>
+          <div className="row" style={{ marginTop: "0.8rem" }}>
+            <button type="button" disabled={busy} onClick={() => void send()}>
+              {t("invites.send")}
+            </button>
+          </div>
+          {msg && <p className="ok">{msg}</p>}
+          {err && <p className="error">{err}</p>}
+        </article>
+      </div>
+
+      <section className="card" style={{ marginTop: "1.4rem" }}>
+        <h2>{t("coachCabinet.listTitle")}</h2>
+        {!data && <p className="muted">{t("admin.loading")}</p>}
+        {data && data.trainees.length === 0 && (
+          <p className="muted">{t("coachCabinet.empty")}</p>
+        )}
+        {data && data.trainees.length > 0 && (
+          <div className="table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>{t("coachCabinet.colName")}</th>
+                  <th>{t("auth.login")}</th>
+                  <th>{t("auth.phone")}</th>
+                  <th>{t("coachCabinet.colSince")}</th>
+                  <th>{t("coachCabinet.colMembership")}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {data.trainees.map((tr) => (
+                  <tr key={tr.id}>
+                    <td>{displayName(tr)}</td>
+                    <td>{tr.login ?? "—"}</td>
+                    <td>{tr.phone}</td>
+                    <td>{formatDate(tr.relationStartedAt, locale)}</td>
+                    <td>
+                      {tr.membershipEndsAt
+                        ? t("coachCabinet.membershipUntil", {
+                            date: formatDate(tr.membershipEndsAt, locale),
+                          })
+                        : t("coachCabinet.noMembership")}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="ghost"
+                        disabled={busy}
+                        onClick={() => void detach(tr.id)}
+                      >
+                        {t("invites.end")}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -109,23 +273,32 @@ export function ProfilePage() {
   }
 
   return (
-    <section className="card" style={{ maxWidth: 480 }}>
-      <h1>{t("profile.title")}</h1>
-      <label>
-        {t("profile.firstName")}
-        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-      </label>
-      <label>
-        {t("profile.lastName")}
-        <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-      </label>
-      <p className="muted">{t("profile.language")}: {t(`lang.${user?.locale ?? "ru"}`)}</p>
-      <div className="row" style={{ marginTop: "0.8rem" }}>
-        <button type="button" onClick={() => void save()}>
-          {t("profile.save")}
-        </button>
-      </div>
-      {saved && <p className="ok">{t("profile.saved")}</p>}
-    </section>
+    <div className="wrap section">
+      <section className="card" style={{ maxWidth: 480 }}>
+        <h1>{t("profile.title")}</h1>
+        <label>
+          {t("profile.firstName")}
+          <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+        </label>
+        <label>
+          {t("profile.lastName")}
+          <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+        </label>
+        <p className="muted">
+          {t("profile.language")}: {t(`lang.${user?.locale ?? "ru"}`)}
+        </p>
+        {user?.login && (
+          <p className="muted">
+            {t("auth.login")}: {user.login}
+          </p>
+        )}
+        <div className="row" style={{ marginTop: "0.8rem" }}>
+          <button type="button" onClick={() => void save()}>
+            {t("profile.save")}
+          </button>
+        </div>
+        {saved && <p className="ok">{t("profile.saved")}</p>}
+      </section>
+    </div>
   );
 }

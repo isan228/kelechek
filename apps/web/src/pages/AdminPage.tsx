@@ -5,7 +5,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
-type Tab = "home" | "site" | "photos" | "users" | "tariffs" | "content" | "payments";
+type Tab = "home" | "site" | "photos" | "users" | "coaches" | "tariffs" | "content" | "payments";
 const ROLES = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"] as const;
 const TYPES = ["ARTICLE", "EXERCISE", "PROGRAM"] as const;
 const STATUSES = ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"] as const;
@@ -40,7 +40,7 @@ export function AdminPage() {
       <h1>{t("admin.title")}</h1>
       <p className="muted">{t("admin.lead")}</p>
       <div className="admin-tabs">
-        {(["home", "site", "photos", "users", "tariffs", "content", "payments"] as Tab[]).map((id) => (
+        {(["home", "site", "photos", "users", "coaches", "tariffs", "content", "payments"] as Tab[]).map((id) => (
           <button
             key={id}
             type="button"
@@ -59,6 +59,7 @@ export function AdminPage() {
       {tab === "site" && <SiteTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "photos" && <PhotosTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "users" && <UsersTab onSaved={() => setMsg(t("profile.saved"))} />}
+      {tab === "coaches" && <CoachesTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "tariffs" && <TariffsTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "content" && <ContentTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "payments" && <PaymentsTab />}
@@ -261,6 +262,174 @@ function UsersTab({ onSaved }: { onSaved: () => void }) {
           </tbody>
         </table>
       </div>
+    </>
+  );
+}
+
+function CoachesTab({ onSaved }: { onSaved: () => void }) {
+  const { t } = useTranslation();
+  const [rows, setRows] = useState<Awaited<ReturnType<typeof api.adminCoaches>>["coaches"]>([]);
+  const [openForm, setOpenForm] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    login: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    bioRu: "",
+    bioKy: "",
+  });
+
+  async function load() {
+    setRows((await api.adminCoaches()).coaches);
+  }
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function create(e: FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setBusy(true);
+    try {
+      await api.adminCreateCoach({
+        login: form.login,
+        password: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone || undefined,
+        bioRu: form.bioRu || undefined,
+        bioKy: form.bioKy || undefined,
+      });
+      setForm({
+        login: "",
+        password: "",
+        firstName: "",
+        lastName: "",
+        phone: "",
+        bioRu: "",
+        bioKy: "",
+      });
+      setOpenForm(false);
+      await load();
+      onSaved();
+    } catch (ex) {
+      const msg = ex instanceof Error ? ex.message : "error";
+      if (msg === "LOGIN_TAKEN") setErr(t("auth.loginTaken"));
+      else if (msg === "PHONE_TAKEN") setErr(t("auth.phoneTaken"));
+      else if (msg === "INVALID_LOGIN") setErr(t("auth.invalidLogin"));
+      else if (msg === "INVALID_PASSWORD") setErr(t("auth.invalidPassword"));
+      else if (msg === "NAME_REQUIRED") setErr(t("admin.coachNameRequired"));
+      else setErr(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <p className="muted">{t("admin.coachLead")}</p>
+      <div className="row" style={{ marginBottom: "1rem" }}>
+        <button type="button" onClick={() => setOpenForm((v) => !v)}>
+          {t("admin.createCoach")}
+        </button>
+      </div>
+      {openForm && (
+        <form className="card admin-form" onSubmit={(e) => void create(e)}>
+          <h3>{t("admin.createCoach")}</h3>
+          {err && <p className="error">{err}</p>}
+          <div className="grid two">
+            <label>
+              {t("auth.login")} *
+              <input
+                value={form.login}
+                onChange={(e) => setForm({ ...form, login: e.target.value })}
+                required
+                autoComplete="off"
+              />
+            </label>
+            <label>
+              {t("auth.password")} *
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+                autoComplete="new-password"
+              />
+            </label>
+            <label>
+              {t("profile.firstName")} *
+              <input
+                value={form.firstName}
+                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              {t("profile.lastName")} *
+              <input
+                value={form.lastName}
+                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              {t("auth.phone")} ({t("admin.optional")})
+              <input
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="+996…"
+              />
+            </label>
+          </div>
+          <label>
+            {t("admin.bioRu")}
+            <textarea value={form.bioRu} onChange={(e) => setForm({ ...form, bioRu: e.target.value })} />
+          </label>
+          <label>
+            {t("admin.bioKy")}
+            <textarea value={form.bioKy} onChange={(e) => setForm({ ...form, bioKy: e.target.value })} />
+          </label>
+          <div className="row" style={{ marginTop: "1rem" }}>
+            <button type="submit" disabled={busy}>
+              {busy ? t("admin.saving") : t("profile.save")}
+            </button>
+            <button type="button" className="ghost" onClick={() => setOpenForm(false)}>
+              {t("admin.cancel")}
+            </button>
+          </div>
+        </form>
+      )}
+      <div className="table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>{t("auth.login")}</th>
+              <th>{t("coachCabinet.colName")}</th>
+              <th>{t("auth.phone")}</th>
+              <th>{t("coachCabinet.trainees")}</th>
+              <th>{t("admin.status")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td>{row.login || "—"}</td>
+                <td>{[row.firstName, row.lastName].filter(Boolean).join(" ") || "—"}</td>
+                <td>{row.phone}</td>
+                <td>{row.traineeCount}</td>
+                <td>{row.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="muted" style={{ marginTop: "0.8rem" }}>
+        {t("admin.coachEditHint")}
+      </p>
     </>
   );
 }

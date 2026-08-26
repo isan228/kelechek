@@ -118,8 +118,9 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
   app.post("/api/me/relation/end", async (request, reply) => {
     const user = requireAuth(request, reply);
     if (!user) return;
+    const body = (request.body ?? {}) as { traineeId?: string };
     try {
-      await endRelation(user.id);
+      await endRelation(user.id, false, body.traineeId);
       return { ok: true };
     } catch (err) {
       const status = (err as { statusCode?: number }).statusCode ?? 500;
@@ -148,9 +149,9 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
     const relations = await prisma.coachingRelation.findMany({
       where: { coachId: user.id, status: "ACTIVE" },
       include: {
-        trainee: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        trainee: { select: { id: true, firstName: true, lastName: true, phone: true, login: true } },
       },
-      take: 50,
+      take: 100,
     });
     return {
       trainees: relations.map((r) => ({
@@ -158,7 +159,79 @@ export async function registerInvitationRoutes(app: FastifyInstance) {
         firstName: r.trainee.firstName,
         lastName: r.trainee.lastName,
         phone: r.trainee.phone,
+        login: r.trainee.login,
         relationStartedAt: r.startedAt,
+      })),
+    };
+  });
+
+  app.get("/api/coach/dashboard", async (request, reply) => {
+    const user = requireRole(request, reply, ["COACH", "ADMIN"]);
+    if (!user) return;
+
+    const full = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        login: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        bioRu: true,
+        bioKy: true,
+        photoUrl: true,
+        locale: true,
+        createdAt: true,
+      },
+    });
+    if (!full) return reply.code(404).send({ error: "NOT_FOUND" });
+
+    const [relations, counter, earned, pendingInvites] = await Promise.all([
+      prisma.coachingRelation.findMany({
+        where: { coachId: user.id, status: "ACTIVE" },
+        include: {
+          trainee: {
+            select: {
+              id: true,
+              login: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              memberships: {
+                where: { status: "ACTIVE", endsAtExclusive: { gt: new Date() } },
+                orderBy: { endsAtExclusive: "desc" },
+                take: 1,
+                select: { endsAtExclusive: true },
+              },
+            },
+          },
+        },
+        orderBy: { startedAt: "desc" },
+        take: 100,
+      }),
+      prisma.coachCounter.findUnique({ where: { coachId: user.id } }),
+      prisma.coachLedgerEntry.aggregate({
+        where: { coachId: user.id },
+        _sum: { signedAmount: true },
+      }),
+      prisma.coachingInvitation.count({
+        where: { coachId: user.id, status: "SENT", expiresAt: { gt: new Date() } },
+      }),
+    ]);
+
+    return {
+      coach: full,
+      traineeCount: counter?.activeRelationCount ?? relations.length,
+      earnedKgs: earned._sum.signedAmount ?? 0,
+      pendingInvites,
+      trainees: relations.map((r) => ({
+        id: r.trainee.id,
+        login: r.trainee.login,
+        firstName: r.trainee.firstName,
+        lastName: r.trainee.lastName,
+        phone: r.trainee.phone,
+        relationStartedAt: r.startedAt,
+        membershipEndsAt: r.trainee.memberships[0]?.endsAtExclusive ?? null,
       })),
     };
   });

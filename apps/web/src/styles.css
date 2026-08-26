@@ -303,7 +303,25 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 .page-hero h1 { font-size: clamp(2.2rem, 5vw, 3.8rem); margin: 0.35rem 0; }
 
-.coach-card img { height: 280px; object-fit: cover; object-position: center 18%; width: 100%; }
+.coach-meta {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+.coach-meta > div {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.5rem;
+}
+.coach-meta dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.coach-meta dd {
+  margin: 0;
+  font-weight: 600;
+}
 .price {
   font-family: "Cormorant Garamond", serif;
   font-size: 2.4rem;

@@ -37,7 +37,9 @@ export function LoginPage() {
       if (mode === "login") {
         const res = await api.login(login, password);
         setUser(res.user);
-        navigate(res.user.roles.includes("ADMIN") ? "/admin" : "/cabinet");
+        if (res.user.roles.includes("ADMIN")) navigate("/admin");
+        else if (res.user.roles.includes("COACH")) navigate("/coach");
+        else navigate("/cabinet");
         return;
       }
       if (!tariffId) {

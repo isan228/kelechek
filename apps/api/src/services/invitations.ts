@@ -112,11 +112,13 @@ export async function respondInvitation(
   });
 }
 
-export async function endRelation(userId: string, asAdmin = false) {
+export async function endRelation(userId: string, asAdmin = false, traineeId?: string) {
   const relation = await prisma.coachingRelation.findFirst({
     where: {
       status: "ACTIVE",
-      OR: [{ traineeId: userId }, { coachId: userId }],
+      ...(traineeId
+        ? { coachId: userId, traineeId }
+        : { OR: [{ traineeId: userId }, { coachId: userId }] }),
     },
   });
   if (!relation) {
