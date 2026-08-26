@@ -161,5 +161,40 @@ bash /var/www/kelechek/scripts/update.sh
 - `JWT_SECRET` — длинная случайная строка (setup уже генерирует).
 - `ADMIN_LOGIN` / `ADMIN_PASSWORD` — вход в `/admin/login` (по умолчанию `admin` / `kelechek2026`).
 - Сайт по HTTP (только IP, без сертификата): `COOKIE_SECURE=false`. После Let's Encrypt: `COOKIE_SECURE=true` и `WEB_ORIGIN=https://ваш-домен`.
-- `MOCK_PAYMENTS=true` — пока нет банка; после интеграции шлюза выключить.
+- `MOCK_PAYMENTS=true` — локально без Finik; на проде `false` и настроить Finik (ниже).
 - Seed создаёт админа и тренера; на боевом можно не запускать повторно.
+
+## 7. Finik (оплата регистрации и абонементов)
+
+Ключи лежат **в корне проекта** (`/var/www/kelechek/`):
+
+- `finik_private.pem` — закрытый (подписывает запросы)
+- `finik_public.pem` — открытый (тот же файл загружаете в кабинет Finik)
+
+```bash
+cd /var/www/kelechek
+openssl genrsa -out finik_private.pem 2048
+openssl rsa -in finik_private.pem -pubout > finik_public.pem
+chown kelech:kelech finik_private.pem finik_public.pem
+chmod 600 finik_private.pem
+chmod 644 finik_public.pem
+```
+
+`finik_public.pem` загрузите в кабинет Finik (тип **Веб**), получите `FINIK_API_KEY` и `accountId`.
+
+В `apps/api/.env` (пути к ключам не нужны — читаются из корня автоматически):
+
+```env
+MOCK_PAYMENTS=false
+WEB_ORIGIN=https://qelechek.kg
+COOKIE_SECURE=true
+FINIK_ENV=prod
+FINIK_API_KEY=...
+FINIK_ACCOUNT_ID=...
+FINIK_QR_NAME=Kelechek
+FINIK_WEBHOOK_HOST=qelechek.kg
+```
+
+`systemctl restart kelech-api`
+
+Webhook: `https://qelechek.kg/api/webhooks/finik`. Файлы `finik_*.pem` в `.gitignore` — `git reset` их не трогает.

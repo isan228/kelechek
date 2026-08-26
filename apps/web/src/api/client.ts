@@ -35,8 +35,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ login, password }),
     }),
-  register: (data: { login: string; password: string; phone: string; firstName?: string }) =>
-    request<{ user: ApiUser }>("/api/auth/register", {
+  register: (data: {
+    login: string;
+    password: string;
+    phone: string;
+    firstName?: string;
+    tariffId: string;
+  }) =>
+    request<{
+      user: ApiUser;
+      payment?: { id: string; status: string };
+      paymentUrl?: string | null;
+    }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -63,10 +73,15 @@ export const api = {
     request<{
       tariffs: { id: string; priceKgs: number; periodDays: number; name: string; description: string }[];
     }>(`/api/tariffs?locale=${locale}`),
-  pay: (tariffId: string) => request<{ payment: { id: string; status: string } }>("/api/payments", {
-    method: "POST",
-    body: JSON.stringify({ tariffId }),
-  }),
+  pay: (tariffId: string) =>
+    request<{ payment: { id: string; status: string }; paymentUrl?: string | null }>("/api/payments", {
+      method: "POST",
+      body: JSON.stringify({ tariffId }),
+    }),
+  paymentStatus: (id: string) =>
+    request<{ payment: { id: string; status: string; amountKgs: number; paidAt: string | null } }>(
+      `/api/payments/${encodeURIComponent(id)}`,
+    ),
   balance: () =>
     request<{
       balance: { accrued: number; available: number; hold: number };

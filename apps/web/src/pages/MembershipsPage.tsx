@@ -25,7 +25,11 @@ export function MembershipsPage() {
   async function pay(id: string) {
     setBusy(true);
     try {
-      await api.pay(id);
+      const res = await api.pay(id);
+      if (res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+        return;
+      }
       setOk(true);
     } finally {
       setBusy(false);

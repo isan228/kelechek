@@ -9,6 +9,8 @@ import {
   validatePassword,
   verifyPassword,
 } from "../services/password.js";
+import { startTariffPayment } from "../services/startPayment.js";
+import { isMockPayments } from "../services/finik.js";
 
 function publicUser(user: {
   id: string;
@@ -38,6 +40,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       phone?: string;
       firstName?: string;
       lastName?: string;
+      tariffId?: string;
     };
     const login = body.login ? normalizeLogin(body.login) : null;
     const password = body.password ?? "";
@@ -45,6 +48,20 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (!login) return reply.code(400).send({ error: "INVALID_LOGIN" });
     if (!validatePassword(password)) return reply.code(400).send({ error: "INVALID_PASSWORD" });
     if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
+
+    let tariffId = (body.tariffId ?? "").trim();
+    if (!tariffId) {
+      if (isMockPayments()) {
+        const first = await prisma.tariff.findFirst({
+          where: { isActive: true },
+          orderBy: { priceKgs: "asc" },
+        });
+        if (!first) return reply.code(400).send({ error: "TARIFF_REQUIRED" });
+        tariffId = first.id;
+      } else {
+        return reply.code(400).send({ error: "TARIFF_REQUIRED" });
+      }
+    }
 
     const taken = await prisma.user.findFirst({
       where: { OR: [{ login }, { phone }] },
@@ -66,7 +83,27 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
 
     setSessionCookie(reply, signSession(user.id));
-    return { user: publicUser(user) };
+
+    try {
+      const pay = await startTariffPayment({
+        userId: user.id,
+        tariffId,
+        lang: "ru",
+        reply,
+      });
+      if (!pay) return;
+      return {
+        user: publicUser(user),
+        payment: { id: pay.paymentId, status: pay.status },
+        paymentUrl: pay.paymentUrl,
+      };
+    } catch (err) {
+      request.log.error({ err, userId: user.id }, "register payment failed");
+      return reply.code(502).send({
+        error: "PAYMENT_PROVIDER_ERROR",
+        user: publicUser(user),
+      });
+    }
   });
 
   app.post("/api/auth/login", async (request, reply) => {

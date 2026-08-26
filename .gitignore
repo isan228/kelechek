@@ -14,3 +14,9 @@ deploy/config.local.ps1
 deploy/config.local.sh
 .github-deploy-key
 uploads/
+secrets/
+finik_private.pem
+finik_public.pem
+finik_webhook_public.pem
+*.pem
+!deploy/**/*.pem

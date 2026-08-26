@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
@@ -6,7 +6,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
 export function LoginPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { photo } = useSiteCopy();
   const { setUser } = useAuth();
   const navigate = useNavigate();
@@ -15,18 +15,42 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("+996");
   const [firstName, setFirstName] = useState("");
+  const [tariffId, setTariffId] = useState("");
+  const [tariffs, setTariffs] = useState<Awaited<ReturnType<typeof api.tariffs>>["tariffs"]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
+
+  useEffect(() => {
+    if (mode !== "register") return;
+    void api.tariffs(locale).then((r) => {
+      setTariffs(r.tariffs);
+      if (r.tariffs[0] && !tariffId) setTariffId(r.tariffs[0].id);
+    });
+  }, [mode, locale]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setBusy(true);
     try {
-      const res =
-        mode === "login"
-          ? await api.login(login, password)
-          : await api.register({ login, password, phone, firstName });
+      if (mode === "login") {
+        const res = await api.login(login, password);
+        setUser(res.user);
+        navigate(res.user.roles.includes("ADMIN") ? "/admin" : "/cabinet");
+        return;
+      }
+      if (!tariffId) {
+        setError(t("auth.tariffRequired"));
+        return;
+      }
+      const res = await api.register({ login, password, phone, firstName, tariffId });
       setUser(res.user);
-      navigate(res.user.roles.includes("ADMIN") ? "/admin" : "/cabinet");
+      if (res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+        return;
+      }
+      navigate("/cabinet");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg === "BAD_CREDENTIALS") setError(t("auth.badCredentials"));
@@ -35,7 +59,12 @@ export function LoginPage() {
       else if (msg === "INVALID_PHONE") setError(t("auth.invalidPhone"));
       else if (msg === "LOGIN_TAKEN") setError(t("auth.loginTaken"));
       else if (msg === "PHONE_TAKEN") setError(t("auth.phoneTaken"));
-      else setError(t("errors.generic"));
+      else if (msg === "TARIFF_REQUIRED") setError(t("auth.tariffRequired"));
+      else if (msg === "PAYMENTS_NOT_CONFIGURED" || msg === "PAYMENT_PROVIDER_ERROR") {
+        setError(t("auth.paymentError"));
+      } else setError(t("errors.generic"));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -46,7 +75,7 @@ export function LoginPage() {
         <form className="card" style={{ maxWidth: 440 }} onSubmit={(e) => void submit(e)}>
           <p className="kicker">{t("appName")}</p>
           <h1>{mode === "login" ? t("auth.title") : t("auth.registerTitle")}</h1>
-          <p className="muted">{t("auth.lead")}</p>
+          <p className="muted">{mode === "register" ? t("auth.registerLead") : t("auth.lead")}</p>
           <div className="row" style={{ marginTop: "0.6rem" }}>
             <button
               type="button"
@@ -102,10 +131,30 @@ export function LoginPage() {
                 {t("profile.firstName")}
                 <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
               </label>
+              <label>
+                {t("auth.tariff")}
+                <select value={tariffId} onChange={(e) => setTariffId(e.target.value)} required>
+                  {tariffs.length === 0 && <option value="">{t("admin.loading")}</option>}
+                  {tariffs.map((tariff) => (
+                    <option key={tariff.id} value={tariff.id}>
+                      {tariff.name} — {tariff.priceKgs} сом
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="muted" style={{ fontSize: "0.85rem" }}>
+                {t("auth.payNote")}
+              </p>
             </>
           )}
           <div className="row" style={{ marginTop: "1rem" }}>
-            <button type="submit">{mode === "login" ? t("auth.submitLogin") : t("auth.submitRegister")}</button>
+            <button type="submit" disabled={busy}>
+              {busy
+                ? t("pay.working")
+                : mode === "login"
+                  ? t("auth.submitLogin")
+                  : t("auth.submitRegisterPay")}
+            </button>
           </div>
           {error && <p className="error">{error}</p>}
           <p className="muted" style={{ marginTop: "1rem", fontSize: "0.85rem" }}>

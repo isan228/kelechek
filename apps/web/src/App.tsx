@@ -12,6 +12,7 @@ import { CabinetPage, GoalPage } from "./pages/CabinetPages";
 import { BalancePage } from "./pages/PayPage";
 import { CoachPage, InvitesPage, ProfilePage } from "./pages/MiscPages";
 import { AdminPage } from "./pages/AdminPage";
+import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
 
 function Guard() {
   const { user, loading } = useAuth();
@@ -36,6 +37,7 @@ export function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/memberships" element={<MembershipsPage />} />
+        <Route path="/pay/success" element={<PaymentSuccessPage />} />
         <Route path="/workouts" element={<WorkoutsPage />} />
         <Route path="/workouts/:id" element={<WorkoutItemPage />} />
         <Route path="/coaches" element={<CoachesPublicPage />} />

@@ -1,8 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { randomUUID } from "node:crypto";
 import { prisma } from "../lib/prisma.js";
 import { hasRole, requireAuth, requireRole } from "../lib/auth.js";
-import { applySuccessfulPayment } from "../services/paymentSuccess.js";
 import {
   computeStreak,
   firstAccrualAt,
@@ -11,6 +9,7 @@ import {
 import { getActiveMembership } from "../services/access.js";
 import { DateTime } from "luxon";
 import { BISHKEK } from "../lib/prisma.js";
+import { startTariffPayment } from "../services/startPayment.js";
 
 function pickI18n<T extends { locale: string }>(rows: T[], locale: string): T | undefined {
   return rows.find((r) => r.locale === locale) ?? rows.find((r) => r.locale === "ru") ?? rows[0];
@@ -44,29 +43,34 @@ export async function registerFinanceRoutes(app: FastifyInstance) {
     const body = request.body as { tariffId?: string };
     if (!body.tariffId) return reply.code(400).send({ error: "TARIFF_REQUIRED" });
 
-    const tariff = await prisma.tariff.findFirst({
-      where: { id: body.tariffId, isActive: true },
-    });
-    if (!tariff) return reply.code(404).send({ error: "TARIFF_NOT_FOUND" });
-
-    const payment = await prisma.payment.create({
-      data: {
+    try {
+      const result = await startTariffPayment({
         userId: user.id,
-        tariffId: tariff.id,
-        amountKgs: tariff.priceKgs,
-        status: "PENDING",
-        provider: process.env.MOCK_PAYMENTS === "true" ? "mock" : "pending-bank",
-        idempotencyKey: randomUUID(),
-      },
-    });
-
-    if (process.env.MOCK_PAYMENTS === "true") {
-      await applySuccessfulPayment(payment.id);
-      const updated = await prisma.payment.findUnique({ where: { id: payment.id } });
-      return { payment: updated };
+        tariffId: body.tariffId,
+        lang: user.locale === "ky" ? "ky" : "ru",
+        reply,
+      });
+      if (!result) return;
+      return {
+        payment: { id: result.paymentId, status: result.status },
+        paymentUrl: result.paymentUrl,
+      };
+    } catch (err) {
+      request.log.error({ err }, "create payment failed");
+      return reply.code(502).send({ error: "PAYMENT_PROVIDER_ERROR" });
     }
+  });
 
-    return { payment, redirectUrl: null };
+  app.get("/api/payments/:id", async (request, reply) => {
+    const user = requireAuth(request, reply);
+    if (!user) return;
+    const id = (request.params as { id: string }).id;
+    const payment = await prisma.payment.findFirst({
+      where: { id, userId: user.id },
+      select: { id: true, status: true, amountKgs: true, paidAt: true, createdAt: true },
+    });
+    if (!payment) return reply.code(404).send({ error: "NOT_FOUND" });
+    return { payment };
   });
 
   app.get("/api/me/balance", async (request, reply) => {

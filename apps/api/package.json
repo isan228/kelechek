@@ -19,6 +19,7 @@
     "@fastify/multipart": "^10.1.1",
     "@fastify/static": "^10.1.3",
     "@kelech/shared": "*",
+    "@mancho.devs/authorizer": "^2.12.8",
     "@prisma/client": "^6.14.0",
     "dotenv": "^17.2.1",
     "fastify": "^5.5.0",
