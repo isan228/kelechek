@@ -837,6 +837,287 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
+  /** Полная бухгалтерия: итоги, режимы, месяцы, счета, журнал «кто кому зачем». */
+  app.get("/api/admin/accounting", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN"]);
+    if (!admin) return;
+
+    const succeeded = { status: "SUCCEEDED" as const };
+    const soloWhere = { ...succeeded, coachId: null };
+    const withCoachWhere = { ...succeeded, coachId: { not: null } };
+
+    const [
+      paid,
+      shares,
+      soloAgg,
+      withCoachAgg,
+      soloCount,
+      withCoachCount,
+      operatorLedger,
+      payments,
+      monthPayments,
+      coachGroups,
+      traineeGroups,
+    ] = await Promise.all([
+      prisma.payment.aggregate({ where: succeeded, _sum: { amountKgs: true }, _count: { _all: true } }),
+      prisma.payment.aggregate({
+        where: succeeded,
+        _sum: { traineeShareKgs: true, coachShareKgs: true, operatorShareKgs: true },
+      }),
+      prisma.payment.aggregate({
+        where: soloWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.aggregate({
+        where: withCoachWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.count({ where: soloWhere }),
+      prisma.payment.count({ where: withCoachWhere }),
+      prisma.operatorLedgerEntry.aggregate({ _sum: { signedAmount: true } }),
+      prisma.payment.findMany({
+        where: succeeded,
+        orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+        take: 200,
+        include: {
+          user: {
+            select: { id: true, phone: true, login: true, firstName: true, lastName: true },
+          },
+          tariff: { include: { translations: true } },
+        },
+      }),
+      prisma.payment.findMany({
+        where: {
+          ...succeeded,
+          OR: [
+            { paidAt: { gte: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000) } },
+            { paidAt: null, createdAt: { gte: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000) } },
+          ],
+        },
+        select: {
+          paidAt: true,
+          createdAt: true,
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+          coachId: true,
+        },
+      }),
+      prisma.coachLedgerEntry.groupBy({
+        by: ["coachId"],
+        where: { type: "CREDIT_ACCRUAL" },
+        _sum: { signedAmount: true },
+        _count: { _all: true },
+        orderBy: { _sum: { signedAmount: "desc" } },
+        take: 50,
+      }),
+      prisma.traineeLedgerEntry.groupBy({
+        by: ["userId"],
+        where: { type: "CREDIT_ACCRUAL" },
+        _sum: { signedAmount: true },
+        _count: { _all: true },
+        orderBy: { _sum: { signedAmount: "desc" } },
+        take: 50,
+      }),
+    ]);
+
+    const coachIds = [
+      ...new Set([
+        ...payments.map((p) => p.coachId).filter((id): id is string => Boolean(id)),
+        ...coachGroups.map((g) => g.coachId),
+      ]),
+    ];
+    const traineeIds = traineeGroups.map((g) => g.userId);
+    const people = await prisma.user.findMany({
+      where: { id: { in: [...new Set([...coachIds, ...traineeIds])] } },
+      select: { id: true, firstName: true, lastName: true, login: true, phone: true },
+    });
+    const personById = new Map(people.map((p) => [p.id, p]));
+
+    const monthMap = new Map<
+      string,
+      {
+        month: string;
+        paidKgs: number;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        soloCount: number;
+        withCoachCount: number;
+        count: number;
+      }
+    >();
+    for (const p of monthPayments) {
+      const at = p.paidAt ?? p.createdAt;
+      const month = at.toISOString().slice(0, 7);
+      const row = monthMap.get(month) ?? {
+        month,
+        paidKgs: 0,
+        traineeShareKgs: 0,
+        coachShareKgs: 0,
+        operatorShareKgs: 0,
+        soloCount: 0,
+        withCoachCount: 0,
+        count: 0,
+      };
+      row.paidKgs += p.amountKgs;
+      row.traineeShareKgs += p.traineeShareKgs ?? 0;
+      row.coachShareKgs += p.coachShareKgs ?? 0;
+      row.operatorShareKgs += p.operatorShareKgs ?? 0;
+      row.count += 1;
+      if (p.coachId) row.withCoachCount += 1;
+      else row.soloCount += 1;
+      monthMap.set(month, row);
+    }
+    const monthly = [...monthMap.values()].sort((a, b) => b.month.localeCompare(a.month)).slice(0, 12);
+
+    const journal = payments.map((p) => {
+      const coach = p.coachId ? personById.get(p.coachId) ?? null : null;
+      const hasCoach = Boolean(p.coachId);
+      const traineePct = hasCoach ? 32 : 82;
+      const coachPct = hasCoach ? 50 : 0;
+      const lines: {
+        account: "TRAINEE" | "COACH" | "OPERATOR";
+        direction: "credit";
+        amountKgs: number;
+        party: {
+          id?: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        } | null;
+        why: string;
+      }[] = [
+        {
+          account: "TRAINEE",
+          direction: "credit",
+          amountKgs: p.traineeShareKgs ?? 0,
+          party: p.user,
+          why: hasCoach
+            ? `Начисление на баланс ученика ${traineePct}% от абонемента (занятия с тренером)`
+            : `Начисление на баланс ученика ${traineePct}% от абонемента (самостоятельно)`,
+        },
+      ];
+      if (hasCoach && (p.coachShareKgs ?? 0) > 0) {
+        lines.push({
+          account: "COACH",
+          direction: "credit",
+          amountKgs: p.coachShareKgs ?? 0,
+          party: coach
+            ? {
+                id: coach.id,
+                firstName: coach.firstName,
+                lastName: coach.lastName,
+                login: coach.login,
+                phone: coach.phone,
+              }
+            : null,
+          why: `Начисление тренеру ${coachPct}% от абонемента ученика`,
+        });
+      }
+      lines.push({
+        account: "OPERATOR",
+        direction: "credit",
+        amountKgs: p.operatorShareKgs ?? 0,
+        party: null,
+        why: "Доля оператора (остаток ~18% после долей ученика и тренера)",
+      });
+
+      return {
+        id: p.id,
+        at: p.paidAt ?? p.createdAt,
+        amountKgs: p.amountKgs,
+        mode: hasCoach ? ("withCoach" as const) : ("solo" as const),
+        reason: "MEMBERSHIP_PAYMENT",
+        reasonText: hasCoach
+          ? "Успешная оплата месячного абонемента (с тренером)"
+          : "Успешная оплата месячного абонемента (самостоятельно)",
+        tariffName: pickTr(p.tariff.translations, "ru")?.name ?? "",
+        payer: p.user,
+        coach: coach
+          ? {
+              id: coach.id,
+              firstName: coach.firstName,
+              lastName: coach.lastName,
+              login: coach.login,
+              phone: coach.phone,
+            }
+          : null,
+        traineeShareKgs: p.traineeShareKgs ?? 0,
+        coachShareKgs: p.coachShareKgs ?? 0,
+        operatorShareKgs: p.operatorShareKgs ?? 0,
+        lines,
+      };
+    });
+
+    return {
+      rates: {
+        solo: { traineePct: 82, coachPct: 0, operatorPct: 18 },
+        withCoach: { traineePct: 32, coachPct: 50, operatorPct: 18 },
+      },
+      totals: {
+        succeededPayments: paid._count._all,
+        paidKgs: paid._sum.amountKgs ?? 0,
+        traineeShareKgs: shares._sum.traineeShareKgs ?? 0,
+        coachShareKgs: shares._sum.coachShareKgs ?? 0,
+        operatorShareKgs: shares._sum.operatorShareKgs ?? 0,
+        operatorLedgerKgs: operatorLedger._sum.signedAmount ?? 0,
+      },
+      byMode: {
+        solo: {
+          count: soloCount,
+          paidKgs: soloAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: soloAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: soloAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: soloAgg._sum.operatorShareKgs ?? 0,
+        },
+        withCoach: {
+          count: withCoachCount,
+          paidKgs: withCoachAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: withCoachAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: withCoachAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: withCoachAgg._sum.operatorShareKgs ?? 0,
+        },
+      },
+      monthly,
+      coachAccounts: coachGroups.map((g) => ({
+        coach: personById.get(g.coachId) ?? {
+          id: g.coachId,
+          firstName: null,
+          lastName: null,
+          login: null,
+          phone: "—",
+        },
+        earnedKgs: g._sum.signedAmount ?? 0,
+        entries: g._count._all,
+      })),
+      traineeAccounts: traineeGroups.map((g) => ({
+        trainee: personById.get(g.userId) ?? {
+          id: g.userId,
+          firstName: null,
+          lastName: null,
+          login: null,
+          phone: "—",
+        },
+        balanceKgs: g._sum.signedAmount ?? 0,
+        entries: g._count._all,
+      })),
+      journal,
+    };
+  });
+
   app.get("/api/admin/site-texts", async (request, reply) => {
     const admin = requireRole(request, reply, ["ADMIN", "CONTENT_EDITOR"]);
     if (!admin) return;

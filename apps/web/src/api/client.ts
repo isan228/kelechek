@@ -607,4 +607,106 @@ export const api = {
         } | null;
       }[];
     }>("/api/admin/payments"),
+  adminAccounting: () =>
+    request<{
+      rates: {
+        solo: { traineePct: number; coachPct: number; operatorPct: number };
+        withCoach: { traineePct: number; coachPct: number; operatorPct: number };
+      };
+      totals: {
+        succeededPayments: number;
+        paidKgs: number;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        operatorLedgerKgs: number;
+      };
+      byMode: {
+        solo: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+        withCoach: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+      };
+      monthly: {
+        month: string;
+        paidKgs: number;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        soloCount: number;
+        withCoachCount: number;
+        count: number;
+      }[];
+      coachAccounts: {
+        coach: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        };
+        earnedKgs: number;
+        entries: number;
+      }[];
+      traineeAccounts: {
+        trainee: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        };
+        balanceKgs: number;
+        entries: number;
+      }[];
+      journal: {
+        id: string;
+        at: string;
+        amountKgs: number;
+        mode: "solo" | "withCoach";
+        reason: string;
+        reasonText: string;
+        tariffName: string;
+        payer: {
+          id: string;
+          phone: string;
+          login: string | null;
+          firstName: string | null;
+          lastName: string | null;
+        };
+        coach: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        } | null;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        lines: {
+          account: "TRAINEE" | "COACH" | "OPERATOR";
+          direction: "credit";
+          amountKgs: number;
+          party: {
+            id?: string;
+            firstName: string | null;
+            lastName: string | null;
+            login: string | null;
+            phone: string;
+          } | null;
+          why: string;
+        }[];
+      }[];
+    }>("/api/admin/accounting"),
 };
