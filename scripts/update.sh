@@ -28,11 +28,9 @@ cp "$ENV_BACKUP" "$ENV_FILE"
 rm -f "$ENV_BACKUP"
 chmod 600 "$ENV_FILE"
 
-# Сайт по HTTP — cookie без Secure. Админ-логин по умолчанию.
+# Не затираем COOKIE_SECURE: после HTTPS должно быть true.
 sed -i '/^OTP_DEV_ECHO=/d' "$ENV_FILE" || true
-if grep -q '^COOKIE_SECURE=' "$ENV_FILE"; then
-  sed -i 's/^COOKIE_SECURE=.*/COOKIE_SECURE=false/' "$ENV_FILE"
-else
+if ! grep -q '^COOKIE_SECURE=' "$ENV_FILE"; then
   echo "COOKIE_SECURE=false" >> "$ENV_FILE"
 fi
 if ! grep -q '^ADMIN_LOGIN=' "$ENV_FILE"; then

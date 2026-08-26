@@ -74,18 +74,41 @@ curl -s http://127.0.0.1:3001/api/health
 
 Сайт: `http://example.com` (DNS A-запись на IP сервера).
 
-HTTPS:
+### HTTPS (Let's Encrypt)
+
+Нужен **домен**, привязанный A-записью к IP сервера. По одному IP сертификат не выдают.
+
+1. В DNS: `ваш-домен.kg` → A → IP Contabo (подождите 5–30 минут).
+2. В Nginx `server_name` должен совпадать с доменом:
 
 ```bash
-apt-get install -y certbot python3-certbot-nginx
-certbot --nginx -d example.com -d www.example.com
+nano /etc/nginx/sites-available/kelech
+# server_name ваш-домен.kg www.ваш-домен.kg;
+nginx -t && systemctl reload nginx
 ```
 
-После сертификата в `apps/api/.env` оставьте `WEB_ORIGIN=https://example.com` и:
+3. Выпуск сертификата:
+
+```bash
+apt-get update
+apt-get install -y certbot python3-certbot-nginx
+certbot --nginx -d ваш-домен.kg -d www.ваш-домен.kg
+```
+
+Certbot сам пропишет SSL в Nginx и включит редирект на HTTPS. Автообновление уже есть (`certbot.timer`).
+
+4. В `/var/www/kelechek/apps/api/.env`:
+
+```bash
+WEB_ORIGIN=https://ваш-домен.kg
+COOKIE_SECURE=true
+```
 
 ```bash
 systemctl restart kelech-api
 ```
+
+Проверка: `https://ваш-домен.kg` и `curl -s https://ваш-домен.kg/api/health`.
 
 ## 3. Автодеплой: пуш в GitHub → сервер
 
@@ -137,6 +160,6 @@ bash /var/www/kelechek/scripts/update.sh
 
 - `JWT_SECRET` — длинная случайная строка (setup уже генерирует).
 - `ADMIN_LOGIN` / `ADMIN_PASSWORD` — вход в `/admin/login` (по умолчанию `admin` / `kelechek2026`).
-- Сайт по HTTP (IP, без сертификата): `COOKIE_SECURE=false`, иначе браузер не сохранит сессию.
+- Сайт по HTTP (только IP, без сертификата): `COOKIE_SECURE=false`. После Let's Encrypt: `COOKIE_SECURE=true` и `WEB_ORIGIN=https://ваш-домен`.
 - `MOCK_PAYMENTS=true` — пока нет банка; после интеграции шлюза выключить.
 - Seed создаёт админа и тренера; на боевом можно не запускать повторно.
