@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
 import { api } from "../api/client";
 import { useSiteCopy } from "../content/SiteCopyProvider";
+import { SupportChat } from "./SupportChat";
 
 export function Layout() {
   const { t, i18n } = useTranslation();
@@ -204,6 +205,7 @@ export function Layout() {
           </div>
         </footer>
       )}
+      <SupportChat />
     </div>
   );
 }

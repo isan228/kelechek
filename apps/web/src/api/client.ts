@@ -814,4 +814,73 @@ export const api = {
     }),
   adminDeleteNews: (id: string) =>
     request(`/api/admin/news/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  chatUnread: () => request<{ unread: number }>("/api/chat/unread"),
+  chatThread: () =>
+    request<{
+      thread: { id: string; status: string; updatedAt: string };
+      messages: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      }[];
+    }>("/api/chat/thread"),
+  chatSend: (body: string) =>
+    request<{
+      message: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      };
+    }>("/api/chat/messages", { method: "POST", body: JSON.stringify({ body }) }),
+  chatAdminThreads: () =>
+    request<{
+      threads: {
+        id: string;
+        status: string;
+        updatedAt: string;
+        userName: string;
+        userPhone: string;
+        unread: boolean;
+        lastMessage: { body: string; createdAt: string; isAdmin: boolean } | null;
+      }[];
+    }>("/api/chat/admin/threads"),
+  chatAdminThread: (id: string) =>
+    request<{
+      thread: {
+        id: string;
+        status: string;
+        updatedAt: string;
+        userName: string;
+        userPhone: string;
+      };
+      messages: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      }[];
+    }>(`/api/chat/admin/threads/${encodeURIComponent(id)}`),
+  chatAdminSend: (id: string, body: string) =>
+    request<{
+      message: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      };
+    }>(`/api/chat/admin/threads/${encodeURIComponent(id)}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ body }),
+    }),
 };

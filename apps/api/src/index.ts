@@ -14,6 +14,7 @@ import { registerAdminRoutes } from "./routes/admin.js";
 import { registerFinikWebhook } from "./routes/finikWebhook.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerCmsRoutes } from "./routes/cms.js";
+import { registerChatRoutes } from "./routes/chat.js";
 
 ensureUploadsDir();
 
@@ -50,6 +51,7 @@ await registerAdminRoutes(app);
 await registerFinikWebhook(app);
 await registerScheduleRoutes(app);
 await registerCmsRoutes(app);
+await registerChatRoutes(app);
 
 async function ensureIndexes() {
   await prisma.$executeRawUnsafe(`
