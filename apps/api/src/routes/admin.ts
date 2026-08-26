@@ -739,7 +739,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     const admin = requireRole(request, reply, ["ADMIN"]);
     if (!admin) return;
     const payments = await prisma.payment.findMany({
-      orderBy: { createdAt: "desc" },
+      where: { status: "SUCCEEDED" },
+      orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
       take: 200,
       include: {
         user: {

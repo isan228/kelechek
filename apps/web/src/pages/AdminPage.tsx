@@ -997,7 +997,6 @@ function PaymentsTab() {
               <th>{t("admin.colTraineeShare")}</th>
               <th>{t("admin.colCoachShare")}</th>
               <th>{t("admin.colOperatorShare")}</th>
-              <th>{t("admin.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1020,7 +1019,6 @@ function PaymentsTab() {
                 <td>{row.traineeShareKgs ?? "—"}</td>
                 <td>{row.coachShareKgs ?? "—"}</td>
                 <td>{row.operatorShareKgs ?? "—"}</td>
-                <td>{row.status}</td>
               </tr>
             ))}
           </tbody>
