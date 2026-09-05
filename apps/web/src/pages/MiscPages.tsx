@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import QRCode from "qrcode";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { CoachHistoryPanel, CoachSchedulePanel } from "./SchedulePages";
 
 function displayName(person: {
   firstName: string | null;
@@ -79,11 +80,17 @@ export function CoachPage() {
   const { t, i18n } = useTranslation();
   const { user, loading } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
+  const [tab, setTab] = useState<"home" | "schedule" | "history" | "trainees" | "qr">("home");
   const [phone, setPhone] = useState("+996");
   const [data, setData] = useState<Awaited<ReturnType<typeof api.coachDashboard>> | null>(null);
   const [qr, setQr] = useState<{ joinUrl: string; day: string; validUntil: string; dataUrl: string } | null>(
     null,
   );
+  const [nextSession, setNextSession] = useState<
+    Awaited<ReturnType<typeof api.coachSessions>>["sessions"][0] | null
+  >(null);
+  const [sportRu, setSportRu] = useState("");
+  const [sportKy, setSportKy] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -101,12 +108,20 @@ export function CoachPage() {
   async function load() {
     const res = await api.coachDashboard();
     setData(res);
+    setSportRu(res.coach.sportRu ?? "");
+    setSportKy(res.coach.sportKy ?? "");
+  }
+
+  async function loadNext() {
+    const r = await api.coachSessions();
+    setNextSession(r.sessions[0] ?? null);
   }
 
   useEffect(() => {
     if (user?.roles.includes("COACH")) {
       void load().catch(() => setData(null));
       void loadQr().catch(() => setQr(null));
+      void loadNext().catch(() => setNextSession(null));
     }
   }, [user]);
 
@@ -142,155 +157,224 @@ export function CoachPage() {
 
   const coach = data?.coach;
   const name = coach ? displayName(coach) : displayName(user);
+  const tabs: { id: typeof tab; label: string }[] = [
+    { id: "home", label: t("coachCabinet.tabHome") },
+    { id: "schedule", label: t("coachCabinet.tabSchedule") },
+    { id: "history", label: t("coachCabinet.tabHistory") },
+    { id: "trainees", label: t("coachCabinet.tabTrainees") },
+    { id: "qr", label: t("coachCabinet.tabQr") },
+  ];
 
   return (
-    <div className="wrap section">
-      <p className="kicker">{t("coachCabinet.kicker")}</p>
-      <h1>{t("coachCabinet.title")}</h1>
-      <p className="lead">{t("coachCabinet.lead", { name })}</p>
-
-      <div className="stats" style={{ marginTop: "1.2rem" }}>
-        <div className="stat">
-          <b>{data?.traineeCount ?? "—"}</b>
-          <span>{t("coachCabinet.trainees")}</span>
+    <div className="wrap section coach-cabinet">
+      <header className="coach-cabinet-head">
+        <div>
+          <p className="kicker">{t("coachCabinet.kicker")}</p>
+          <h1>{t("coachCabinet.title")}</h1>
+          <p className="lead">{t("coachCabinet.lead", { name })}</p>
         </div>
-        <div className="stat">
-          <b>{data?.earnedKgs ?? "—"}</b>
-          <span>{t("coachCabinet.earned")}</span>
+        <div className="coach-stats">
+          <div className="coach-stat">
+            <b>{data?.traineeCount ?? "—"}</b>
+            <span>{t("coachCabinet.trainees")}</span>
+          </div>
+          <div className="coach-stat">
+            <b>{data?.earnedKgs ?? "—"}</b>
+            <span>{t("coachCabinet.earned")}</span>
+          </div>
+          <div className="coach-stat">
+            <b>{data?.pendingInvites ?? "—"}</b>
+            <span>{t("coachCabinet.pending")}</span>
+          </div>
         </div>
-        <div className="stat">
-          <b>{data?.pendingInvites ?? "—"}</b>
-          <span>{t("coachCabinet.pending")}</span>
+      </header>
+
+      <nav className="coach-tabs" aria-label={t("coachCabinet.kicker")}>
+        {tabs.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={tab === item.id ? "active" : ""}
+            onClick={() => setTab(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      {tab === "home" && (
+        <div className="coach-tab-body">
+          <div className="coach-panel-grid">
+            <article className="coach-panel coach-next">
+              <h3>{t("coachCabinet.nextSession")}</h3>
+              {!nextSession ? (
+                <p className="muted">{t("schedule.empty")}</p>
+              ) : (
+                <>
+                  <strong className="coach-next-title">{nextSession.title}</strong>
+                  <p className="muted">
+                    {new Intl.DateTimeFormat(locale === "ky" ? "ky-KG" : "ru-KG", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(nextSession.startsAt))}
+                  </p>
+                  <div className="row" style={{ marginTop: "0.8rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                    <button type="button" onClick={() => setTab("schedule")}>
+                      {t("coachCabinet.openSchedule")}
+                    </button>
+                    <button type="button" className="ghost" onClick={() => setTab("qr")}>
+                      {t("coachCabinet.tabQr")}
+                    </button>
+                  </div>
+                </>
+              )}
+            </article>
+
+            <article className="coach-panel">
+              <h3>{t("coachCabinet.about")}</h3>
+              <dl className="coach-meta">
+                <div>
+                  <dt>{t("coachCabinet.sport")}</dt>
+                  <dd>
+                    {(locale === "ky" ? coach?.sportKy || coach?.sportRu : coach?.sportRu || coach?.sportKy) ||
+                      "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{t("auth.phone")}</dt>
+                  <dd>{coach?.phone ?? user.phone ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt>{t("coachCabinet.since")}</dt>
+                  <dd>{formatDate(coach?.createdAt ?? null, locale)}</dd>
+                </div>
+              </dl>
+              <label>
+                {t("coachCabinet.sportRu")}
+                <input value={sportRu} onChange={(e) => setSportRu(e.target.value)} placeholder="бокс, борьба…" />
+              </label>
+              <label>
+                {t("coachCabinet.sportKy")}
+                <input value={sportKy} onChange={(e) => setSportKy(e.target.value)} />
+              </label>
+              <div className="row" style={{ marginTop: "0.8rem" }}>
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={busy}
+                  onClick={() => {
+                    void api
+                      .coachPatchProfile({ sportRu, sportKy })
+                      .then(() => load())
+                      .then(() => setMsg(t("profile.saved")));
+                  }}
+                >
+                  {t("coachCabinet.saveSport")}
+                </button>
+                <Link to="/profile">
+                  <button type="button" className="ghost">
+                    {t("nav.profile")}
+                  </button>
+                </Link>
+              </div>
+              {msg && <p className="ok">{msg}</p>}
+            </article>
+          </div>
         </div>
-      </div>
+      )}
 
-      <article className="card coach-qr-card" style={{ marginTop: "1.4rem" }}>
-        <h2>{t("coachCabinet.qrTitle")}</h2>
-        <p className="muted">{t("coachCabinet.qrLead")}</p>
-        {qr ? (
-          <div className="coach-qr-wrap">
-            <img src={qr.dataUrl} alt="QR" className="coach-qr-img" />
-            <div>
-              <p>
-                <strong>{t("coachCabinet.qrDay")}:</strong> {qr.day}
-              </p>
-              <p className="muted">{t("coachCabinet.qrUntil", { time: formatDate(qr.validUntil, locale) })}</p>
-              <button type="button" className="ghost" onClick={() => void loadQr()}>
-                {t("coachCabinet.qrRefresh")}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p className="muted">{t("admin.loading")}</p>
-        )}
-      </article>
+      {tab === "schedule" && (
+        <div className="coach-tab-body">
+          <CoachSchedulePanel onChanged={() => void loadNext()} />
+        </div>
+      )}
 
-      <div className="grid two" style={{ marginTop: "1.4rem" }}>
-        <article className="card">
-          <h2>{t("coachCabinet.about")}</h2>
-          <dl className="coach-meta">
-            <div>
-              <dt>{t("auth.login")}</dt>
-              <dd>{coach?.login ?? user.login ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>{t("profile.firstName")}</dt>
-              <dd>{coach?.firstName ?? user.firstName ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>{t("profile.lastName")}</dt>
-              <dd>{coach?.lastName ?? user.lastName ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>{t("auth.phone")}</dt>
-              <dd>{coach?.phone ?? user.phone ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>{t("coachCabinet.since")}</dt>
-              <dd>{formatDate(coach?.createdAt ?? null, locale)}</dd>
-            </div>
-          </dl>
-          {(coach?.bioRu || coach?.bioKy) && (
-            <p className="muted" style={{ marginTop: "0.8rem" }}>
-              {locale === "ky" ? coach.bioKy || coach.bioRu : coach.bioRu || coach.bioKy}
-            </p>
-          )}
-          <div className="row" style={{ marginTop: "1rem" }}>
-            <Link to="/profile">
-              <button type="button" className="ghost">
-                {t("nav.profile")}
-              </button>
-            </Link>
-          </div>
-        </article>
+      {tab === "history" && (
+        <div className="coach-tab-body">
+          <CoachHistoryPanel />
+        </div>
+      )}
 
-        <article className="card">
-          <h2>{t("invites.coachTitle")}</h2>
-          <p className="muted">{t("coachCabinet.inviteLead")}</p>
-          <label>
-            {t("auth.phone")}
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </label>
-          <div className="row" style={{ marginTop: "0.8rem" }}>
-            <button type="button" disabled={busy} onClick={() => void send()}>
-              {t("invites.send")}
-            </button>
-          </div>
-          {msg && <p className="ok">{msg}</p>}
-          {err && <p className="error">{err}</p>}
-        </article>
-      </div>
+      {tab === "trainees" && (
+        <div className="coach-tab-body">
+          <div className="coach-panel-grid">
+            <article className="coach-panel">
+              <h3>{t("invites.coachTitle")}</h3>
+              <p className="muted">{t("coachCabinet.inviteLead")}</p>
+              <label>
+                {t("auth.phone")}
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </label>
+              <div className="row" style={{ marginTop: "0.8rem" }}>
+                <button type="button" disabled={busy} onClick={() => void send()}>
+                  {t("invites.send")}
+                </button>
+              </div>
+              {msg && <p className="ok">{msg}</p>}
+              {err && <p className="error">{err}</p>}
+            </article>
 
-      <section className="card" style={{ marginTop: "1.4rem" }}>
-        <h2>{t("coachCabinet.listTitle")}</h2>
-        {!data && <p className="muted">{t("admin.loading")}</p>}
-        {data && data.trainees.length === 0 && (
-          <p className="muted">{t("coachCabinet.empty")}</p>
-        )}
-        {data && data.trainees.length > 0 && (
-          <div className="table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>{t("coachCabinet.colName")}</th>
-                  <th>{t("auth.login")}</th>
-                  <th>{t("auth.phone")}</th>
-                  <th>{t("coachCabinet.colSince")}</th>
-                  <th>{t("coachCabinet.colMembership")}</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {data.trainees.map((tr) => (
-                  <tr key={tr.id}>
-                    <td>{displayName(tr)}</td>
-                    <td>{tr.login ?? "—"}</td>
-                    <td>{tr.phone}</td>
-                    <td>{formatDate(tr.relationStartedAt, locale)}</td>
-                    <td>
-                      {tr.membershipEndsAt
-                        ? t("coachCabinet.membershipUntil", {
-                            date: formatDate(tr.membershipEndsAt, locale),
-                          })
-                        : t("coachCabinet.noMembership")}
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="ghost"
-                        disabled={busy}
-                        onClick={() => void detach(tr.id)}
-                      >
+            <article className="coach-panel">
+              <h3>{t("coachCabinet.listTitle")}</h3>
+              {!data && <p className="muted">{t("admin.loading")}</p>}
+              {data && data.trainees.length === 0 && <p className="muted">{t("coachCabinet.empty")}</p>}
+              {data && data.trainees.length > 0 && (
+                <ul className="coach-trainee-list">
+                  {data.trainees.map((tr) => (
+                    <li key={tr.id}>
+                      <div>
+                        <strong>{displayName(tr)}</strong>
+                        <span className="muted">
+                          {tr.phone}
+                          {tr.login ? ` · ${tr.login}` : ""}
+                        </span>
+                        <span className="muted">
+                          {tr.membershipEndsAt
+                            ? t("coachCabinet.membershipUntil", {
+                                date: formatDate(tr.membershipEndsAt, locale),
+                              })
+                            : t("coachCabinet.noMembership")}
+                        </span>
+                      </div>
+                      <button type="button" className="ghost" disabled={busy} onClick={() => void detach(tr.id)}>
                         {t("invites.end")}
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
           </div>
-        )}
-      </section>
+        </div>
+      )}
+
+      {tab === "qr" && (
+        <div className="coach-tab-body">
+          <article className="coach-panel coach-qr-card">
+            <h3>{t("coachCabinet.qrTitle")}</h3>
+            <p className="muted">{t("coachCabinet.qrLead")}</p>
+            {qr ? (
+              <div className="coach-qr-wrap">
+                <img src={qr.dataUrl} alt="QR" className="coach-qr-img" />
+                <div>
+                  <p>
+                    <strong>{t("coachCabinet.qrDay")}:</strong> {qr.day}
+                  </p>
+                  <p className="muted">{t("coachCabinet.qrUntil", { time: formatDate(qr.validUntil, locale) })}</p>
+                  <button type="button" className="ghost" onClick={() => void loadQr()}>
+                    {t("coachCabinet.qrRefresh")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="muted">{t("admin.loading")}</p>
+            )}
+          </article>
+        </div>
+      )}
     </div>
   );
 }

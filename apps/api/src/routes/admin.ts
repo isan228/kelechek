@@ -39,7 +39,7 @@ async function saveUploadedImage(
   return `/api/media/${name}`;
 }
 
-const ROLES: UserRole[] = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR"];
+const ROLES: UserRole[] = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR", "ACCOUNTANT"];
 const STATUSES: UserStatus[] = ["ACTIVE", "BLOCKED"];
 const CONTENT_TYPES: ContentType[] = ["ARTICLE", "EXERCISE", "PROGRAM"];
 const CONTENT_STATUSES: ContentStatus[] = [
@@ -91,6 +91,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         lastName: true,
         bioRu: true,
         bioKy: true,
+        sportRu: true,
+        sportKy: true,
         photoUrl: true,
       },
     });
@@ -100,6 +102,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         firstName: c.firstName,
         lastName: c.lastName,
         bio: (locale === "ky" ? c.bioKy : c.bioRu) || c.bioRu || c.bioKy || null,
+        sport: (locale === "ky" ? c.sportKy : c.sportRu) || c.sportRu || c.sportKy || null,
         photoUrl: c.photoUrl,
       })),
     };
@@ -108,24 +111,124 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   app.get("/api/admin/overview", async (request, reply) => {
     const admin = requireRole(request, reply, ["ADMIN"]);
     if (!admin) return;
-    const [users, coaches, tariffs, content, payments, paid] = await Promise.all([
-      prisma.user.count({ where: { deletedAt: null } }),
-      prisma.user.count({ where: { deletedAt: null, roles: { has: "COACH" } } }),
-      prisma.tariff.count(),
-      prisma.contentItem.count(),
-      prisma.payment.count(),
-      prisma.payment.aggregate({
-        where: { status: "SUCCEEDED" },
-        _sum: { amountKgs: true },
-      }),
-    ]);
-    return {
+    const now = new Date();
+    const succeeded = { status: "SUCCEEDED" as const };
+
+    const soloWhere = { ...succeeded, coachId: null };
+    const withCoachWhere = { ...succeeded, coachId: { not: null } };
+
+    const [
       users,
+      trainees,
       coaches,
       tariffs,
       content,
       payments,
-      paidKgs: paid._sum.amountKgs ?? 0,
+      pendingPayments,
+      failedPayments,
+      succeededCount,
+      paid,
+      shares,
+      soloCount,
+      withCoachCount,
+      soloAgg,
+      withCoachAgg,
+      activeMemberships,
+      activeRelations,
+      operatorLedger,
+    ] = await Promise.all([
+      prisma.user.count({ where: { deletedAt: null } }),
+      prisma.user.count({ where: { deletedAt: null, roles: { has: "TRAINEE" } } }),
+      prisma.user.count({ where: { deletedAt: null, roles: { has: "COACH" } } }),
+      prisma.tariff.count(),
+      prisma.contentItem.count(),
+      prisma.payment.count(),
+      prisma.payment.count({ where: { status: "PENDING" } }),
+      prisma.payment.count({ where: { status: { in: ["FAILED", "CANCELED"] } } }),
+      prisma.payment.count({ where: succeeded }),
+      prisma.payment.aggregate({
+        where: succeeded,
+        _sum: { amountKgs: true },
+      }),
+      prisma.payment.aggregate({
+        where: succeeded,
+        _sum: {
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.count({ where: soloWhere }),
+      prisma.payment.count({ where: withCoachWhere }),
+      prisma.payment.aggregate({
+        where: soloWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.aggregate({
+        where: withCoachWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.membershipPeriod.count({
+        where: { status: "ACTIVE", endsAtExclusive: { gt: now } },
+      }),
+      prisma.coachingRelation.count({ where: { status: "ACTIVE" } }),
+      prisma.operatorLedgerEntry.aggregate({ _sum: { signedAmount: true } }),
+    ]);
+
+    const paidKgs = paid._sum.amountKgs ?? 0;
+    const traineeShareKgs = shares._sum.traineeShareKgs ?? 0;
+    const coachShareKgs = shares._sum.coachShareKgs ?? 0;
+    const operatorShareKgs = shares._sum.operatorShareKgs ?? 0;
+
+    return {
+      users,
+      trainees,
+      coaches,
+      tariffs,
+      content,
+      payments,
+      pendingPayments,
+      failedPayments,
+      succeededPayments: succeededCount,
+      paidKgs,
+      traineeShareKgs,
+      coachShareKgs,
+      operatorShareKgs,
+      operatorLedgerKgs: operatorLedger._sum.signedAmount ?? 0,
+      withCoachPayments: withCoachCount,
+      soloPayments: soloCount,
+      activeMemberships,
+      activeRelations,
+      rates: {
+        solo: { traineePct: 82, coachPct: 0, operatorPct: 18 },
+        withCoach: { traineePct: 32, coachPct: 50, operatorPct: 18 },
+      },
+      byMode: {
+        solo: {
+          count: soloCount,
+          paidKgs: soloAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: soloAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: soloAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: soloAgg._sum.operatorShareKgs ?? 0,
+        },
+        withCoach: {
+          count: withCoachCount,
+          paidKgs: withCoachAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: withCoachAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: withCoachAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: withCoachAgg._sum.operatorShareKgs ?? 0,
+        },
+      },
     };
   });
 
@@ -245,6 +348,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       phone?: string;
       bioRu?: string;
       bioKy?: string;
+      sportRu?: string;
+      sportKy?: string;
       photoUrl?: string;
     };
     const login = body.login ? normalizeLogin(body.login) : null;
@@ -284,6 +389,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         lastName,
         bioRu: text(body.bioRu, 2000) || null,
         bioKy: text(body.bioKy, 2000) || null,
+        sportRu: text(body.sportRu, 120) || null,
+        sportKy: text(body.sportKy, 120) || null,
         photoUrl: text(body.photoUrl, 500) || null,
         roles: [UserRole.COACH],
         locale: Locale.ru,
@@ -321,6 +428,79 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         traineeCount: c.coachCounter?.activeRelationCount ?? 0,
       })),
     };
+  });
+
+  app.post("/api/admin/accountants", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN"]);
+    if (!admin) return;
+    const body = request.body as {
+      login?: string;
+      password?: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+    };
+    const login = body.login ? normalizeLogin(body.login) : null;
+    if (!login) return reply.code(400).send({ error: "INVALID_LOGIN" });
+    if (!body.password || !validatePassword(body.password)) {
+      return reply.code(400).send({ error: "INVALID_PASSWORD" });
+    }
+    const firstName = text(body.firstName, 80);
+    const lastName = text(body.lastName, 80);
+    if (!firstName || !lastName) return reply.code(400).send({ error: "NAME_REQUIRED" });
+
+    let phone = body.phone ? normalizePhone(body.phone) : null;
+    if (!phone) {
+      for (let i = 0; i < 8; i++) {
+        const candidate = `+9967${String(Math.floor(10000000 + Math.random() * 89999999))}`;
+        const taken = await prisma.user.findFirst({ where: { phone: candidate } });
+        if (!taken) {
+          phone = candidate;
+          break;
+        }
+      }
+    }
+    if (!phone) return reply.code(400).send({ error: "INVALID_PHONE" });
+
+    const exists = await prisma.user.findFirst({
+      where: { OR: [{ phone }, { login }] },
+    });
+    if (exists?.login === login) return reply.code(409).send({ error: "LOGIN_TAKEN" });
+    if (exists?.phone === phone) return reply.code(409).send({ error: "PHONE_TAKEN" });
+
+    const user = await prisma.user.create({
+      data: {
+        phone,
+        login,
+        passwordHash: await hashPassword(body.password),
+        firstName,
+        lastName,
+        roles: [UserRole.ACCOUNTANT],
+        locale: Locale.ru,
+        phoneVerifiedAt: new Date(),
+      },
+    });
+    return { user };
+  });
+
+  app.get("/api/admin/accountants", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN"]);
+    if (!admin) return;
+    const accountants = await prisma.user.findMany({
+      where: { roles: { has: "ACCOUNTANT" }, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        login: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+    return { accountants };
   });
 
 
@@ -668,26 +848,346 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/payments", async (request, reply) => {
-    const admin = requireRole(request, reply, ["ADMIN"]);
+    const admin = requireRole(request, reply, ["ADMIN", "ACCOUNTANT"]);
     if (!admin) return;
     const payments = await prisma.payment.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 100,
+      where: { status: "SUCCEEDED" },
+      orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+      take: 200,
       include: {
-        user: { select: { phone: true, firstName: true, lastName: true } },
+        user: {
+          select: {
+            phone: true,
+            login: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
         tariff: { include: { translations: true } },
       },
     });
+
+    const coachIds = [
+      ...new Set(payments.map((p) => p.coachId).filter((id): id is string => Boolean(id))),
+    ];
+    const coaches =
+      coachIds.length === 0
+        ? []
+        : await prisma.user.findMany({
+            where: { id: { in: coachIds } },
+            select: { id: true, firstName: true, lastName: true, login: true, phone: true },
+          });
+    const coachById = new Map(coaches.map((c) => [c.id, c]));
+
     return {
-      payments: payments.map((p) => ({
+      payments: payments.map((p) => {
+        const coach = p.coachId ? coachById.get(p.coachId) ?? null : null;
+        return {
+          id: p.id,
+          amountKgs: p.amountKgs,
+          status: p.status,
+          createdAt: p.createdAt,
+          paidAt: p.paidAt,
+          hasCoach: Boolean(p.coachId),
+          traineeShareKgs: p.traineeShareKgs,
+          coachShareKgs: p.coachShareKgs,
+          operatorShareKgs: p.operatorShareKgs,
+          traineeRateBps: p.traineeRateBps,
+          coachRateBps: p.coachRateBps,
+          user: p.user,
+          coach: coach
+            ? {
+                id: coach.id,
+                firstName: coach.firstName,
+                lastName: coach.lastName,
+                login: coach.login,
+                phone: coach.phone,
+              }
+            : null,
+          tariffName: pickTr(p.tariff.translations, "ru")?.name ?? "",
+        };
+      }),
+    };
+  });
+
+  /** Полная бухгалтерия: итоги, режимы, месяцы, счета, журнал «кто кому зачем». */
+  app.get("/api/admin/accounting", async (request, reply) => {
+    const admin = requireRole(request, reply, ["ADMIN", "ACCOUNTANT"]);
+    if (!admin) return;
+
+    const succeeded = { status: "SUCCEEDED" as const };
+    const soloWhere = { ...succeeded, coachId: null };
+    const withCoachWhere = { ...succeeded, coachId: { not: null } };
+
+    const [
+      paid,
+      shares,
+      soloAgg,
+      withCoachAgg,
+      soloCount,
+      withCoachCount,
+      operatorLedger,
+      payments,
+      monthPayments,
+      coachGroups,
+      traineeGroups,
+    ] = await Promise.all([
+      prisma.payment.aggregate({ where: succeeded, _sum: { amountKgs: true }, _count: { _all: true } }),
+      prisma.payment.aggregate({
+        where: succeeded,
+        _sum: { traineeShareKgs: true, coachShareKgs: true, operatorShareKgs: true },
+      }),
+      prisma.payment.aggregate({
+        where: soloWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.aggregate({
+        where: withCoachWhere,
+        _sum: {
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+        },
+      }),
+      prisma.payment.count({ where: soloWhere }),
+      prisma.payment.count({ where: withCoachWhere }),
+      prisma.operatorLedgerEntry.aggregate({ _sum: { signedAmount: true } }),
+      prisma.payment.findMany({
+        where: succeeded,
+        orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+        take: 200,
+        include: {
+          user: {
+            select: { id: true, phone: true, login: true, firstName: true, lastName: true },
+          },
+          tariff: { include: { translations: true } },
+        },
+      }),
+      prisma.payment.findMany({
+        where: {
+          ...succeeded,
+          OR: [
+            { paidAt: { gte: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000) } },
+            { paidAt: null, createdAt: { gte: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000) } },
+          ],
+        },
+        select: {
+          paidAt: true,
+          createdAt: true,
+          amountKgs: true,
+          traineeShareKgs: true,
+          coachShareKgs: true,
+          operatorShareKgs: true,
+          coachId: true,
+        },
+      }),
+      prisma.coachLedgerEntry.groupBy({
+        by: ["coachId"],
+        where: { type: "CREDIT_ACCRUAL" },
+        _sum: { signedAmount: true },
+        _count: { _all: true },
+        orderBy: { _sum: { signedAmount: "desc" } },
+        take: 50,
+      }),
+      prisma.traineeLedgerEntry.groupBy({
+        by: ["userId"],
+        where: { type: "CREDIT_ACCRUAL" },
+        _sum: { signedAmount: true },
+        _count: { _all: true },
+        orderBy: { _sum: { signedAmount: "desc" } },
+        take: 50,
+      }),
+    ]);
+
+    const coachIds = [
+      ...new Set([
+        ...payments.map((p) => p.coachId).filter((id): id is string => Boolean(id)),
+        ...coachGroups.map((g) => g.coachId),
+      ]),
+    ];
+    const traineeIds = traineeGroups.map((g) => g.userId);
+    const people = await prisma.user.findMany({
+      where: { id: { in: [...new Set([...coachIds, ...traineeIds])] } },
+      select: { id: true, firstName: true, lastName: true, login: true, phone: true },
+    });
+    const personById = new Map(people.map((p) => [p.id, p]));
+
+    const monthMap = new Map<
+      string,
+      {
+        month: string;
+        paidKgs: number;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        soloCount: number;
+        withCoachCount: number;
+        count: number;
+      }
+    >();
+    for (const p of monthPayments) {
+      const at = p.paidAt ?? p.createdAt;
+      const month = at.toISOString().slice(0, 7);
+      const row = monthMap.get(month) ?? {
+        month,
+        paidKgs: 0,
+        traineeShareKgs: 0,
+        coachShareKgs: 0,
+        operatorShareKgs: 0,
+        soloCount: 0,
+        withCoachCount: 0,
+        count: 0,
+      };
+      row.paidKgs += p.amountKgs;
+      row.traineeShareKgs += p.traineeShareKgs ?? 0;
+      row.coachShareKgs += p.coachShareKgs ?? 0;
+      row.operatorShareKgs += p.operatorShareKgs ?? 0;
+      row.count += 1;
+      if (p.coachId) row.withCoachCount += 1;
+      else row.soloCount += 1;
+      monthMap.set(month, row);
+    }
+    const monthly = [...monthMap.values()].sort((a, b) => b.month.localeCompare(a.month)).slice(0, 12);
+
+    const journal = payments.map((p) => {
+      const coach = p.coachId ? personById.get(p.coachId) ?? null : null;
+      const hasCoach = Boolean(p.coachId);
+      const traineePct = hasCoach ? 32 : 82;
+      const coachPct = hasCoach ? 50 : 0;
+      const lines: {
+        account: "TRAINEE" | "COACH" | "OPERATOR";
+        direction: "credit";
+        amountKgs: number;
+        party: {
+          id?: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        } | null;
+        why: string;
+      }[] = [
+        {
+          account: "TRAINEE",
+          direction: "credit",
+          amountKgs: p.traineeShareKgs ?? 0,
+          party: p.user,
+          why: hasCoach
+            ? `Начисление на баланс ученика ${traineePct}% от абонемента (занятия с тренером)`
+            : `Начисление на баланс ученика ${traineePct}% от абонемента (самостоятельно)`,
+        },
+      ];
+      if (hasCoach && (p.coachShareKgs ?? 0) > 0) {
+        lines.push({
+          account: "COACH",
+          direction: "credit",
+          amountKgs: p.coachShareKgs ?? 0,
+          party: coach
+            ? {
+                id: coach.id,
+                firstName: coach.firstName,
+                lastName: coach.lastName,
+                login: coach.login,
+                phone: coach.phone,
+              }
+            : null,
+          why: `Начисление тренеру ${coachPct}% от абонемента ученика`,
+        });
+      }
+      lines.push({
+        account: "OPERATOR",
+        direction: "credit",
+        amountKgs: p.operatorShareKgs ?? 0,
+        party: null,
+        why: "Доля оператора (остаток ~18% после долей ученика и тренера)",
+      });
+
+      return {
         id: p.id,
+        at: p.paidAt ?? p.createdAt,
         amountKgs: p.amountKgs,
-        status: p.status,
-        createdAt: p.createdAt,
-        paidAt: p.paidAt,
-        user: p.user,
+        mode: hasCoach ? ("withCoach" as const) : ("solo" as const),
+        reason: "MEMBERSHIP_PAYMENT",
+        reasonText: hasCoach
+          ? "Успешная оплата месячного абонемента (с тренером)"
+          : "Успешная оплата месячного абонемента (самостоятельно)",
         tariffName: pickTr(p.tariff.translations, "ru")?.name ?? "",
+        payer: p.user,
+        coach: coach
+          ? {
+              id: coach.id,
+              firstName: coach.firstName,
+              lastName: coach.lastName,
+              login: coach.login,
+              phone: coach.phone,
+            }
+          : null,
+        traineeShareKgs: p.traineeShareKgs ?? 0,
+        coachShareKgs: p.coachShareKgs ?? 0,
+        operatorShareKgs: p.operatorShareKgs ?? 0,
+        lines,
+      };
+    });
+
+    return {
+      rates: {
+        solo: { traineePct: 82, coachPct: 0, operatorPct: 18 },
+        withCoach: { traineePct: 32, coachPct: 50, operatorPct: 18 },
+      },
+      totals: {
+        succeededPayments: paid._count._all,
+        paidKgs: paid._sum.amountKgs ?? 0,
+        traineeShareKgs: shares._sum.traineeShareKgs ?? 0,
+        coachShareKgs: shares._sum.coachShareKgs ?? 0,
+        operatorShareKgs: shares._sum.operatorShareKgs ?? 0,
+        operatorLedgerKgs: operatorLedger._sum.signedAmount ?? 0,
+      },
+      byMode: {
+        solo: {
+          count: soloCount,
+          paidKgs: soloAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: soloAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: soloAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: soloAgg._sum.operatorShareKgs ?? 0,
+        },
+        withCoach: {
+          count: withCoachCount,
+          paidKgs: withCoachAgg._sum.amountKgs ?? 0,
+          traineeShareKgs: withCoachAgg._sum.traineeShareKgs ?? 0,
+          coachShareKgs: withCoachAgg._sum.coachShareKgs ?? 0,
+          operatorShareKgs: withCoachAgg._sum.operatorShareKgs ?? 0,
+        },
+      },
+      monthly,
+      coachAccounts: coachGroups.map((g) => ({
+        coach: personById.get(g.coachId) ?? {
+          id: g.coachId,
+          firstName: null,
+          lastName: null,
+          login: null,
+          phone: "—",
+        },
+        earnedKgs: g._sum.signedAmount ?? 0,
+        entries: g._count._all,
       })),
+      traineeAccounts: traineeGroups.map((g) => ({
+        trainee: personById.get(g.userId) ?? {
+          id: g.userId,
+          firstName: null,
+          lastName: null,
+          login: null,
+          phone: "—",
+        },
+        balanceKgs: g._sum.signedAmount ?? 0,
+        entries: g._count._all,
+      })),
+      journal,
     };
   });
 

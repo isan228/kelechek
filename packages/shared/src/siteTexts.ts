@@ -72,7 +72,7 @@ export const SITE_TEXT_GROUPS: SiteTextGroup[] = [
   },
   {
     id: "pay",
-    titleRu: "Абонементы (страница)",
+    titleRu: "Инвестиции (страница)",
     fields: [
       { key: "pay.title", labelRu: "Заголовок" },
       { key: "pay.pageLead", labelRu: "Лид", multiline: true },

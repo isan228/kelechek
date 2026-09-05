@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
@@ -21,6 +21,14 @@ export function CabinetPage() {
       void api.balance().then(setData).catch(() => setData(null));
     }
   }, [user]);
+
+  if (
+    user?.roles.includes("ACCOUNTANT") &&
+    !user.roles.includes("ADMIN") &&
+    !user.roles.includes("TRAINEE")
+  ) {
+    return <Navigate to="/accounting" replace />;
+  }
 
   const holdPct = Math.min(
     100,

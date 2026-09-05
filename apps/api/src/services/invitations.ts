@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { prisma, INVITE_TTL_DAYS } from "../lib/prisma.js";
 import { BISHKEK } from "../lib/prisma.js";
+import { addTraineeToCoachClass } from "./schedule.js";
 
 export async function sendInvitation(coachId: string, traineePhone: string) {
   const trainee = await prisma.user.findUnique({ where: { phone: traineePhone } });
@@ -189,6 +190,11 @@ export async function linkTraineeToCoach(
         lastName: coach.lastName,
       },
     };
+  }).then(async (result) => {
+    if (!result.alreadyLinked) {
+      await addTraineeToCoachClass(coachId, traineeId);
+    }
+    return result;
   });
 }
 

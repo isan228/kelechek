@@ -175,6 +175,8 @@ export const api = {
         lastName: string | null;
         bioRu: string | null;
         bioKy: string | null;
+        sportRu: string | null;
+        sportKy: string | null;
         photoUrl: string | null;
         locale: "ru" | "ky";
         createdAt: string;
@@ -192,6 +194,154 @@ export const api = {
         membershipEndsAt: string | null;
       }[];
     }>("/api/coach/dashboard"),
+  coachPatchProfile: (data: {
+    sportRu?: string;
+    sportKy?: string;
+    bioRu?: string;
+    bioKy?: string;
+    firstName?: string;
+    lastName?: string;
+  }) => request<{ coach: Record<string, unknown> }>("/api/coach/profile", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  }),
+  coachSessions: () =>
+    request<{
+      classId: string;
+      sessions: {
+        id: string;
+        title: string;
+        startsAt: string;
+        endsAt: string;
+        status: string;
+        presentCount: number;
+        fromWeekly: boolean;
+      }[];
+    }>("/api/coach/sessions"),
+  coachSessionsHistory: () =>
+    request<{
+      traineeTotal: number;
+      sessions: {
+        id: string;
+        title: string;
+        startsAt: string;
+        endsAt: string;
+        status: string;
+        presentCount: number;
+        fromWeekly: boolean;
+      }[];
+    }>("/api/coach/sessions/history"),
+  coachWeeklySlots: () =>
+    request<{
+      classId: string;
+      slots: {
+        id: string;
+        weekday: number;
+        startHm: string;
+        endHm: string;
+        title: string;
+        isActive: boolean;
+      }[];
+    }>("/api/coach/weekly-slots"),
+  coachCreateWeeklySlot: (data: {
+    weekday: number;
+    startHm: string;
+    endHm: string;
+    title: string;
+  }) =>
+    request<{
+      slot: {
+        id: string;
+        weekday: number;
+        startHm: string;
+        endHm: string;
+        title: string;
+        isActive: boolean;
+      };
+    }>("/api/coach/weekly-slots", { method: "POST", body: JSON.stringify(data) }),
+  coachPatchWeeklySlot: (
+    id: string,
+    data: Partial<{
+      weekday: number;
+      startHm: string;
+      endHm: string;
+      title: string;
+      isActive: boolean;
+    }>,
+  ) =>
+    request(`/api/coach/weekly-slots/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  coachDeleteWeeklySlot: (id: string) =>
+    request(`/api/coach/weekly-slots/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  coachCreateSession: (data: { title: string; startsAt: string; endsAt: string }) =>
+    request<{ session: { id: string; title: string; startsAt: string; endsAt: string } }>(
+      "/api/coach/sessions",
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+  coachDeleteSession: (id: string) =>
+    request(`/api/coach/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  coachSessionQr: (id: string) =>
+    request<{
+      session: { id: string; title: string; startsAt: string; endsAt: string };
+      joinUrl: string;
+      present: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        phone: string;
+        markedAt: string;
+      }[];
+    }>(`/api/coach/sessions/${encodeURIComponent(id)}/qr`),
+  mySchedule: () =>
+    request<{
+      coach: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        sportRu: string | null;
+        sportKy: string | null;
+      } | null;
+      weeklySlots: {
+        id: string;
+        weekday: number;
+        startHm: string;
+        endHm: string;
+        title: string;
+      }[];
+      sessions: {
+        id: string;
+        title: string;
+        startsAt: string;
+        endsAt: string;
+        status: string;
+        fromWeekly: boolean;
+        attended: boolean;
+        markedAt: string | null;
+      }[];
+    }>("/api/me/schedule"),
+  checkIn: (token: string) =>
+    request<{
+      ok: true;
+      already: boolean;
+      session: { id: string; title: string; startsAt?: string };
+    }>("/api/checkin", { method: "POST", body: JSON.stringify({ token }) }),
+  notifications: () =>
+    request<{
+      unread: number;
+      notifications: {
+        id: string;
+        type: string;
+        payload: Record<string, unknown>;
+        readAt: string | null;
+        createdAt: string;
+      }[];
+    }>("/api/me/notifications"),
+  notificationsReadAll: () =>
+    request("/api/me/notifications/read-all", { method: "POST" }),
+  notificationRead: (id: string) =>
+    request(`/api/me/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }),
   coachQr: () =>
     request<{
       token: string;
@@ -217,17 +367,81 @@ export const api = {
         firstName: string | null;
         lastName: string | null;
         bio: string | null;
+        sport: string | null;
         photoUrl: string | null;
       }[];
     }>(`/api/coaches?locale=${locale}`),
+  adminCreateCoach: (data: {
+    login: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    bioRu?: string;
+    bioKy?: string;
+    sportRu?: string;
+    sportKy?: string;
+    photoUrl?: string;
+  }) => request("/api/admin/coaches", { method: "POST", body: JSON.stringify(data) }),
+  adminCreateAccountant: (data: {
+    login: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+  }) => request("/api/admin/accountants", { method: "POST", body: JSON.stringify(data) }),
+  adminAccountants: () =>
+    request<{
+      accountants: {
+        id: string;
+        login: string | null;
+        phone: string;
+        firstName: string | null;
+        lastName: string | null;
+        status: string;
+        createdAt: string;
+      }[];
+    }>("/api/admin/accountants"),
   adminOverview: () =>
     request<{
       users: number;
+      trainees: number;
       coaches: number;
       tariffs: number;
       content: number;
       payments: number;
+      pendingPayments: number;
+      failedPayments: number;
+      succeededPayments: number;
       paidKgs: number;
+      traineeShareKgs: number;
+      coachShareKgs: number;
+      operatorShareKgs: number;
+      operatorLedgerKgs: number;
+      withCoachPayments: number;
+      soloPayments: number;
+      activeMemberships: number;
+      activeRelations: number;
+      rates: {
+        solo: { traineePct: number; coachPct: number; operatorPct: number };
+        withCoach: { traineePct: number; coachPct: number; operatorPct: number };
+      };
+      byMode: {
+        solo: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+        withCoach: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+      };
     }>("/api/admin/overview"),
   adminCoaches: () =>
     request<{
@@ -245,16 +459,6 @@ export const api = {
         traineeCount: number;
       }[];
     }>("/api/admin/coaches"),
-  adminCreateCoach: (data: {
-    login: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-    bioRu?: string;
-    bioKy?: string;
-    photoUrl?: string;
-  }) => request("/api/admin/coaches", { method: "POST", body: JSON.stringify(data) }),
   adminUsers: (q = "") =>
     request<{
       users: {
@@ -400,8 +604,283 @@ export const api = {
         status: string;
         createdAt: string;
         paidAt: string | null;
+        hasCoach: boolean;
+        traineeShareKgs: number | null;
+        coachShareKgs: number | null;
+        operatorShareKgs: number | null;
+        traineeRateBps: number | null;
+        coachRateBps: number | null;
         tariffName: string;
-        user: { phone: string; firstName: string | null; lastName: string | null };
+        user: {
+          phone: string;
+          login: string | null;
+          firstName: string | null;
+          lastName: string | null;
+        };
+        coach: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        } | null;
       }[];
     }>("/api/admin/payments"),
+  adminAccounting: () =>
+    request<{
+      rates: {
+        solo: { traineePct: number; coachPct: number; operatorPct: number };
+        withCoach: { traineePct: number; coachPct: number; operatorPct: number };
+      };
+      totals: {
+        succeededPayments: number;
+        paidKgs: number;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        operatorLedgerKgs: number;
+      };
+      byMode: {
+        solo: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+        withCoach: {
+          count: number;
+          paidKgs: number;
+          traineeShareKgs: number;
+          coachShareKgs: number;
+          operatorShareKgs: number;
+        };
+      };
+      monthly: {
+        month: string;
+        paidKgs: number;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        soloCount: number;
+        withCoachCount: number;
+        count: number;
+      }[];
+      coachAccounts: {
+        coach: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        };
+        earnedKgs: number;
+        entries: number;
+      }[];
+      traineeAccounts: {
+        trainee: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        };
+        balanceKgs: number;
+        entries: number;
+      }[];
+      journal: {
+        id: string;
+        at: string;
+        amountKgs: number;
+        mode: "solo" | "withCoach";
+        reason: string;
+        reasonText: string;
+        tariffName: string;
+        payer: {
+          id: string;
+          phone: string;
+          login: string | null;
+          firstName: string | null;
+          lastName: string | null;
+        };
+        coach: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+          login: string | null;
+          phone: string;
+        } | null;
+        traineeShareKgs: number;
+        coachShareKgs: number;
+        operatorShareKgs: number;
+        lines: {
+          account: "TRAINEE" | "COACH" | "OPERATOR";
+          direction: "credit";
+          amountKgs: number;
+          party: {
+            id?: string;
+            firstName: string | null;
+            lastName: string | null;
+            login: string | null;
+            phone: string;
+          } | null;
+          why: string;
+        }[];
+      }[];
+    }>("/api/admin/accounting"),
+  gallery: () =>
+    request<{
+      items: { id: string; imageUrl: string; captionRu: string; captionKy: string }[];
+    }>("/api/gallery"),
+  news: (locale = "ru") =>
+    request<{
+      posts: {
+        id: string;
+        coverUrl: string | null;
+        publishedAt: string;
+        title: string;
+        summary: string;
+      }[];
+    }>(`/api/news?locale=${locale}`),
+  newsPost: (id: string, locale = "ru") =>
+    request<{
+      post: {
+        id: string;
+        coverUrl: string | null;
+        publishedAt: string;
+        title: string;
+        summary: string;
+        body: string;
+      };
+    }>(`/api/news/${encodeURIComponent(id)}?locale=${locale}`),
+  adminGallery: () =>
+    request<{
+      items: {
+        id: string;
+        imageUrl: string;
+        captionRu: string;
+        captionKy: string;
+        sortOrder: number;
+        isActive: boolean;
+      }[];
+    }>("/api/admin/gallery"),
+  adminCreateGallery: (data: {
+    imageUrl: string;
+    captionRu?: string;
+    captionKy?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+  }) => request("/api/admin/gallery", { method: "POST", body: JSON.stringify(data) }),
+  adminPatchGallery: (
+    id: string,
+    data: Partial<{
+      imageUrl: string;
+      captionRu: string;
+      captionKy: string;
+      sortOrder: number;
+      isActive: boolean;
+    }>,
+  ) =>
+    request(`/api/admin/gallery/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  adminDeleteGallery: (id: string) =>
+    request(`/api/admin/gallery/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  adminNews: () =>
+    request<{
+      posts: {
+        id: string;
+        coverUrl: string | null;
+        status: string;
+        publishedAt: string | null;
+        createdAt: string;
+        ru: { title: string; summary: string; body: string };
+        ky: { title: string; summary: string; body: string };
+      }[];
+    }>("/api/admin/news"),
+  adminSaveNews: (
+    id: string | null,
+    data: {
+      coverUrl?: string;
+      status: string;
+      ru: { title: string; summary: string; body: string };
+      ky: { title: string; summary: string; body: string };
+    },
+  ) =>
+    request(id ? `/api/admin/news/${encodeURIComponent(id)}` : "/api/admin/news", {
+      method: id ? "PATCH" : "POST",
+      body: JSON.stringify(data),
+    }),
+  adminDeleteNews: (id: string) =>
+    request(`/api/admin/news/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  chatUnread: () => request<{ unread: number }>("/api/chat/unread"),
+  chatThread: () =>
+    request<{
+      thread: { id: string; status: string; updatedAt: string };
+      messages: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      }[];
+    }>("/api/chat/thread"),
+  chatSend: (body: string) =>
+    request<{
+      message: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      };
+    }>("/api/chat/messages", { method: "POST", body: JSON.stringify({ body }) }),
+  chatAdminThreads: () =>
+    request<{
+      threads: {
+        id: string;
+        status: string;
+        updatedAt: string;
+        userName: string;
+        userPhone: string;
+        unread: boolean;
+        lastMessage: { body: string; createdAt: string; isAdmin: boolean } | null;
+      }[];
+    }>("/api/chat/admin/threads"),
+  chatAdminThread: (id: string) =>
+    request<{
+      thread: {
+        id: string;
+        status: string;
+        updatedAt: string;
+        userName: string;
+        userPhone: string;
+      };
+      messages: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      }[];
+    }>(`/api/chat/admin/threads/${encodeURIComponent(id)}`),
+  chatAdminSend: (id: string, body: string) =>
+    request<{
+      message: {
+        id: string;
+        body: string;
+        createdAt: string;
+        senderId: string;
+        isAdmin: boolean;
+        senderName: string;
+      };
+    }>(`/api/chat/admin/threads/${encodeURIComponent(id)}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ body }),
+    }),
 };

@@ -17,6 +17,7 @@ enum UserRole {
   COACH
   ADMIN
   CONTENT_EDITOR
+  ACCOUNTANT
 }
 
 enum UserStatus {
@@ -111,6 +112,8 @@ model User {
   lastName        String?
   bioRu           String?
   bioKy           String?
+  sportRu         String?
+  sportKy         String?
   photoUrl        String?
   pinEncrypted    String?
   createdAt       DateTime   @default(now())
@@ -136,6 +139,8 @@ model User {
   reviewedContent       ContentItem[]        @relation("ContentReviewer")
   coachCounter          CoachCounter?
   classMemberships      ClassMember[]
+  chatThreads           ChatThread[]
+  chatMessages          ChatMessage[]
 
   @@index([status])
 }
@@ -341,6 +346,7 @@ model Class {
   translations ClassI18n[]
   members      ClassMember[]
   sessions     ClassSession[]
+  weeklySlots  WeeklySlot[]
 }
 
 model ClassI18n {
@@ -361,15 +367,38 @@ model ClassMember {
   @@id([classId, traineeId])
 }
 
+/** Постоянное расписание: день недели + время (Бишкек). */
+model WeeklySlot {
+  id        String         @id @default(uuid()) @db.Uuid
+  classId   String         @db.Uuid
+  /** ISO weekday: 1=Пн … 7=Вс */
+  weekday   Int
+  startHm   String
+  endHm     String
+  title     String         @default("Тренировка")
+  isActive  Boolean        @default(true)
+  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  sessions  ClassSession[]
+
+  @@index([classId, weekday])
+}
+
 model ClassSession {
-  id        String             @id @default(uuid()) @db.Uuid
-  classId   String             @db.Uuid
-  startsAt  DateTime
-  endsAt    DateTime
-  status    String
-  lockedAt  DateTime?
-  class     Class              @relation(fields: [classId], references: [id], onDelete: Restrict)
-  attendance AttendanceRecord[]
+  id           String             @id @default(uuid()) @db.Uuid
+  classId      String             @db.Uuid
+  weeklySlotId String?            @db.Uuid
+  title        String             @default("")
+  startsAt     DateTime
+  endsAt       DateTime
+  status       String             @default("SCHEDULED")
+  lockedAt     DateTime?
+  class        Class              @relation(fields: [classId], references: [id], onDelete: Restrict)
+  weeklySlot   WeeklySlot?        @relation(fields: [weeklySlotId], references: [id], onDelete: SetNull)
+  attendance   AttendanceRecord[]
+
+  @@index([classId, startsAt])
+  @@index([startsAt])
+  @@index([weeklySlotId, startsAt])
 }
 
 model AttendanceRecord {
@@ -710,4 +739,72 @@ model SensitiveAccessLog {
   subjectId String   @db.Uuid
   purpose   String
   at        DateTime @default(now())
+}
+
+model GalleryItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  imageUrl   String
+  captionRu  String   @default("")
+  captionKy  String   @default("")
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([isActive, sortOrder])
+}
+
+model NewsPost {
+  id          String        @id @default(uuid()) @db.Uuid
+  coverUrl    String?
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  translations NewsPostI18n[]
+
+  @@index([status, publishedAt])
+}
+
+model NewsPostI18n {
+  postId  String   @db.Uuid
+  locale  Locale
+  title   String
+  summary String
+  body    String   @default("")
+  post    NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, locale])
+}
+
+enum ChatThreadStatus {
+  OPEN
+  CLOSED
+}
+
+model ChatThread {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  status         ChatThreadStatus @default(OPEN)
+  userLastReadAt DateTime?
+  adminLastReadAt DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages       ChatMessage[]
+
+  @@unique([userId])
+  @@index([updatedAt])
+  @@index([status, updatedAt])
+}
+
+model ChatMessage {
+  id        String     @id @default(uuid()) @db.Uuid
+  threadId  String     @db.Uuid
+  senderId  String     @db.Uuid
+  body      String
+  createdAt DateTime   @default(now())
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
 }

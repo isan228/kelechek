@@ -12,8 +12,22 @@ import { CabinetPage, GoalPage } from "./pages/CabinetPages";
 import { BalancePage } from "./pages/PayPage";
 import { CoachPage, InvitesPage, ProfilePage } from "./pages/MiscPages";
 import { JoinCoachPage } from "./pages/JoinCoachPage";
+import {
+  CheckInPage,
+  NotificationsPage,
+  TraineeSchedulePage,
+} from "./pages/SchedulePages";
 import { AdminPage } from "./pages/AdminPage";
+import { AccountingPage } from "./pages/AccountingPage";
+import { GalleryPage, NewsItemPage, NewsPage } from "./pages/MediaPages";
 import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
+
+function homeFor(roles: string[]) {
+  if (roles.includes("ADMIN")) return "/admin";
+  if (roles.includes("ACCOUNTANT")) return "/accounting";
+  if (roles.includes("COACH")) return "/coach";
+  return "/cabinet";
+}
 
 function Guard() {
   const { user, loading } = useAuth();
@@ -30,6 +44,16 @@ function AdminGuard() {
   return <Outlet />;
 }
 
+function AccountantGuard() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.roles.includes("ACCOUNTANT") && !user.roles.includes("ADMIN")) {
+    return <Navigate to="/cabinet" replace />;
+  }
+  return <Outlet />;
+}
+
 export function App() {
   const { user, loading } = useAuth();
   return (
@@ -42,22 +66,17 @@ export function App() {
         <Route path="/workouts" element={<WorkoutsPage />} />
         <Route path="/workouts/:id" element={<WorkoutItemPage />} />
         <Route path="/coaches" element={<CoachesPublicPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="/news/:id" element={<NewsItemPage />} />
         <Route path="/join" element={<JoinCoachPage />} />
+        <Route path="/checkin" element={<CheckInPage />} />
         <Route path="/goal" element={<GoalPage />} />
         <Route
           path="/login"
           element={
             user && !loading ? (
-              <Navigate
-                to={
-                  user.roles.includes("ADMIN")
-                    ? "/admin"
-                    : user.roles.includes("COACH")
-                      ? "/coach"
-                      : "/cabinet"
-                }
-                replace
-              />
+              <Navigate to={homeFor(user.roles)} replace />
             ) : (
               <LoginPage />
             )
@@ -72,9 +91,14 @@ export function App() {
         <Route element={<Guard />}>
           <Route path="/cabinet" element={<CabinetPage />} />
           <Route path="/progress" element={<BalancePage />} />
+          <Route path="/schedule" element={<TraineeSchedulePage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/invites" element={<InvitesPage />} />
           <Route path="/coach" element={<CoachPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+        <Route element={<AccountantGuard />}>
+          <Route path="/accounting" element={<AccountingPage />} />
         </Route>
         <Route element={<AdminGuard />}>
           <Route path="/admin" element={<AdminPage />} />
