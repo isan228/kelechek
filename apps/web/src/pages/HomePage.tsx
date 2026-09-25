@@ -339,8 +339,6 @@ export function HomePage() {
     cardRefs.current[i]?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
   }
 
-  const pct = Math.round(progress * 100);
-
   return (
     <div className={`home-journey ${finished ? "is-finished" : ""}`}>
       <div className="home-journey-bg" aria-hidden>
@@ -375,10 +373,6 @@ export function HomePage() {
           <Link to="/" className="home-journey-sticky-brand">
             {s("appName")}
           </Link>
-          <p className="home-journey-sticky-prog">
-            <span>{t("landing.journeyProgress", { pct })}</span>
-            <i style={{ width: `${pct}%` }} />
-          </p>
           <Link to={ctaTo} className="home-journey-sticky-cta">
             {t("landing.journeyCta")}
           </Link>
@@ -433,10 +427,9 @@ export function HomePage() {
         {SPOTS.map((spot, i) => (
           <div
             key={spot.id}
-            className={`home-journey-row home-journey-row-${spot.edge} ${
-              progress >= spot.t - 0.07 || reduced ? "is-visible" : ""
-            } ${activeId === spot.id ? "is-active" : ""}`}
-            style={{ top: spot.y }}
+            className={`home-journey-row home-journey-row-${spot.edge} is-visible ${
+              activeId === spot.id ? "is-active" : ""
+            }`}
           >
             <aside className="home-journey-face">
               <p className="home-journey-face-n">{String(spot.n).padStart(2, "0")}</p>
@@ -450,9 +443,6 @@ export function HomePage() {
               }}
               className={`home-journey-card home-journey-card-${spot.kind}`}
             >
-              <span className="home-journey-ghost" aria-hidden>
-                {String(spot.n).padStart(2, "0")}
-              </span>
               <span className="home-journey-num" aria-hidden>
                 {spot.n}
               </span>
