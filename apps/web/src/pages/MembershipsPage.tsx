@@ -13,7 +13,7 @@ function formatSom(value: number, locale: string) {
 
 export function MembershipsPage() {
   const { t, i18n } = useTranslation();
-  const { s, photo } = useSiteCopy();
+  const { s } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [tariffs, setTariffs] = useState<Awaited<ReturnType<typeof api.tariffs>>["tariffs"]>([]);
@@ -41,7 +41,6 @@ export function MembershipsPage() {
   return (
     <>
       <PageHero kicker={t("nav.memberships")} title={s("pay.title")} lead={s("pay.pageLead")} />
-      <img className="full-bleed-photo" src={photo("future")} alt="" />
       <section className="band">
         <div className="wrap">
           <Reveal>
@@ -53,7 +52,7 @@ export function MembershipsPage() {
           </Reveal>
           <div className="story-grid" style={{ marginBottom: "2.8rem" }}>
             {[1, 2, 3].map((n) => (
-              <Reveal key={n} delay={n * 50}>
+              <Reveal key={n} delay={n * 60} variant="up">
                 <article className="story-block">
                   <em className="kicker">0{n}</em>
                   <h3>{t(`pay.how${n}t`)}</h3>
@@ -64,7 +63,7 @@ export function MembershipsPage() {
           </div>
           <div className="grid two">
             {tariffs.map((tariff, i) => (
-              <Reveal key={tariff.id} delay={i * 70}>
+              <Reveal key={tariff.id} delay={i * 70} variant="scale">
                 <article className="card tariff-card">
                   <span className="badge">{t("pay.period", { days: tariff.periodDays })}</span>
                   <h2>{tariff.name}</h2>

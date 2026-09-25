@@ -8,12 +8,11 @@ import { PageHero } from "../components/PageHero";
 
 export function CoachesPublicPage() {
   const { t, i18n } = useTranslation();
-  const { s, photo } = useSiteCopy();
+  const { s } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [coaches, setCoaches] = useState<
     { id: string; firstName: string | null; lastName: string | null; bio: string | null; sport: string | null; photoUrl: string | null }[]
   >([]);
-  const fallbacks = [photo("honor"), photo("discipline"), photo("youth")];
 
   useEffect(() => {
     void api
@@ -36,7 +35,7 @@ export function CoachesPublicPage() {
           </Reveal>
           <div className="story-grid">
             {[1, 2, 3].map((n) => (
-              <Reveal key={n} delay={n * 50}>
+              <Reveal key={n} delay={n * 50} variant="up">
                 <article className="story-block">
                   <h3>{t(`coaches.why${n}t`)}</h3>
                   <p className="muted">{t(`coaches.why${n}`)}</p>
@@ -49,18 +48,24 @@ export function CoachesPublicPage() {
       <section className="band">
         <div className="wrap">
           <div className="grid three">
-            {coaches.map((c, i) => (
-              <Reveal key={c.id} delay={(i % 3) * 60}>
-                <article className="coach-card">
-                  <img src={c.photoUrl || fallbacks[i % fallbacks.length]} alt="" />
-                  <div className="coach-card-body">
-                    <h3>{[c.firstName, c.lastName].filter(Boolean).join(" ") || s("coaches.unnamed")}</h3>
-                    {c.sport ? <span className="badge">{c.sport}</span> : null}
-                    <p className="muted">{c.bio || s("coaches.cardLead")}</p>
-                  </div>
-                </article>
-              </Reveal>
-            ))}
+            {coaches.map((c, i) => {
+              const name = [c.firstName, c.lastName].filter(Boolean).join(" ") || s("coaches.unnamed");
+              const initial = (c.firstName?.[0] || c.lastName?.[0] || "K").toUpperCase();
+              return (
+                <Reveal key={c.id} delay={(i % 3) * 60} variant="up">
+                  <article className="coach-card">
+                    <div className="coach-card-body">
+                      <div className="coach-avatar" aria-hidden>
+                        {initial}
+                      </div>
+                      <h3>{name}</h3>
+                      {c.sport ? <span className="badge">{c.sport}</span> : null}
+                      <p className="muted">{c.bio || s("coaches.cardLead")}</p>
+                    </div>
+                  </article>
+                </Reveal>
+              );
+            })}
           </div>
           {coaches.length === 0 && <p className="muted">{s("coaches.empty")}</p>}
           <div className="cta-row" style={{ marginTop: "1.8rem" }}>

@@ -1,15 +1,14 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
-/** Появление блока при скролле — лёгкая анимация без шума. */
-export function Reveal({
-  children,
-  className = "",
-  delay = 0,
-}: {
+type RevealProps = {
   children: ReactNode;
   className?: string;
   delay?: number;
-}) {
+  variant?: "up" | "left" | "right" | "scale" | "blur";
+};
+
+/** Появление блока при скролле. */
+export function Reveal({ children, className = "", delay = 0, variant = "up" }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,14 +21,18 @@ export function Reveal({
           io.disconnect();
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+      { threshold: 0.1, rootMargin: "0px 0px -6% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
   return (
-    <div ref={ref} className={`reveal ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+    <div
+      ref={ref}
+      className={`reveal reveal-${variant} ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
       {children}
     </div>
   );

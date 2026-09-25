@@ -2,13 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
-import { useSiteCopy } from "../content/SiteCopyProvider";
 import { Reveal } from "../components/Reveal";
 import { PageHero } from "../components/PageHero";
 
 export function GalleryPage() {
   const { t, i18n } = useTranslation();
-  const { photo } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [items, setItems] = useState<Awaited<ReturnType<typeof api.gallery>>["items"]>([]);
 
@@ -16,31 +14,35 @@ export function GalleryPage() {
     void api.gallery().then((r) => setItems(r.items)).catch(() => setItems([]));
   }, []);
 
-  const fallbacks = [photo("movement"), photo("discipline"), photo("honor"), photo("youth"), photo("goals"), photo("medal")];
-  const list =
-    items.length > 0
-      ? items.map((g) => ({
-          id: g.id,
-          src: g.imageUrl,
-          caption: locale === "ky" ? g.captionKy || g.captionRu : g.captionRu || g.captionKy,
-        }))
-      : fallbacks.map((src, i) => ({ id: String(i), src, caption: "" }));
-
   return (
     <>
       <PageHero kicker={t("nav.gallery")} title={t("gallery.title")} lead={t("gallery.lead")} />
       <section className="band" style={{ paddingTop: "1.5rem" }}>
         <div className="wrap">
-          <div className="gallery-masonry">
-            {list.map((item, i) => (
-              <Reveal key={item.id} delay={(i % 6) * 40}>
-                <figure>
-                  <img src={item.src} alt={item.caption || ""} />
-                  {item.caption ? <figcaption>{item.caption}</figcaption> : null}
-                </figure>
-              </Reveal>
-            ))}
-          </div>
+          {items.length === 0 ? (
+            <Reveal>
+              <p className="manifesto">
+                <em>{t("gallery.emptyTitle")}</em>
+              </p>
+              <p className="lead" style={{ marginTop: "1rem" }}>
+                {t("gallery.emptyLead")}
+              </p>
+            </Reveal>
+          ) : (
+            <div className="story-grid">
+              {items.map((item, i) => {
+                const caption = locale === "ky" ? item.captionKy || item.captionRu : item.captionRu || item.captionKy;
+                return (
+                  <Reveal key={item.id} delay={(i % 6) * 40} variant="up">
+                    <article className="feature-panel">
+                      <p className="kicker">0{String(i + 1).padStart(1, "0")}</p>
+                      <h3>{caption || t("gallery.untitled")}</h3>
+                    </article>
+                  </Reveal>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </>
@@ -49,7 +51,6 @@ export function GalleryPage() {
 
 export function NewsPage() {
   const { t, i18n } = useTranslation();
-  const { photo } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [posts, setPosts] = useState<Awaited<ReturnType<typeof api.news>>["posts"]>([]);
 
@@ -65,9 +66,8 @@ export function NewsPage() {
           {posts.length === 0 && <p className="muted">{t("news.empty")}</p>}
           <div className="news-grid">
             {posts.map((post, i) => (
-              <Reveal key={post.id} delay={i * 50}>
+              <Reveal key={post.id} delay={i * 50} variant="up">
                 <Link to={`/news/${post.id}`} className="news-card">
-                  <img src={post.coverUrl || photo("city")} alt="" />
                   <div className="muted">
                     {new Date(post.publishedAt).toLocaleDateString(locale === "ky" ? "ky-KG" : "ru-KG")}
                   </div>
@@ -86,7 +86,6 @@ export function NewsPage() {
 export function NewsItemPage() {
   const { id } = useParams();
   const { t, i18n } = useTranslation();
-  const { photo } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [post, setPost] = useState<Awaited<ReturnType<typeof api.newsPost>>["post"] | null>(null);
 
@@ -115,11 +114,6 @@ export function NewsItemPage() {
           <p className="muted" style={{ marginTop: 0 }}>
             {new Date(post.publishedAt).toLocaleDateString(locale === "ky" ? "ky-KG" : "ru-KG")}
           </p>
-          <img
-            className="news-cover"
-            src={post.coverUrl || photo("city")}
-            alt=""
-          />
           <div className="lead news-body">{post.body}</div>
           <div className="cta-row">
             <Link to="/news">

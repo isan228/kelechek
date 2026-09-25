@@ -3,11 +3,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { useSiteCopy } from "../content/SiteCopyProvider";
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
-  const { photo } = useSiteCopy();
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -78,7 +76,9 @@ export function LoginPage() {
     <div className="auth-shell">
       <div className="wrap">
         <div className="split">
-          <img className="login-photo" src={photo("city")} alt="" />
+          <div className="auth-visual">
+            <p>{t("appName")}</p>
+          </div>
           <form className="card" onSubmit={(e) => void submit(e)}>
             <p className="kicker">{t("appName")}</p>
             <h1>{mode === "login" ? t("auth.title") : t("auth.registerTitle")}</h1>

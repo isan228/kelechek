@@ -105,7 +105,7 @@ export function CabinetPage() {
 
 export function GoalPage() {
   const { t, i18n } = useTranslation();
-  const { s, photo } = useSiteCopy();
+  const { s } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [data, setData] = useState<Awaited<ReturnType<typeof api.balance>> | null>(null);
@@ -123,8 +123,7 @@ export function GoalPage() {
       <p className="kicker">{t("nav.goal")}</p>
       <h1>{s("goal.title")}</h1>
       <p className="lead">{s("goal.lead")}</p>
-      <article className="card photo" style={{ maxWidth: 640, marginTop: "1.5rem" }}>
-        <img src={photo("medal")} alt="" />
+      <article className="card" style={{ maxWidth: 640, marginTop: "1.5rem" }}>
         <div className="pad">
         <h3>{s("goal.bar")}</h3>
         <div className="progress-ring">

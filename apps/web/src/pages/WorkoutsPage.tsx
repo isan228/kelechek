@@ -4,17 +4,14 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
+import { Reveal } from "../components/Reveal";
+import { PageHero } from "../components/PageHero";
 
 export function WorkoutsPage() {
   const { t, i18n } = useTranslation();
-  const { s, photo } = useSiteCopy();
+  const { s } = useSiteCopy();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [data, setData] = useState<Awaited<ReturnType<typeof api.content>> | null>(null);
-  const cover: Record<string, string> = {
-    ARTICLE: photo("city"),
-    EXERCISE: photo("movement"),
-    PROGRAM: photo("medal"),
-  };
 
   useEffect(() => {
     void api.content(locale).then(setData).catch(() => setData({ canReadBody: false, items: [] }));
@@ -22,25 +19,24 @@ export function WorkoutsPage() {
 
   return (
     <>
-      <div className="page-hero">
-        <div className="wrap">
-          <p className="kicker">{t("nav.workouts")}</p>
-          <h1>{s("content.title")}</h1>
-          <p className="lead">{data && !data.canReadBody ? s("content.locked") : s("content.openLead")}</p>
-        </div>
-      </div>
+      <PageHero
+        kicker={t("nav.workouts")}
+        title={s("content.title")}
+        lead={data && !data.canReadBody ? s("content.locked") : s("content.openLead")}
+      />
       <section className="band" style={{ paddingTop: "1.5rem" }}>
         <div className="wrap grid three">
-          {data?.items.map((item) => (
-            <article className="card photo" key={item.id}>
-              <img src={cover[item.type] ?? cover.ARTICLE} alt="" />
-              <div className="pad">
+          {data?.items.map((item, i) => (
+            <Reveal key={item.id} delay={(i % 3) * 50} variant="up">
+              <article className="card">
                 <span className="badge">{item.type}</span>
                 <h3>{item.title}</h3>
                 <p className="muted">{item.summary}</p>
-                <Link className="section-link" to={`/workouts/${item.id}`}>{s("content.open")} →</Link>
-              </div>
-            </article>
+                <Link className="section-link" to={`/workouts/${item.id}`}>
+                  {s("content.open")} →
+                </Link>
+              </article>
+            </Reveal>
           ))}
         </div>
       </section>

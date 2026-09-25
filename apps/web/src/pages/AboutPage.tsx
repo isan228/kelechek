@@ -6,18 +6,19 @@ import { PageHero } from "../components/PageHero";
 
 export function AboutPage() {
   const { t } = useTranslation();
-  const { s, photo } = useSiteCopy();
+  const { s } = useSiteCopy();
   return (
     <>
       <PageHero kicker={t("nav.about")} title={s("about.title")} lead={s("about.lead")} />
       <section className="band">
         <div className="wrap split">
-          <Reveal>
-            <img src={photo("traditions")} alt="" />
+          <Reveal variant="left">
+            <p className="manifesto">
+              <em>{s("about.ideaTitle")}</em>
+            </p>
           </Reveal>
-          <Reveal delay={80}>
+          <Reveal variant="right" delay={80}>
             <div>
-              <h2>{s("about.ideaTitle")}</h2>
               <p className="lead">{s("about.idea")}</p>
               <p className="muted">{s("about.notCashback")}</p>
               <div className="cta-row">
@@ -40,7 +41,7 @@ export function AboutPage() {
           </Reveal>
           <div className="story-grid">
             {[1, 2, 3].map((n) => (
-              <Reveal key={n} delay={n * 60}>
+              <Reveal key={n} delay={n * 70} variant="up">
                 <article className="story-block">
                   <em className="kicker">0{n}</em>
                   <h3>{t(`about.value${n}t`)}</h3>
@@ -52,27 +53,24 @@ export function AboutPage() {
         </div>
       </section>
       <section className="band band-deep">
-        <div className="wrap split">
-          <Reveal>
-            <div>
+        <div className="wrap">
+          <Reveal variant="blur">
+            <div className="section-head">
               <p className="kicker">{t("about.nextKicker")}</p>
               <h2>{t("about.nextTitle")}</h2>
               <p className="muted">{t("about.nextLead")}</p>
-              <div className="cta-row">
-                <Link to="/login">
-                  <button type="button">{t("landing.ctaStart")}</button>
-                </Link>
-                <Link to="/gallery">
-                  <button className="ghost" type="button">
-                    {t("nav.gallery")}
-                  </button>
-                </Link>
-              </div>
             </div>
           </Reveal>
-          <Reveal delay={80}>
-            <img src={photo("future")} alt="" />
-          </Reveal>
+          <div className="cta-row">
+            <Link to="/login">
+              <button type="button">{t("landing.ctaStart")}</button>
+            </Link>
+            <Link to="/news">
+              <button className="ghost" type="button">
+                {t("nav.news")}
+              </button>
+            </Link>
+          </div>
         </div>
       </section>
     </>
