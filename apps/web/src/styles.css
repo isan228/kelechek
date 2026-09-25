@@ -2241,3 +2241,208 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
     animation: none !important;
   }
 }
+
+/* ===== Circle + Path map ===== */
+.sx-circle {
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.sx-circle-rail {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 4px 12px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.sx-circle-rail::-webkit-scrollbar { display: none; }
+.sx-circle-person {
+  flex: 0 0 92px;
+  scroll-snap-align: start;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+}
+.sx-circle-ava {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-family: var(--sx-font);
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--sx-surface-2);
+  border: 1px solid var(--sx-line);
+  color: var(--sx-ink);
+}
+.sx-circle-ava.is-you {
+  border-color: var(--sx-accent);
+  box-shadow: 0 0 0 3px rgba(200, 255, 61, 0.15);
+  color: var(--sx-accent);
+}
+.sx-circle-ava.is-invite {
+  border-style: dashed;
+  color: var(--sx-muted);
+  background: transparent;
+  font-size: 1.4rem;
+}
+.sx-circle-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  max-width: 88px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sx-circle-role {
+  font-size: 0.68rem;
+  color: var(--sx-muted);
+  text-align: center;
+  max-width: 88px;
+  line-height: 1.2;
+}
+.sx-circle-pulse {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--sx-accent);
+  background: rgba(200, 255, 61, 0.1);
+  padding: 2px 6px;
+  border-radius: 99px;
+}
+
+.sx-path-panel {
+  border-radius: var(--sx-radius);
+  padding: 18px 16px 16px;
+  display: grid;
+  gap: 14px;
+}
+.sx-path {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 0;
+  display: grid;
+  gap: 0;
+}
+.sx-path-node {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px 12px;
+  align-items: start;
+  position: relative;
+  padding-bottom: 18px;
+}
+.sx-path-node:last-child { padding-bottom: 0; }
+.sx-path-line {
+  position: absolute;
+  left: 19px;
+  top: -18px;
+  width: 2px;
+  height: 18px;
+  background: var(--sx-line);
+}
+.sx-path-node.is-done .sx-path-line {
+  background: color-mix(in srgb, var(--sx-accent) 55%, var(--sx-line));
+}
+.sx-path-dot {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--sx-line);
+  background: var(--sx-surface-2);
+  color: var(--sx-muted);
+  display: grid;
+  place-items: center;
+  font-family: var(--sx-font);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+}
+.sx-path-node.is-done .sx-path-dot {
+  background: color-mix(in srgb, var(--sx-accent) 18%, var(--sx-surface));
+  border-color: color-mix(in srgb, var(--sx-accent) 45%, var(--sx-line));
+  color: var(--sx-accent);
+}
+.sx-path-node.is-current .sx-path-dot,
+.sx-path-dot.is-focus {
+  border-color: var(--sx-accent);
+  color: #0a0b0d;
+  background: var(--sx-accent);
+  box-shadow: 0 0 0 4px rgba(200, 255, 61, 0.12);
+}
+.sx-path-node.is-locked {
+  opacity: 0.55;
+}
+.sx-path-label {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 2px 0;
+  min-height: 40px;
+}
+.sx-path-label strong {
+  font-family: var(--sx-font);
+  font-size: 0.98rem;
+}
+.sx-path-detail {
+  padding-top: 12px;
+  border-top: 1px solid var(--sx-line);
+  display: grid;
+  gap: 6px;
+}
+.sx-path-detail-title {
+  margin: 0;
+  font-family: var(--sx-font);
+  font-size: 1.15rem;
+}
+.sx-path-tall .sx-path-node { padding-bottom: 22px; }
+
+.sx-mini-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--sx-surface);
+  border: 1px solid var(--sx-line);
+}
+.sx-mini-value {
+  margin: 0;
+  font-family: var(--sx-font);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.sx-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.sx-feed li {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--sx-surface);
+  border: 1px solid var(--sx-line);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.sx-feed b { font-weight: 700; }

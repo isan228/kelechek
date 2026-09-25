@@ -1,10 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
 
 const tabs = [
-  { to: "/app", end: true, label: "Обзор", icon: "◆" },
+  { to: "/app", end: true, label: "Круг", icon: "○" },
+  { to: "/app/activity", end: false, label: "Путь", icon: "⇢" },
   { to: "/app/invest", end: false, label: "Рынок", icon: "▣" },
-  { to: "/app/activity", end: false, label: "Активность", icon: "◎" },
-  { to: "/app/portfolio", end: false, label: "Портфель", icon: "▢" },
+  { to: "/app/portfolio", end: false, label: "Я", icon: "▢" },
 ] as const;
 
 export function AppTabBar() {

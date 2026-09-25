@@ -2,52 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { api } from "../../api/client";
-import { INVEST_ASSETS, getOnboardingGoal } from "../../app/investData";
+import { CIRCLE, PATH_NODES, getOnboardingGoal } from "../../app/investData";
 
 function formatSom(n: number) {
   return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
-}
-
-function ActivityRing({ pct, label }: { pct: number; label: string }) {
-  const r = 36;
-  const c = 2 * Math.PI * r;
-  const offset = c - (Math.min(100, pct) / 100) * c;
-  return (
-    <div className="sx-ring" aria-label={`${label}: ${pct}%`}>
-      <svg viewBox="0 0 88 88" width="88" height="88">
-        <circle className="sx-ring-track" cx="44" cy="44" r={r} />
-        <circle
-          className="sx-ring-value"
-          cx="44"
-          cy="44"
-          r={r}
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-        />
-      </svg>
-      <div className="sx-ring-label">
-        <b>{pct}%</b>
-        <span>{label}</span>
-      </div>
-    </div>
-  );
-}
-
-function MiniChart({ data, up }: { data: number[]; up: boolean }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const pts = data
-    .map((v, i) => {
-      const x = (i / (data.length - 1)) * 100;
-      const y = 36 - ((v - min) / (max - min || 1)) * 28;
-      return `${x},${y}`;
-    })
-    .join(" ");
-  return (
-    <svg className={`sx-spark ${up ? "is-up" : "is-down"}`} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden>
-      <polyline fill="none" points={pts} />
-    </svg>
-  );
 }
 
 export function DashboardPage() {
@@ -55,22 +13,17 @@ export function DashboardPage() {
   const goal = getOnboardingGoal() ?? "both";
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [activeNode, setActiveNode] = useState(() => PATH_NODES.find((n) => n.status === "current")?.id ?? PATH_NODES[0]?.id);
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
     void api
       .balance()
       .then((r) => {
-        if (!alive) return;
-        setBalance(r.balance.available);
-        setError(false);
+        if (alive) setBalance(r.balance.available);
       })
       .catch(() => {
-        if (!alive) return;
-        setBalance(24850);
-        setError(false);
+        if (alive) setBalance(24850);
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -80,123 +33,141 @@ export function DashboardPage() {
     };
   }, []);
 
-  const showInvest = goal === "invest" || goal === "both";
-  const showActivity = goal === "activity" || goal === "both";
-  const portfolioChange = 3.6;
+  const current = PATH_NODES.find((n) => n.id === activeNode) ?? PATH_NODES.find((n) => n.status === "current");
+  const doneCount = PATH_NODES.filter((n) => n.status === "done").length;
 
   if (loading) {
     return (
-      <div className="sx-page" role="status" aria-label="Загрузка дашборда">
+      <div className="sx-page" role="status" aria-label="Загрузка">
         <div className="sx-skeleton sx-skeleton-lg" />
         <div className="sx-skeleton" />
-        <div className="sx-card-grid">
-          <div className="sx-skeleton sx-skeleton-card" />
-          <div className="sx-skeleton sx-skeleton-card" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="sx-page sx-state">
-        <h1 className="sx-title">Не удалось загрузить</h1>
-        <p className="sx-lead">Проверьте соединение и попробуйте снова.</p>
-        <button type="button" className="sx-cta" onClick={() => window.location.reload()}>
-          Обновить
-        </button>
+        <div className="sx-skeleton sx-skeleton-card" />
       </div>
     );
   }
 
   return (
-    <div className="sx-page">
+    <div className="sx-page sx-home-circle">
       <header className="sx-dash-head">
         <div>
-          <p className="sx-kicker">Сегодня</p>
-          <h1 className="sx-hello">
-            {user?.firstName ? `Привет, ${user.firstName}` : "Ваш обзор"}
-          </h1>
+          <p className="sx-kicker">Ваш круг</p>
+          <h1 className="sx-hello">{user?.firstName ? `${user.firstName}, вы в пути` : "Ваш круг"}</h1>
         </div>
-        <Link to="/app/portfolio" className="sx-avatar" aria-label="Портфель">
+        <Link to="/app/portfolio" className="sx-avatar" aria-label="Профиль">
           {(user?.firstName?.[0] || "K").toUpperCase()}
         </Link>
       </header>
 
-      {showInvest && (
-        <section className="sx-hero-metric sx-glow" aria-labelledby="portfolio-total">
-          <p className="sx-metric-label" id="portfolio-total">
-            Портфель
-          </p>
-          <p className="sx-metric-value">{formatSom(balance ?? 0)} сом</p>
-          <p className={`sx-metric-delta ${portfolioChange >= 0 ? "is-up" : "is-down"}`}>
-            {portfolioChange >= 0 ? "+" : ""}
-            {portfolioChange}% за 7 дней
-          </p>
-          <Link to="/app/invest" className="sx-cta sx-cta-block">
-            Смотреть рынок
-          </Link>
-        </section>
-      )}
+      <section className="sx-circle" aria-label="Люди в круге">
+        <div className="sx-circle-rail">
+          {CIRCLE.map((person) => {
+            const inner = (
+              <>
+                <span className={`sx-circle-ava ${person.role === "you" ? "is-you" : ""}`} aria-hidden>
+                  {person.initials}
+                </span>
+                <span className="sx-circle-name">{person.name}</span>
+                <span className="sx-circle-role">{person.subtitle}</span>
+                {person.pulse ? <span className="sx-circle-pulse">{person.pulse}</span> : null}
+              </>
+            );
+            if (person.to) {
+              return (
+                <Link key={person.id} to={person.to} className="sx-circle-person">
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <div key={person.id} className="sx-circle-person">
+                {inner}
+              </div>
+            );
+          })}
+          <button type="button" className="sx-circle-person sx-circle-invite" aria-label="Пригласить в круг">
+            <span className="sx-circle-ava is-invite" aria-hidden>
+              +
+            </span>
+            <span className="sx-circle-name">Пригласить</span>
+            <span className="sx-circle-role">расширить круг</span>
+          </button>
+        </div>
+      </section>
 
-      {showActivity && (
-        <section className="sx-section" aria-labelledby="activity-summary">
-          <div className="sx-section-head">
-            <h2 id="activity-summary">Активность</h2>
-            <Link to="/app/activity" className="sx-text-link">
-              Все →
+      <section className="sx-path-panel sx-glow" aria-labelledby="path-title">
+        <div className="sx-section-head">
+          <h2 id="path-title">Карта пути</h2>
+          <span className="sx-muted">
+            {doneCount}/{PATH_NODES.length}
+          </span>
+        </div>
+        <p className="sx-lead" style={{ maxWidth: "none" }}>
+          Узлы — цели, не награды. Тапните узел, чтобы увидеть следующий шаг.
+        </p>
+
+        <ol className="sx-path">
+          {PATH_NODES.map((node, i) => (
+            <li key={node.id} className={`sx-path-node is-${node.status}`}>
+              {i > 0 ? <span className="sx-path-line" aria-hidden /> : null}
+              <button
+                type="button"
+                className={`sx-path-dot ${activeNode === node.id ? "is-focus" : ""}`}
+                onClick={() => setActiveNode(node.id)}
+                aria-current={node.status === "current" ? "step" : undefined}
+                aria-label={`${node.title}, ${node.status === "done" ? "готово" : node.status === "current" ? "сейчас" : "дальше"}`}
+              >
+                <span>{node.status === "done" ? "✓" : String(i + 1)}</span>
+              </button>
+              <button type="button" className="sx-path-label" onClick={() => setActiveNode(node.id)}>
+                <strong>{node.title}</strong>
+                <span className="sx-muted">{node.hint}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+
+        {current && (
+          <div className="sx-path-detail">
+            <p className="sx-metric-label">Сейчас в фокусе</p>
+            <h3 className="sx-path-detail-title">{current.title}</h3>
+            <p className="sx-muted">{current.detail}</p>
+            <Link to={current.ctaTo} className="sx-cta sx-cta-block">
+              {current.cta}
             </Link>
           </div>
-          <div className="sx-rings">
-            <ActivityRing pct={72} label="Move" />
-            <ActivityRing pct={54} label="Train" />
-            <ActivityRing pct={88} label="Streak" />
-          </div>
-          <div className="sx-chip-row">
-            <span className="sx-chip">Серия 9 дн.</span>
-            <span className="sx-chip">Челлендж: 4/7</span>
-          </div>
-        </section>
-      )}
+        )}
+      </section>
 
-      {showInvest && (
-        <section className="sx-section" aria-labelledby="watchlist">
-          <div className="sx-section-head">
-            <h2 id="watchlist">В фокусе</h2>
+      {(goal === "invest" || goal === "both") && (
+        <section className="sx-section">
+          <div className="sx-mini-balance">
+            <div>
+              <p className="sx-metric-label">Накоплено в круге</p>
+              <p className="sx-mini-value">{formatSom(balance ?? 0)} сом</p>
+            </div>
             <Link to="/app/invest" className="sx-text-link">
               Рынок →
             </Link>
           </div>
-          <div className="sx-asset-list">
-            {INVEST_ASSETS.map((asset) => (
-              <Link key={asset.id} to={`/app/invest/${asset.id}`} className="sx-asset-row">
-                <div>
-                  <strong>{asset.name}</strong>
-                  <span className="sx-muted">
-                    {asset.sport} · {asset.kind === "athlete" ? "Атлет" : asset.kind === "team" ? "Команда" : "Событие"}
-                  </span>
-                </div>
-                <MiniChart data={asset.chart} up={asset.changePct >= 0} />
-                <div className="sx-asset-price">
-                  <b>{formatSom(asset.price)}</b>
-                  <span className={asset.changePct >= 0 ? "is-up" : "is-down"}>
-                    {asset.changePct >= 0 ? "+" : ""}
-                    {asset.changePct}%
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
         </section>
       )}
 
-      {showActivity && !showInvest && (
-        <section className="sx-section">
-          <Link to="/app/activity" className="sx-cta sx-cta-block">
-            Открыть трекер
-          </Link>
-        </section>
-      )}
+      <section className="sx-section" aria-labelledby="feed-title">
+        <div className="sx-section-head">
+          <h2 id="feed-title">Живой круг</h2>
+        </div>
+        <ul className="sx-feed">
+          <li>
+            <b>Айгуль</b> обновила серию тренировок · <span className="sx-muted">2ч</span>
+          </li>
+          <li>
+            <b>Тимур</b> закрыл узел «Серия 7» · <span className="sx-muted">вчера</span>
+          </li>
+          <li>
+            <b>Вы</b> в круге с тренером · <span className="sx-muted">на этой неделе</span>
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }

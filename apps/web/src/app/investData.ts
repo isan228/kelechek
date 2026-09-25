@@ -90,3 +90,111 @@ export function getOnboardingGoal(): OnboardingGoal | null {
 export function setOnboardingGoal(goal: OnboardingGoal) {
   localStorage.setItem("kelechek_goal", goal);
 }
+
+export type CirclePerson = {
+  id: string;
+  name: string;
+  initials: string;
+  subtitle: string;
+  role: "you" | "coach" | "athlete" | "friend";
+  pulse?: string;
+  to?: string;
+};
+
+export const CIRCLE: CirclePerson[] = [
+  { id: "you", name: "Вы", initials: "Я", subtitle: "в пути", role: "you", pulse: "сейчас" },
+  {
+    id: "coach",
+    name: "Тренер",
+    initials: "ТР",
+    subtitle: "наставник",
+    role: "coach",
+    pulse: "онлайн",
+    to: "/invites",
+  },
+  {
+    id: "a1",
+    name: "Айгуль",
+    initials: "АН",
+    subtitle: "атлет · вклад",
+    role: "athlete",
+    pulse: "+4.8%",
+    to: "/app/invest/a1",
+  },
+  {
+    id: "f1",
+    name: "Тимур",
+    initials: "ТБ",
+    subtitle: "друг · серия",
+    role: "friend",
+    pulse: "7 дн.",
+  },
+];
+
+export type PathNode = {
+  id: string;
+  title: string;
+  hint: string;
+  detail: string;
+  status: "done" | "current" | "locked";
+  cta: string;
+  ctaTo: string;
+};
+
+export const PATH_NODES: PathNode[] = [
+  {
+    id: "start",
+    title: "Старт в круге",
+    hint: "профиль и цель",
+    detail: "Вы уже внутри. Дальше — ритм и люди рядом.",
+    status: "done",
+    cta: "К профилю",
+    ctaTo: "/app/portfolio",
+  },
+  {
+    id: "train",
+    title: "Первая тренировка",
+    hint: "отметить движение",
+    detail: "Любая сессия засчитывается в путь — даже короткая.",
+    status: "done",
+    cta: "Тренировки",
+    ctaTo: "/app/activity",
+  },
+  {
+    id: "streak",
+    title: "Серия 7 дней",
+    hint: "сейчас здесь",
+    detail: "Держите контакт с кругом: отметьте день или бросьте вызов другу.",
+    status: "current",
+    cta: "Продолжить серию",
+    ctaTo: "/app/activity",
+  },
+  {
+    id: "invest",
+    title: "Первый вклад",
+    hint: "в человека из круга",
+    detail: "Инвестиция в атлета или событие связывает капитал с вашим путём.",
+    status: "locked",
+    cta: "Смотреть рынок",
+    ctaTo: "/app/invest",
+  },
+  {
+    id: "circle3",
+    title: "Круг из троих",
+    hint: "пригласить ещё одного",
+    detail: "Когда в круге ≥3 людей, путь ускоряется — видны чужие узлы.",
+    status: "locked",
+    cta: "Приглашения",
+    ctaTo: "/invites",
+  },
+  {
+    id: "quarter",
+    title: "Цель квартала",
+    hint: "капитал + тело",
+    detail: "Свести накопление и активность к одной измеримой цели на 90 дней.",
+    status: "locked",
+    cta: "Открыть портфель",
+    ctaTo: "/app/portfolio",
+  },
+];
+

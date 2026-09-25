@@ -1,94 +1,66 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-
-const workouts = [
-  { id: 1, title: "Силовая · верх", min: 42, kcal: 320, done: true },
-  { id: 2, title: "Интервалы", min: 28, kcal: 290, done: true },
-  { id: 3, title: "Мобилити", min: 20, kcal: 110, done: false },
-];
-
-const challenges = [
-  { id: "c1", title: "7 дней движения", progress: 4, total: 7 },
-  { id: "c2", title: "Горный километраж", progress: 12, total: 30 },
-];
+import { PATH_NODES } from "../../app/investData";
 
 export function ActivityPage() {
-  const [syncing, setSyncing] = useState(false);
-  const [synced, setSynced] = useState(false);
-
-  async function syncDevices() {
-    setSyncing(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setSyncing(false);
-    setSynced(true);
-  }
+  const current = PATH_NODES.find((n) => n.status === "current");
+  const done = PATH_NODES.filter((n) => n.status === "done").length;
 
   return (
     <div className="sx-page">
-      <p className="sx-kicker">Трекер</p>
-      <h1 className="sx-title">Активность</h1>
-      <p className="sx-lead">Тренировки, челленджи и связь с устройствами.</p>
+      <p className="sx-kicker">Путь</p>
+      <h1 className="sx-title">Карта целиком</h1>
+      <p className="sx-lead">
+        {done} из {PATH_NODES.length} узлов закрыто. Двигайтесь по маршруту — без кубков, только шаги.
+      </p>
 
-      <section className="sx-hero-metric sx-glow">
-        <p className="sx-metric-label">Неделя</p>
-        <p className="sx-metric-value">5 / 7</p>
-        <p className="sx-metric-delta is-up">+2 к прошлой неделе</p>
-        <div className="sx-progress" role="progressbar" aria-valuenow={71} aria-valuemin={0} aria-valuemax={100}>
-          <span style={{ width: "71%" }} />
-        </div>
-      </section>
-
-      <section className="sx-section">
-        <div className="sx-section-head">
-          <h2>Тренировки</h2>
-        </div>
-        {workouts.length === 0 ? (
-          <p className="sx-muted">Пока пусто — добавьте первую сессию.</p>
-        ) : (
-          <ul className="sx-list">
-            {workouts.map((w) => (
-              <li key={w.id} className="sx-list-row">
-                <div>
-                  <strong>{w.title}</strong>
-                  <span className="sx-muted">
-                    {w.min} мин · {w.kcal} ккал
-                  </span>
-                </div>
-                <span className={`sx-status ${w.done ? "is-done" : ""}`}>{w.done ? "Готово" : "План"}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="sx-section">
-        <div className="sx-section-head">
-          <h2>Челленджи</h2>
-        </div>
-        <div className="sx-challenge-grid">
-          {challenges.map((c) => (
-            <article key={c.id} className="sx-challenge">
-              <strong>{c.title}</strong>
-              <div className="sx-progress">
-                <span style={{ width: `${(c.progress / c.total) * 100}%` }} />
+      <section className="sx-path-panel sx-glow">
+        <ol className="sx-path sx-path-tall">
+          {PATH_NODES.map((node, i) => (
+            <li key={node.id} className={`sx-path-node is-${node.status}`}>
+              {i > 0 ? <span className="sx-path-line" aria-hidden /> : null}
+              <div className="sx-path-dot" aria-hidden>
+                <span>{node.status === "done" ? "✓" : String(i + 1)}</span>
               </div>
-              <span className="sx-muted">
-                {c.progress}/{c.total}
-              </span>
-            </article>
+              <div className="sx-path-label">
+                <strong>{node.title}</strong>
+                <span className="sx-muted">{node.detail}</span>
+                {node.status !== "locked" && (
+                  <Link to={node.ctaTo} className="sx-text-link" style={{ marginTop: 6 }}>
+                    {node.cta} →
+                  </Link>
+                )}
+              </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
+      {current && (
+        <Link to={current.ctaTo} className="sx-cta sx-cta-block">
+          {current.cta}
+        </Link>
+      )}
+
       <section className="sx-section">
-        <button type="button" className="sx-cta sx-cta-block" onClick={() => void syncDevices()} disabled={syncing}>
-          {syncing ? "Синхронизация…" : synced ? "Устройства обновлены" : "Синхронизировать устройства"}
-        </button>
-        <p className="sx-muted" style={{ marginTop: "0.75rem" }}>
-          Поддержка Apple Health / Google Fit — в следующем релизе API.
-        </p>
-        <Link to="/workouts" className="sx-text-link" style={{ display: "inline-block", marginTop: "0.8rem" }}>
-          Материалы тренировок →
+        <h2>Сегодняшние сессии</h2>
+        <ul className="sx-list">
+          <li className="sx-list-row">
+            <div>
+              <strong>Силовая · верх</strong>
+              <span className="sx-muted">42 мин</span>
+            </div>
+            <span className="sx-status is-done">Готово</span>
+          </li>
+          <li className="sx-list-row">
+            <div>
+              <strong>Мобилити</strong>
+              <span className="sx-muted">20 мин · план</span>
+            </div>
+            <span className="sx-status">Открыть</span>
+          </li>
+        </ul>
+        <Link to="/workouts" className="sx-text-link" style={{ marginTop: 8 }}>
+          Материалы →
         </Link>
       </section>
     </div>
