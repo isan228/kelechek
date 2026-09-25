@@ -301,7 +301,13 @@
     "journeyGym1": "Орбита · Борбор",
     "journeyProgress": "Маршрут {{pct}}%",
     "journeyWpStreak": "Абонемент",
-    "journeyStreakTitle": "Жылдык абонемент жана стрик"
+    "journeyStreakTitle": "Жылдык абонемент жана стрик",
+    "journeyCoachMeta": "Каруселде {{count}} профиль — салыштырып караңыз.",
+    "journeyUniStat1": "өнөктөш окуу жай",
+    "journeyUniStat2": "коштоо кадамы",
+    "journeyFinishBullet1": "Жылдык абонемент дароо иштейт",
+    "journeyFinishBullet2": "Машыктыруучу жана зал — кабинетте тандалат",
+    "journeyFinishBullet3": "Стрик биринчи төлөнгөн жылдан башталат"
   },
   "about": {
     "title": "Долбоор жөнүндө",

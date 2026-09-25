@@ -301,7 +301,13 @@
     "journeyGym1": "Орбита · Центр",
     "journeyProgress": "Маршрут {{pct}}%",
     "journeyWpStreak": "Абонемент",
-    "journeyStreakTitle": "Годовой абонемент и стрик"
+    "journeyStreakTitle": "Годовой абонемент и стрик",
+    "journeyCoachMeta": "В карусели {{count}} профиля — листайте и сравнивайте.",
+    "journeyUniStat1": "партнёрских вузов",
+    "journeyUniStat2": "шага сопровождения",
+    "journeyFinishBullet1": "Годовой абонемент активируется сразу",
+    "journeyFinishBullet2": "Тренер и зал — на выбор в кабинете",
+    "journeyFinishBullet3": "Стрик стартует с первого оплаченного года"
   },
   "about": {
     "title": "О проекте",
