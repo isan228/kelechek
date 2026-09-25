@@ -51,17 +51,72 @@ type Spot = {
   t: number;
   edge: Edge;
   y: string;
-  scale: number;
   kind: Kind;
+  faceKey: string;
+  faceSubKey: string;
 };
 
 const SPOTS: Spot[] = [
-  { id: "start", n: 1, t: 0.03, edge: "left", y: "1.2%", scale: 1.05, kind: "start" },
-  { id: "streak", n: 2, t: 0.2, edge: "right", y: "13%", scale: 1.08, kind: "streak" },
-  { id: "coach", n: 3, t: 0.38, edge: "left", y: "29%", scale: 1, kind: "coach" },
-  { id: "gyms", n: 4, t: 0.55, edge: "right", y: "45%", scale: 1.02, kind: "gyms" },
-  { id: "uni", n: 5, t: 0.72, edge: "left", y: "61%", scale: 1, kind: "uni" },
-  { id: "finish", n: 6, t: 0.92, edge: "right", y: "77%", scale: 1.04, kind: "finish" },
+  {
+    id: "start",
+    n: 1,
+    t: 0.03,
+    edge: "left",
+    y: "1%",
+    kind: "start",
+    faceKey: "journeyFaceStart",
+    faceSubKey: "journeyFaceStartSub",
+  },
+  {
+    id: "streak",
+    n: 2,
+    t: 0.2,
+    edge: "right",
+    y: "14%",
+    kind: "streak",
+    faceKey: "journeyFaceStreak",
+    faceSubKey: "journeyFaceStreakSub",
+  },
+  {
+    id: "coach",
+    n: 3,
+    t: 0.38,
+    edge: "left",
+    y: "30%",
+    kind: "coach",
+    faceKey: "journeyFaceCoach",
+    faceSubKey: "journeyFaceCoachSub",
+  },
+  {
+    id: "gyms",
+    n: 4,
+    t: 0.55,
+    edge: "right",
+    y: "46%",
+    kind: "gyms",
+    faceKey: "journeyFaceGyms",
+    faceSubKey: "journeyFaceGymsSub",
+  },
+  {
+    id: "uni",
+    n: 5,
+    t: 0.72,
+    edge: "left",
+    y: "62%",
+    kind: "uni",
+    faceKey: "journeyFaceUni",
+    faceSubKey: "journeyFaceUniSub",
+  },
+  {
+    id: "finish",
+    n: 6,
+    t: 0.92,
+    edge: "right",
+    y: "78%",
+    kind: "finish",
+    faceKey: "journeyFaceFinish",
+    faceSubKey: "journeyFaceFinishSub",
+  },
 ];
 
 const COACHES = [
@@ -376,221 +431,228 @@ export function HomePage() {
         </svg>
 
         {SPOTS.map((spot, i) => (
-          <article
+          <div
             key={spot.id}
-            ref={(n) => {
-              cardRefs.current[i] = n;
-            }}
-            className={`home-journey-card home-journey-card-${spot.kind} home-journey-edge-${spot.edge} ${
+            className={`home-journey-row home-journey-row-${spot.edge} ${
               progress >= spot.t - 0.07 || reduced ? "is-visible" : ""
             } ${activeId === spot.id ? "is-active" : ""}`}
-            style={{
-              top: spot.y,
-              ["--scale" as string]: String(spot.scale),
-            }}
+            style={{ top: spot.y }}
           >
-            <span className="home-journey-ghost" aria-hidden>
-              {String(spot.n).padStart(2, "0")}
-            </span>
-            <span className="home-journey-num" aria-hidden>
-              {spot.n}
-            </span>
+            <aside className="home-journey-face">
+              <p className="home-journey-face-n">{String(spot.n).padStart(2, "0")}</p>
+              <p className="home-journey-face-title">{t(`landing.${spot.faceKey}`)}</p>
+              <p className="home-journey-face-sub">{t(`landing.${spot.faceSubKey}`)}</p>
+            </aside>
 
-            <div className="home-journey-card-head">
-              <span className="home-journey-card-ico">
-                <StageIcon kind={spot.kind} />
+            <article
+              ref={(n) => {
+                cardRefs.current[i] = n;
+              }}
+              className={`home-journey-card home-journey-card-${spot.kind}`}
+            >
+              <span className="home-journey-ghost" aria-hidden>
+                {String(spot.n).padStart(2, "0")}
               </span>
-              <p className="home-journey-kicker">{t(`landing.${KICKER[spot.kind]}`)}</p>
-            </div>
+              <span className="home-journey-num" aria-hidden>
+                {spot.n}
+              </span>
 
-            {spot.kind === "start" && (
-              <>
-                <h1>{s("appName")}</h1>
-                <p className="home-journey-hook">{t("landing.journeyHook")}</p>
-                <p className="home-journey-note">{t("landing.journeySub")}</p>
-                <div className="home-journey-mini">
-                  <div>
-                    <b>1</b>
-                    <span>{t("landing.journeyWpStreak")}</span>
+              <div className="home-journey-card-head">
+                <span className="home-journey-card-ico">
+                  <StageIcon kind={spot.kind} />
+                </span>
+                <p className="home-journey-kicker">{t(`landing.${KICKER[spot.kind]}`)}</p>
+              </div>
+
+              {spot.kind === "start" && (
+                <>
+                  <h1>{s("appName")}</h1>
+                  <p className="home-journey-hook">{t("landing.journeyHook")}</p>
+                  <p className="home-journey-note">{t("landing.journeySub")}</p>
+                  <div className="home-journey-mini">
+                    <div>
+                      <b>1</b>
+                      <span>{t("landing.journeyWpStreak")}</span>
+                    </div>
+                    <div>
+                      <b>4</b>
+                      <span>{t("landing.journeyYear")}</span>
+                    </div>
+                    <div>
+                      <b>100%</b>
+                      <span>{t("landing.journeyRefundValue")}</span>
+                    </div>
                   </div>
-                  <div>
-                    <b>4</b>
-                    <span>{t("landing.journeyYear")}</span>
+                  <div className="home-journey-actions">
+                    <Link to={ctaTo} className="home-journey-btn">
+                      {t("landing.journeyCta")}
+                    </Link>
+                    <button type="button" className="home-journey-btn-ghost" onClick={() => goSpot(1)}>
+                      {t("landing.journeyScroll")}
+                    </button>
                   </div>
-                  <div>
-                    <b>100%</b>
-                    <span>{t("landing.journeyRefundValue")}</span>
+                </>
+              )}
+
+              {spot.kind === "streak" && (
+                <>
+                  <h2>{t("landing.journeyStreakTitle")}</h2>
+                  <p className="home-journey-note">{t("landing.journeyStreakLead")}</p>
+                  <div className="home-journey-streak" aria-label={t("landing.journeyStreakTitle")}>
+                    {[1, 2, 3, 4].map((y) => (
+                      <div
+                        key={y}
+                        className={`home-journey-ring ${y === 4 ? "is-refund" : ""}`}
+                        style={{ ["--p" as string]: String(y <= 2 ? 100 : y === 3 ? 55 : 0) }}
+                      >
+                        <span>
+                          {y === 4 ? (
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+                              <path d="M4 8h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="currentColor" strokeWidth="1.8" />
+                              <path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.8" />
+                              <path d="M12 12v4M10 14h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                            </svg>
+                          ) : (
+                            <>
+                              {y}
+                              <small>{t("landing.journeyYear")}</small>
+                            </>
+                          )}
+                        </span>
+                        <strong>{t("landing.journeyYearN", { n: y })}</strong>
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div className="home-journey-actions">
-                  <Link to={ctaTo} className="home-journey-btn">
+                  <div className="home-journey-bars" aria-hidden>
+                    {[72, 88, 55, 18].map((h, idx) => (
+                      <i key={idx} style={{ height: `${h}%` }} />
+                    ))}
+                  </div>
+                  <div className="home-journey-refund">
+                    <b>{t("landing.journeyRefundValue")}</b>
+                    <span>{t("landing.journeyRefundLabel")}</span>
+                  </div>
+                  <p className="home-journey-break">{t("landing.journeyStreakBreak")}</p>
+                </>
+              )}
+
+              {spot.kind === "coach" && (
+                <>
+                  <h2>{t("landing.journeyCoachTitle")}</h2>
+                  <p className="home-journey-note">{t("landing.journeyCoachLead")}</p>
+                  <div className="home-journey-coach">
+                    <button
+                      type="button"
+                      className="home-journey-coach-nav"
+                      aria-label={t("landing.journeyPrev")}
+                      onClick={() => setCoachIdx((v) => (v + COACHES.length - 1) % COACHES.length)}
+                    >
+                      ‹
+                    </button>
+                    <div className="home-journey-coach-card" key={COACHES[coachIdx].id}>
+                      <div className="home-journey-coach-ava">{t(`landing.${COACHES[coachIdx].nameKey}`).slice(0, 1)}</div>
+                      <strong>{t(`landing.${COACHES[coachIdx].nameKey}`)}</strong>
+                      <span>{t(`landing.${COACHES[coachIdx].specKey}`)}</span>
+                      <em>
+                        {COACHES[coachIdx].years} {t("landing.journeyYears")}
+                      </em>
+                    </div>
+                    <button
+                      type="button"
+                      className="home-journey-coach-nav"
+                      aria-label={t("landing.journeyNext")}
+                      onClick={() => setCoachIdx((v) => (v + 1) % COACHES.length)}
+                    >
+                      ›
+                    </button>
+                  </div>
+                  <div className="home-journey-chips">
+                    {[1, 2, 3].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={`home-journey-chip ${coachIdx === n - 1 ? "is-on" : ""}`}
+                        onClick={() => setCoachIdx(n - 1)}
+                      >
+                        {t(`landing.journeyCoachSpec${n}`)}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="home-journey-meta">{t("landing.journeyCoachMeta", { count: COACHES.length })}</p>
+                </>
+              )}
+
+              {spot.kind === "gyms" && (
+                <>
+                  <h2>{t("landing.journeyGymsTitle")}</h2>
+                  <p className="home-journey-note">{t("landing.journeyGymsLead")}</p>
+                  <p className="home-journey-big">
+                    24<span>{t("landing.journeyGymsCount")}</span>
+                  </p>
+                  <div className="home-journey-map-mini" aria-hidden>
+                    <span style={{ left: "18%", top: "30%" }} />
+                    <span style={{ left: "55%", top: "22%" }} />
+                    <span style={{ left: "40%", top: "58%" }} />
+                    <span style={{ left: "72%", top: "48%" }} />
+                  </div>
+                  <div className="home-journey-gyms">
+                    {GYMS.map((g) => (
+                      <div key={g.id} className="home-journey-gym">
+                        <strong>{t(`landing.${g.nameKey}`)}</strong>
+                        <span>{g.dist}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {spot.kind === "uni" && (
+                <>
+                  <h2>{t("landing.journeyUniTitle")}</h2>
+                  <p className="home-journey-note">{t("landing.journeyUniLead")}</p>
+                  <div className="home-journey-uni-stats">
+                    <div>
+                      <b>12+</b>
+                      <span>{t("landing.journeyUniStat1")}</span>
+                    </div>
+                    <div>
+                      <b>3</b>
+                      <span>{t("landing.journeyUniStat2")}</span>
+                    </div>
+                  </div>
+                  <ul className="home-journey-uni">
+                    {[1, 2, 3].map((n) => (
+                      <li key={n}>
+                        <b>{n}</b>
+                        <div>
+                          <strong>{t(`landing.journeyUni${n}t`)}</strong>
+                          <span>{t(`landing.journeyUni${n}`)}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {spot.kind === "finish" && (
+                <>
+                  <h2>{t("landing.journeyFinishTitle")}</h2>
+                  <p className="home-journey-note">{t("landing.journeyFinishLead")}</p>
+                  <div className={`home-journey-finish-mark ${finished || reduced ? "is-on" : ""}`} aria-hidden>
+                    <span>✓</span>
+                  </div>
+                  <ul className="home-journey-finish-list">
+                    <li>{t("landing.journeyFinishBullet1")}</li>
+                    <li>{t("landing.journeyFinishBullet2")}</li>
+                    <li>{t("landing.journeyFinishBullet3")}</li>
+                  </ul>
+                  <Link to={ctaTo} className="home-journey-btn home-journey-btn-lg">
                     {t("landing.journeyCta")}
                   </Link>
-                  <button type="button" className="home-journey-btn-ghost" onClick={() => goSpot(1)}>
-                    {t("landing.journeyScroll")}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {spot.kind === "streak" && (
-              <>
-                <h2>{t("landing.journeyStreakTitle")}</h2>
-                <p className="home-journey-note">{t("landing.journeyStreakLead")}</p>
-                <div className="home-journey-streak" aria-label={t("landing.journeyStreakTitle")}>
-                  {[1, 2, 3, 4].map((y) => (
-                    <div
-                      key={y}
-                      className={`home-journey-ring ${y === 4 ? "is-refund" : ""}`}
-                      style={{ ["--p" as string]: String(y <= 2 ? 100 : y === 3 ? 55 : 0) }}
-                    >
-                      <span>
-                        {y === 4 ? (
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                            <path d="M4 8h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="currentColor" strokeWidth="1.8" />
-                            <path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.8" />
-                            <path d="M12 12v4M10 14h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          </svg>
-                        ) : (
-                          <>
-                            {y}
-                            <small>{t("landing.journeyYear")}</small>
-                          </>
-                        )}
-                      </span>
-                      <strong>{t("landing.journeyYearN", { n: y })}</strong>
-                    </div>
-                  ))}
-                </div>
-                <div className="home-journey-bars" aria-hidden>
-                  {[72, 88, 55, 18].map((h, idx) => (
-                    <i key={idx} style={{ height: `${h}%` }} />
-                  ))}
-                </div>
-                <div className="home-journey-refund">
-                  <b>{t("landing.journeyRefundValue")}</b>
-                  <span>{t("landing.journeyRefundLabel")}</span>
-                </div>
-                <p className="home-journey-break">{t("landing.journeyStreakBreak")}</p>
-              </>
-            )}
-
-            {spot.kind === "coach" && (
-              <>
-                <h2>{t("landing.journeyCoachTitle")}</h2>
-                <p className="home-journey-note">{t("landing.journeyCoachLead")}</p>
-                <div className="home-journey-coach">
-                  <button
-                    type="button"
-                    className="home-journey-coach-nav"
-                    aria-label={t("landing.journeyPrev")}
-                    onClick={() => setCoachIdx((v) => (v + COACHES.length - 1) % COACHES.length)}
-                  >
-                    ‹
-                  </button>
-                  <div className="home-journey-coach-card" key={COACHES[coachIdx].id}>
-                    <div className="home-journey-coach-ava">{t(`landing.${COACHES[coachIdx].nameKey}`).slice(0, 1)}</div>
-                    <strong>{t(`landing.${COACHES[coachIdx].nameKey}`)}</strong>
-                    <span>{t(`landing.${COACHES[coachIdx].specKey}`)}</span>
-                    <em>
-                      {COACHES[coachIdx].years} {t("landing.journeyYears")}
-                    </em>
-                  </div>
-                  <button
-                    type="button"
-                    className="home-journey-coach-nav"
-                    aria-label={t("landing.journeyNext")}
-                    onClick={() => setCoachIdx((v) => (v + 1) % COACHES.length)}
-                  >
-                    ›
-                  </button>
-                </div>
-                <div className="home-journey-chips">
-                  {[1, 2, 3].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`home-journey-chip ${coachIdx === n - 1 ? "is-on" : ""}`}
-                      onClick={() => setCoachIdx(n - 1)}
-                    >
-                      {t(`landing.journeyCoachSpec${n}`)}
-                    </button>
-                  ))}
-                </div>
-                <p className="home-journey-meta">{t("landing.journeyCoachMeta", { count: COACHES.length })}</p>
-              </>
-            )}
-
-            {spot.kind === "gyms" && (
-              <>
-                <h2>{t("landing.journeyGymsTitle")}</h2>
-                <p className="home-journey-note">{t("landing.journeyGymsLead")}</p>
-                <p className="home-journey-big">
-                  24<span>{t("landing.journeyGymsCount")}</span>
-                </p>
-                <div className="home-journey-map-mini" aria-hidden>
-                  <span style={{ left: "18%", top: "30%" }} />
-                  <span style={{ left: "55%", top: "22%" }} />
-                  <span style={{ left: "40%", top: "58%" }} />
-                  <span style={{ left: "72%", top: "48%" }} />
-                </div>
-                <div className="home-journey-gyms">
-                  {GYMS.map((g) => (
-                    <div key={g.id} className="home-journey-gym">
-                      <strong>{t(`landing.${g.nameKey}`)}</strong>
-                      <span>{g.dist}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {spot.kind === "uni" && (
-              <>
-                <h2>{t("landing.journeyUniTitle")}</h2>
-                <p className="home-journey-note">{t("landing.journeyUniLead")}</p>
-                <div className="home-journey-uni-stats">
-                  <div>
-                    <b>12+</b>
-                    <span>{t("landing.journeyUniStat1")}</span>
-                  </div>
-                  <div>
-                    <b>3</b>
-                    <span>{t("landing.journeyUniStat2")}</span>
-                  </div>
-                </div>
-                <ul className="home-journey-uni">
-                  {[1, 2, 3].map((n) => (
-                    <li key={n}>
-                      <b>{n}</b>
-                      <div>
-                        <strong>{t(`landing.journeyUni${n}t`)}</strong>
-                        <span>{t(`landing.journeyUni${n}`)}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            {spot.kind === "finish" && (
-              <>
-                <h2>{t("landing.journeyFinishTitle")}</h2>
-                <p className="home-journey-note">{t("landing.journeyFinishLead")}</p>
-                <div className={`home-journey-finish-mark ${finished || reduced ? "is-on" : ""}`} aria-hidden>
-                  <span>✓</span>
-                </div>
-                <ul className="home-journey-finish-list">
-                  <li>{t("landing.journeyFinishBullet1")}</li>
-                  <li>{t("landing.journeyFinishBullet2")}</li>
-                  <li>{t("landing.journeyFinishBullet3")}</li>
-                </ul>
-                <Link to={ctaTo} className="home-journey-btn home-journey-btn-lg">
-                  {t("landing.journeyCta")}
-                </Link>
-              </>
-            )}
-          </article>
+                </>
+              )}
+            </article>
+          </div>
         ))}
       </div>
     </div>
