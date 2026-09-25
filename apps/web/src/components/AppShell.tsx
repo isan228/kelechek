@@ -12,8 +12,8 @@ export function AppShell() {
       <div className="uw-shell">
         <div className="uw-page" role="status" aria-label="Загрузка">
           <div className="uw-skel" />
-          <div className="uw-skel" />
           <div className="uw-skel uw-skel-lg" />
+          <div className="uw-skel" />
         </div>
       </div>
     );
@@ -22,7 +22,7 @@ export function AppShell() {
 
   if (hideChrome) {
     return (
-      <div className="uw-shell">
+      <div className="uw-shell uw-shell-solo">
         <div className="uw-shell-main uw-shell-main-solo">
           <Outlet />
         </div>
@@ -32,11 +32,13 @@ export function AppShell() {
 
   return (
     <div className="uw-shell uw-shell-social">
-      <AppTopBar />
-      <div className="uw-shell-main">
-        <Outlet />
-      </div>
       <AppBottomNav />
+      <div className="uw-shell-column">
+        <AppTopBar />
+        <div className="uw-shell-main">
+          <Outlet />
+        </div>
+      </div>
     </div>
   );
 }

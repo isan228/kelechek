@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
+import { IconBookmark, IconChat, IconHeart, IconHeartFill, IconMore, IconShare } from "../../components/UwIcons";
 
 function formatSom(n: number) {
   return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
@@ -59,8 +60,8 @@ export function DashboardPage() {
   if (loading) {
     return (
       <div className="uw-page" role="status">
-        <div className="uw-skel uw-skel-lg" />
         <div className="uw-skel" />
+        <div className="uw-skel uw-skel-lg" />
         <div className="uw-skel" />
       </div>
     );
@@ -86,8 +87,8 @@ export function DashboardPage() {
             <strong>{name}</strong>
             <span>баланс · сегодня</span>
           </div>
-          <Link to="/progress" className="uw-post-more">
-            ···
+          <Link to="/progress" className="uw-post-more" aria-label="Ещё">
+            <IconMore />
           </Link>
         </header>
         <div className="uw-post-hero">
@@ -98,17 +99,22 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="uw-post-actions">
-          <button type="button" className={`uw-ico-btn ${liked ? "is-on" : ""}`} onClick={() => setLiked((v) => !v)}>
-            {liked ? "♥" : "♡"}
+          <button
+            type="button"
+            className={`uw-ico-btn ${liked ? "is-on" : ""}`}
+            onClick={() => setLiked((v) => !v)}
+            aria-label="Нравится"
+          >
+            {liked ? <IconHeartFill /> : <IconHeart />}
           </button>
-          <Link to="/app/invest" className="uw-ico-btn">
-            ✉
+          <Link to="/app/invest" className="uw-ico-btn" aria-label="Инвестиции">
+            <IconChat />
           </Link>
-          <Link to={continueTo} className="uw-ico-btn">
-            ↪
+          <Link to={continueTo} className="uw-ico-btn" aria-label="Продолжить">
+            <IconShare />
           </Link>
-          <Link to="/goal" className="uw-ico-btn uw-ico-end">
-            ✦
+          <Link to="/goal" className="uw-ico-btn uw-ico-end" aria-label="Цель">
+            <IconBookmark />
           </Link>
         </div>
         <div className="uw-post-caption">
@@ -135,7 +141,7 @@ export function DashboardPage() {
           </li>
           <li>
             <Link to="/invites">Приглашения тренера</Link>
-            <span>inbox</span>
+            <span>входящие</span>
           </li>
           <li>
             <Link to="/workouts">Материалы и программы</Link>
@@ -146,7 +152,7 @@ export function DashboardPage() {
 
       <article className="uw-post">
         <header className="uw-post-head">
-          <span className="uw-post-ava">▦</span>
+          <span className="uw-post-ava">P</span>
           <div className="uw-post-meta">
             <strong>прогресс</strong>
             <span>к цели</span>
