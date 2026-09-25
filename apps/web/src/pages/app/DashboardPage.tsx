@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider";
 import { api } from "../../api/client";
 
 function formatSom(n: number) {
@@ -10,7 +9,6 @@ function formatSom(n: number) {
 type Balance = Awaited<ReturnType<typeof api.balance>>;
 
 export function DashboardPage() {
-  const { user } = useAuth();
   const [data, setData] = useState<Balance | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,12 +69,9 @@ export function DashboardPage() {
     <div className="uw-page">
       <header className="uw-top">
         <div>
-          <p className="uw-eyebrow">Личный кабинет</p>
-          <h1 className="uw-h1">{user?.firstName ? `${user.firstName}` : "Обзор"}</h1>
+          <p className="uw-eyebrow">Статистика</p>
+          <h1 className="uw-h1">Обзор</h1>
         </div>
-        <Link to="/profile" className="uw-ghost-btn">
-          Профиль
-        </Link>
       </header>
 
       <section className="uw-ready" aria-labelledby="ready-title">
