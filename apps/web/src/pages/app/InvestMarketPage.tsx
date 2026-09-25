@@ -6,43 +6,45 @@ function formatSom(n: number) {
 }
 
 export function InvestMarketPage() {
-  if (INVEST_ASSETS.length === 0) {
-    return (
-      <div className="sx-page sx-state">
-        <h1 className="sx-title">Рынок пуст</h1>
-        <p className="sx-lead">Скоро здесь появятся объекты для инвестиций.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="sx-page">
-      <p className="sx-kicker">Рынок</p>
-      <h1 className="sx-title">Объекты</h1>
-      <p className="sx-lead">Атлеты, команды и события с прозрачной динамикой.</p>
+    <div className="uw-page">
+      <header className="uw-top">
+        <div>
+          <p className="uw-eyebrow">QBank · объекты</p>
+          <h1 className="uw-h1">Банк</h1>
+        </div>
+        <Link to="/memberships" className="uw-ghost-btn">
+          Абонемент
+        </Link>
+      </header>
+      <p className="uw-sub" style={{ marginTop: -8 }}>
+        Выберите объект — как тему в банке вопросов. Сначала сводка, детали по открытию.
+      </p>
 
-      <div className="sx-market-grid">
-        {INVEST_ASSETS.map((asset) => (
-          <Link key={asset.id} to={`/app/invest/${asset.id}`} className="sx-market-card sx-glow">
-            <span className="sx-badge">{asset.sport}</span>
-            <h2>{asset.name}</h2>
-            <p className="sx-muted">{asset.tagline}</p>
-            <div className="sx-market-meta">
-              <div>
-                <span className="sx-muted">Цена</span>
-                <b>{formatSom(asset.price)}</b>
-              </div>
-              <div>
-                <span className="sx-muted">YTD</span>
-                <b className={asset.yieldYtd >= 0 ? "is-up" : "is-down"}>
-                  {asset.yieldYtd >= 0 ? "+" : ""}
-                  {asset.yieldYtd}%
-                </b>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {INVEST_ASSETS.length === 0 ? (
+        <div className="uw-panel">
+          <p className="uw-sub">Пока пусто — объекты появятся позже.</p>
+        </div>
+      ) : (
+        <ul className="uw-blocks">
+          {INVEST_ASSETS.map((asset) => (
+            <li key={asset.id}>
+              <Link to={`/app/invest/${asset.id}`} className="uw-block">
+                <div>
+                  <strong>{asset.name}</strong>
+                  <span className="uw-sub">
+                    {asset.sport} · {formatSom(asset.price)} · YTD {asset.yieldYtd}%
+                  </span>
+                </div>
+                <span className={`uw-pill ${asset.changePct >= 0 ? "" : "is-timed"}`}>
+                  {asset.changePct >= 0 ? "+" : ""}
+                  {asset.changePct}%
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

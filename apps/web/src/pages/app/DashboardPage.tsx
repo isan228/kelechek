@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { api } from "../../api/client";
-import { CIRCLE, PATH_NODES, getOnboardingGoal } from "../../app/investData";
 
 function formatSom(n: number) {
   return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
 }
 
+type Balance = Awaited<ReturnType<typeof api.balance>>;
+
 export function DashboardPage() {
   const { user } = useAuth();
-  const goal = getOnboardingGoal() ?? "both";
-  const [balance, setBalance] = useState<number | null>(null);
+  const [data, setData] = useState<Balance | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,10 +19,10 @@ export function DashboardPage() {
     void api
       .balance()
       .then((r) => {
-        if (alive) setBalance(r.balance.available);
+        if (alive) setData(r);
       })
       .catch(() => {
-        if (alive) setBalance(24850);
+        if (alive) setData(null);
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -32,111 +32,128 @@ export function DashboardPage() {
     };
   }, []);
 
-  const current = PATH_NODES.find((n) => n.status === "current") ?? PATH_NODES[0];
-  const doneCount = PATH_NODES.filter((n) => n.status === "done").length;
-  const people = CIRCLE.filter((p) => p.role !== "you");
+  const holdNeed = data?.withdrawalProgress.holdingMonths ?? 12;
+  const holdHave = data?.withdrawalProgress.monthsHeld ?? 0;
+  const holdPct = Math.min(100, Math.round((holdHave / holdNeed) * 100));
+  const streak = data?.streak ?? 0;
+  const balance = data?.balance.available ?? 0;
+  const minGoal = data?.withdrawalProgress.minAmountKgs ?? 1000;
+  const savePct = Math.min(100, Math.round((balance / minGoal) * 100));
+
+  const readiness = useMemo(() => {
+    const a = holdPct * 0.4;
+    const b = Math.min(100, streak * 12) * 0.25;
+    const c = savePct * 0.35;
+    return Math.round(a + b + c);
+  }, [holdPct, streak, savePct]);
+
+  const subjects = [
+    { name: "Накопление", pct: savePct, to: "/progress", hint: `${formatSom(balance)} сом` },
+    { name: "Выдержка", pct: holdPct, to: "/goal", hint: `${holdHave}/${holdNeed} мес.` },
+    { name: "Серия", pct: Math.min(100, streak * 10), to: "/app/activity", hint: streak ? `${streak} мес.` : "не начата" },
+    { name: "Материалы", pct: 62, to: "/workouts", hint: "практика" },
+  ];
+
+  const continueTo = !data?.membership ? "/memberships" : streak < 1 ? "/app/activity" : "/workouts";
+  const continueLabel = !data?.membership ? "Оформить абонемент" : streak < 1 ? "Начать серию" : "Продолжить практику";
 
   if (loading) {
     return (
-      <div className="sx-page" role="status" aria-label="Загрузка">
-        <div className="sx-skeleton sx-skeleton-lg" />
-        <div className="sx-skeleton" />
-        <div className="sx-skeleton sx-skeleton-card" />
+      <div className="uw-page" role="status">
+        <div className="uw-skel uw-skel-lg" />
+        <div className="uw-skel" />
+        <div className="uw-skel" />
       </div>
     );
   }
 
   return (
-    <div className="sx-page">
-      <header className="sx-dash-head">
+    <div className="uw-page">
+      <header className="uw-top">
         <div>
-          <p className="sx-kicker">Круг</p>
-          <h1 className="sx-hello">{user?.firstName ? `Привет, ${user.firstName}` : "Ваш круг"}</h1>
+          <p className="uw-eyebrow">Личный кабинет</p>
+          <h1 className="uw-h1">{user?.firstName ? `${user.firstName}` : "Обзор"}</h1>
         </div>
-        <Link to="/app/portfolio" className="sx-avatar" aria-label="Профиль">
-          {(user?.firstName?.[0] || "K").toUpperCase()}
+        <Link to="/profile" className="uw-ghost-btn">
+          Профиль
         </Link>
       </header>
 
-      {current && (
-        <section className="sx-next sx-glow" aria-labelledby="next-step">
-          <div className="sx-next-top">
-            <p className="sx-metric-label" id="next-step">
-              Следующий шаг · {doneCount}/{PATH_NODES.length}
+      <section className="uw-ready" aria-labelledby="ready-title">
+        <div className="uw-ready-score" aria-labelledby="ready-title">
+          <div className="uw-score-ring" style={{ ["--p" as string]: `${readiness}` }}>
+            <span>{readiness}%</span>
+          </div>
+          <div>
+            <h2 id="ready-title" className="uw-h2">
+              Готовность к цели
+            </h2>
+            <p className="uw-sub">
+              Сводный индекс: накопление, выдержка и серия — как readiness в учебном кабинете.
             </p>
-            <Link to="/app/activity" className="sx-text-link">
-              Весь путь
-            </Link>
           </div>
-          <h2 className="sx-next-title">{current.title}</h2>
-          <p className="sx-muted">{current.detail}</p>
-          <div className="sx-progress" role="progressbar" aria-valuenow={Math.round((doneCount / PATH_NODES.length) * 100)} aria-valuemin={0} aria-valuemax={100}>
-            <span style={{ width: `${(doneCount / PATH_NODES.length) * 100}%` }} />
-          </div>
-          <Link to={current.ctaTo} className="sx-cta sx-cta-block">
-            {current.cta}
-          </Link>
-        </section>
-      )}
-
-      <section className="sx-section" aria-labelledby="people-title">
-        <div className="sx-section-head">
-          <h2 id="people-title">Люди рядом</h2>
-          <Link to="/invites" className="sx-text-link">
-            + Пригласить
-          </Link>
         </div>
-        <ul className="sx-people">
-          {people.map((person) => {
-            const row = (
-              <>
-                <span className="sx-people-ava" aria-hidden>
-                  {person.initials}
-                </span>
-                <span className="sx-people-text">
-                  <strong>{person.name}</strong>
-                  <span className="sx-muted">{person.subtitle}</span>
-                </span>
-                {person.pulse ? <span className="sx-people-meta">{person.pulse}</span> : null}
-              </>
-            );
-            return (
-              <li key={person.id}>
-                {person.to ? (
-                  <Link to={person.to} className="sx-people-row">
-                    {row}
-                  </Link>
-                ) : (
-                  <div className="sx-people-row">{row}</div>
-                )}
-              </li>
-            );
-          })}
+        <Link to={continueTo} className="uw-primary">
+          {continueLabel}
+        </Link>
+      </section>
+
+      <section className="uw-panel">
+        <div className="uw-panel-head">
+          <h2 className="uw-h2">По блокам</h2>
+          <span className="uw-sub">как subjects</span>
+        </div>
+        <ul className="uw-subjects">
+          {subjects.map((s) => (
+            <li key={s.name}>
+              <Link to={s.to} className="uw-subject">
+                <div className="uw-subject-top">
+                  <strong>{s.name}</strong>
+                  <span>{s.pct}%</span>
+                </div>
+                <div className="uw-bar" aria-hidden>
+                  <span style={{ width: `${s.pct}%` }} />
+                </div>
+                <span className="uw-sub">{s.hint}</span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </section>
 
-      {(goal === "invest" || goal === "both") && (
-        <section className="sx-section">
-          <Link to="/app/invest" className="sx-balance-link">
-            <span>
-              <span className="sx-metric-label">Баланс</span>
-              <strong className="sx-mini-value">{formatSom(balance ?? 0)} сом</strong>
-            </span>
-            <span className="sx-text-link">Рынок →</span>
-          </Link>
-        </section>
-      )}
+      <section className="uw-stats">
+        <div className="uw-stat">
+          <span className="uw-sub">Баланс</span>
+          <b>{formatSom(balance)}</b>
+        </div>
+        <div className="uw-stat">
+          <span className="uw-sub">Серия</span>
+          <b>{streak || 0}</b>
+        </div>
+        <div className="uw-stat">
+          <span className="uw-sub">До вывода</span>
+          <b>
+            {holdHave}/{holdNeed}
+          </b>
+        </div>
+      </section>
 
-      <section className="sx-section" aria-labelledby="feed-title">
-        <h2 id="feed-title">Недавно в круге</h2>
-        <ul className="sx-feed">
+      <section className="uw-panel">
+        <div className="uw-panel-head">
+          <h2 className="uw-h2">К повторению</h2>
+        </div>
+        <ul className="uw-review">
           <li>
-            <b>Айгуль</b> — серия тренировок
-            <span className="sx-muted"> · 2ч</span>
+            <Link to="/schedule">Расписание тренировок</Link>
+            <span className="uw-tag">сегодня</span>
           </li>
           <li>
-            <b>Тимур</b> — закрыл шаг пути
-            <span className="sx-muted"> · вчера</span>
+            <Link to="/invites">Приглашения тренера</Link>
+            <span className="uw-tag">inbox</span>
+          </li>
+          <li>
+            <Link to="/goal">Условия цели</Link>
+            <span className="uw-tag">правила</span>
           </li>
         </ul>
       </section>

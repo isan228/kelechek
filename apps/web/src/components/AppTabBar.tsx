@@ -1,31 +1,31 @@
 import { NavLink, useLocation } from "react-router-dom";
 
 const tabs = [
-  { to: "/app", end: true, label: "Круг", icon: "○" },
-  { to: "/app/activity", end: false, label: "Путь", icon: "⇢" },
-  { to: "/app/invest", end: false, label: "Рынок", icon: "▣" },
-  { to: "/app/portfolio", end: false, label: "Я", icon: "▢" },
+  { to: "/app", end: true, label: "Обзор", icon: "⌂" },
+  { to: "/app/activity", end: false, label: "Практика", icon: "▣" },
+  { to: "/app/invest", end: false, label: "Банк", icon: "▤" },
+  { to: "/app/portfolio", end: false, label: "Отчёт", icon: "▦" },
 ] as const;
 
 export function AppTabBar() {
   const { pathname } = useLocation();
-  const hide = pathname.startsWith("/app/onboarding") || /^\/app\/invest\/[^/]+$/.test(pathname);
-
-  if (hide) return null;
+  if (pathname.startsWith("/app/onboarding") || /^\/app\/invest\/[^/]+$/.test(pathname)) {
+    return null;
+  }
 
   return (
-    <nav className="sx-tabbar" aria-label="Основная навигация">
+    <nav className="uw-tabbar" aria-label="Кабинет">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
           end={tab.end}
-          className={({ isActive }) => `sx-tab ${isActive ? "is-active" : ""}`}
+          className={({ isActive }) => `uw-tab ${isActive ? "is-active" : ""}`}
         >
-          <span className="sx-tab-icon" aria-hidden>
+          <span className="uw-tab-ico" aria-hidden>
             {tab.icon}
           </span>
-          <span>{tab.label}</span>
+          {tab.label}
         </NavLink>
       ))}
     </nav>

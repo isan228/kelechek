@@ -2,103 +2,92 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { api } from "../../api/client";
-import { getOnboardingGoal, setOnboardingGoal, type OnboardingGoal } from "../../app/investData";
 
 function formatSom(n: number) {
   return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
 }
 
-const ops = [
-  { id: 1, title: "Инвестиция · Айгуль Нурланова", amount: -5000, at: "24 сен" },
-  { id: 2, title: "Начисление · абонемент", amount: 4100, at: "20 сен" },
-  { id: 3, title: "Инвестиция · Issyk-Kul Trail", amount: -1500, at: "12 сен" },
-];
-
-const badges = ["Серия 7+", "Первый вклад", "Челлендж x2"];
-
 export function PortfolioPage() {
   const { user } = useAuth();
   const [balance, setBalance] = useState(0);
-  const [goal, setGoal] = useState<OnboardingGoal>(getOnboardingGoal() ?? "both");
+  const [streak, setStreak] = useState(0);
+  const [hold, setHold] = useState({ have: 0, need: 12 });
 
   useEffect(() => {
     void api
       .balance()
-      .then((r) => setBalance(r.balance.available))
-      .catch(() => setBalance(24850));
+      .then((r) => {
+        setBalance(r.balance.available);
+        setStreak(r.streak);
+        setHold({
+          have: r.withdrawalProgress.monthsHeld,
+          need: r.withdrawalProgress.holdingMonths,
+        });
+      })
+      .catch(() => undefined);
   }, []);
 
+  const rows = [
+    { label: "Корректность серии", value: streak > 0 ? "Стабильно" : "Низкая", pct: Math.min(100, streak * 10) },
+    { label: "Темп накопления", value: balance > 0 ? "Активен" : "Пауза", pct: Math.min(100, Math.round(balance / 50)) },
+    { label: "Выдержка", value: `${hold.have}/${hold.need}`, pct: Math.round((hold.have / hold.need) * 100) },
+  ];
+
   return (
-    <div className="sx-page">
-      <p className="sx-kicker">Портфель</p>
-      <h1 className="sx-title">{user?.firstName || "Профиль"}</h1>
-      <p className="sx-lead">История, достижения и настройки фокуса.</p>
-
-      <section className="sx-hero-metric sx-glow">
-        <p className="sx-metric-label">Доступно</p>
-        <p className="sx-metric-value">{formatSom(balance)} сом</p>
-        <Link to="/progress" className="sx-text-link">
-          Детали баланса →
+    <div className="uw-page">
+      <header className="uw-top">
+        <div>
+          <p className="uw-eyebrow">Performance</p>
+          <h1 className="uw-h1">Отчёт</h1>
+        </div>
+        <Link to="/profile" className="uw-ghost-btn">
+          {user?.firstName || "Аккаунт"}
         </Link>
-      </section>
+      </header>
 
-      <section className="sx-section">
-        <h2>Достижения</h2>
-        <div className="sx-chip-row">
-          {badges.map((b) => (
-            <span key={b} className="sx-chip is-accent">
-              {b}
-            </span>
-          ))}
+      <section className="uw-panel">
+        <h2 className="uw-h2">Сводка</h2>
+        <div className="uw-stats">
+          <div className="uw-stat">
+            <span className="uw-sub">Баланс</span>
+            <b>{formatSom(balance)}</b>
+          </div>
+          <div className="uw-stat">
+            <span className="uw-sub">Серия</span>
+            <b>{streak}</b>
+          </div>
+          <div className="uw-stat">
+            <span className="uw-sub">Выдержка</span>
+            <b>
+              {hold.have}/{hold.need}
+            </b>
+          </div>
         </div>
       </section>
 
-      <section className="sx-section">
-        <h2>Операции</h2>
-        <ul className="sx-list">
-          {ops.map((o) => (
-            <li key={o.id} className="sx-list-row">
-              <div>
-                <strong>{o.title}</strong>
-                <span className="sx-muted">{o.at}</span>
+      <section className="uw-panel">
+        <h2 className="uw-h2">Разбор по метрикам</h2>
+        <ul className="uw-subjects">
+          {rows.map((r) => (
+            <li key={r.label} className="uw-subject" style={{ cursor: "default" }}>
+              <div className="uw-subject-top">
+                <strong>{r.label}</strong>
+                <span>{r.value}</span>
               </div>
-              <b className={o.amount >= 0 ? "is-up" : ""}>
-                {o.amount >= 0 ? "+" : ""}
-                {formatSom(o.amount)}
-              </b>
+              <div className="uw-bar" aria-hidden>
+                <span style={{ width: `${Math.min(100, r.pct)}%` }} />
+              </div>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="sx-section">
-        <h2>Фокус продукта</h2>
-        <div className="sx-choice-list">
-          {(
-            [
-              ["invest", "Инвестиции"],
-              ["activity", "Активность"],
-              ["both", "Оба"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              className={`sx-choice ${goal === id ? "is-selected" : ""}`}
-              onClick={() => {
-                setGoal(id);
-                setOnboardingGoal(id);
-              }}
-            >
-              <span className="sx-choice-check" aria-hidden />
-              <strong>{label}</strong>
-            </button>
-          ))}
-        </div>
-        <Link to="/profile" className="sx-text-link" style={{ display: "inline-block", marginTop: "1rem" }}>
-          Аккаунт →
-        </Link>
-      </section>
+      <div className="uw-link-stack">
+        <Link to="/progress">История операций →</Link>
+        <Link to="/goal">Цель и правила →</Link>
+        <Link to="/memberships">Абонемент →</Link>
+        <Link to="/notifications">Уведомления →</Link>
+      </div>
     </div>
   );
 }

@@ -73,7 +73,7 @@ export function Layout() {
 
   if (isApp) {
     return (
-      <div className="site site-app">
+      <div className="site site-app site-app-uw">
         <main className="site-main">
           <Outlet />
         </main>
