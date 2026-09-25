@@ -1,6 +1,6 @@
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { AppBottomNav, AppTopBar } from "./AppTabBar";
+import { AppAside, AppBottomNav, AppTopBar } from "./AppTabBar";
 
 export function AppShell() {
   const { user, loading } = useAuth();
@@ -33,11 +33,14 @@ export function AppShell() {
   return (
     <div className="uw-shell uw-shell-social">
       <AppBottomNav />
-      <div className="uw-shell-column">
-        <AppTopBar />
-        <div className="uw-shell-main">
-          <Outlet />
+      <div className="uw-shell-stage">
+        <div className="uw-shell-column">
+          <AppTopBar />
+          <div className="uw-shell-main">
+            <Outlet />
+          </div>
         </div>
+        <AppAside />
       </div>
     </div>
   );
