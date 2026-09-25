@@ -47,7 +47,7 @@ export function AdminPage() {
   if (!user.roles.includes("ADMIN")) return <Navigate to="/cabinet" replace />;
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("nav.admin")}</p>
       <h1>{t("admin.title")}</h1>
       <p className="muted">{t("admin.lead")}</p>

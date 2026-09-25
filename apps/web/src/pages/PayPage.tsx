@@ -57,7 +57,7 @@ export function BalancePage() {
   }, []);
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
     <div className="grid two">
       <section className="card">
         <h1>{t("balance.title")}</h1>

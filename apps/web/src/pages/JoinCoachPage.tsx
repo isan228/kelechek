@@ -125,7 +125,7 @@ export function JoinCoachPage() {
   if (loading || !user) return null;
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("join.kicker")}</p>
       <h1>{t("join.title")}</h1>
       <p className="lead">{t("join.lead")}</p>

@@ -41,7 +41,7 @@ export function PaymentSuccessPage() {
   const ok = status === "SUCCEEDED";
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <div className="card" style={{ maxWidth: 520 }}>
         <p className="kicker">{t("appName")}</p>
         <h1>{ok ? t("pay.success") : t("pay.waitingTitle")}</h1>

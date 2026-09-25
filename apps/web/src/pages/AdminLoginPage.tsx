@@ -31,7 +31,7 @@ export function AdminLoginPage() {
   }
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <form className="card" style={{ maxWidth: 440, margin: "0 auto" }} onSubmit={(e) => void submit(e)}>
         <p className="kicker">{t("nav.admin")}</p>
         <h1>{t("auth.adminTitle")}</h1>

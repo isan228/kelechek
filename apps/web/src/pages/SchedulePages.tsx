@@ -377,7 +377,7 @@ export function TraineeSchedulePage() {
       : data?.coach?.sportRu || data?.coach?.sportKy;
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("schedule.kicker")}</p>
       <h1>{t("schedule.myTitle")}</h1>
       {!data?.coach ? (
@@ -530,7 +530,7 @@ export function CheckInPage() {
   if (loading || !user) return null;
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("schedule.checkinKicker")}</p>
       <h1>{t("nav.checkin")}</h1>
       <p className="lead">{t("schedule.checkinUserLead")}</p>
@@ -600,7 +600,7 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("nav.notifications")}</p>
       <h1>{t("nav.notifications")}</h1>
       <div className="row" style={{ marginBottom: "1rem" }}>

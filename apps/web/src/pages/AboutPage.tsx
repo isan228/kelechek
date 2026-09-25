@@ -2,32 +2,29 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 import { Reveal } from "../components/Reveal";
+import { PageHero } from "../components/PageHero";
 
 export function AboutPage() {
   const { t } = useTranslation();
   const { s, photo } = useSiteCopy();
   return (
     <>
-      <div className="page-hero">
-        <div className="wrap">
-          <p className="kicker">{t("nav.about")}</p>
-          <h1>{s("about.title")}</h1>
-          <p className="lead">{s("about.lead")}</p>
-        </div>
-      </div>
+      <PageHero kicker={t("nav.about")} title={s("about.title")} lead={s("about.lead")} />
       <section className="band">
         <div className="wrap split">
           <Reveal>
             <img src={photo("traditions")} alt="" />
           </Reveal>
-          <Reveal delay={100}>
+          <Reveal delay={80}>
             <div>
               <h2>{s("about.ideaTitle")}</h2>
               <p className="lead">{s("about.idea")}</p>
-              <p className="lead">{s("about.notCashback")}</p>
-              <Link to="/memberships">
-                <button type="button">{t("nav.memberships")}</button>
-              </Link>
+              <p className="muted">{s("about.notCashback")}</p>
+              <div className="cta-row">
+                <Link to="/memberships">
+                  <button type="button">{t("nav.memberships")}</button>
+                </Link>
+              </div>
             </div>
           </Reveal>
         </div>
@@ -43,8 +40,9 @@ export function AboutPage() {
           </Reveal>
           <div className="story-grid">
             {[1, 2, 3].map((n) => (
-              <Reveal key={n} delay={n * 70}>
+              <Reveal key={n} delay={n * 60}>
                 <article className="story-block">
+                  <em className="kicker">0{n}</em>
                   <h3>{t(`about.value${n}t`)}</h3>
                   <p className="muted">{t(`about.value${n}`)}</p>
                 </article>
@@ -72,7 +70,7 @@ export function AboutPage() {
               </div>
             </div>
           </Reveal>
-          <Reveal delay={100}>
+          <Reveal delay={80}>
             <img src={photo("future")} alt="" />
           </Reveal>
         </div>

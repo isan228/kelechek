@@ -38,7 +38,8 @@ export function InvitesPage() {
   }, []);
 
   return (
-    <section className="card">
+    <div className="wrap app-page">
+      <section className="card" style={{ maxWidth: 720 }}>
       <h1>{t("invites.title")}</h1>
       {data?.relation && (
         <p>
@@ -73,6 +74,7 @@ export function InvitesPage() {
         ))}
       </ul>
     </section>
+    </div>
   );
 }
 
@@ -166,7 +168,7 @@ export function CoachPage() {
   ];
 
   return (
-    <div className="wrap section coach-cabinet">
+    <div className="wrap app-page coach-cabinet">
       <header className="coach-cabinet-head">
         <div>
           <p className="kicker">{t("coachCabinet.kicker")}</p>
@@ -393,7 +395,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <section className="card" style={{ maxWidth: 480 }}>
         <h1>{t("profile.title")}</h1>
         <label>

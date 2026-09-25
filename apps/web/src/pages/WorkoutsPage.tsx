@@ -29,7 +29,7 @@ export function WorkoutsPage() {
           <p className="lead">{data && !data.canReadBody ? s("content.locked") : s("content.openLead")}</p>
         </div>
       </div>
-      <section className="section" style={{ paddingTop: 0 }}>
+      <section className="band" style={{ paddingTop: "1.5rem" }}>
         <div className="wrap grid three">
           {data?.items.map((item) => (
             <article className="card photo" key={item.id}>
@@ -38,7 +38,7 @@ export function WorkoutsPage() {
                 <span className="badge">{item.type}</span>
                 <h3>{item.title}</h3>
                 <p className="muted">{item.summary}</p>
-                <Link to={`/workouts/${item.id}`}>{s("content.open")}</Link>
+                <Link className="section-link" to={`/workouts/${item.id}`}>{s("content.open")} →</Link>
               </div>
             </article>
           ))}
@@ -63,7 +63,7 @@ export function WorkoutItemPage() {
   if (!item) return null;
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <article className="card">
         <p className="kicker">{item.type}</p>
         <h1>{item.title}</h1>

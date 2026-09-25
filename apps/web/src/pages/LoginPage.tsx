@@ -75,98 +75,100 @@ export function LoginPage() {
   }
 
   return (
-    <div className="wrap section">
-      <div className="split">
-        <img className="login-photo" src={photo("city")} alt="" />
-        <form className="card" style={{ maxWidth: 440 }} onSubmit={(e) => void submit(e)}>
-          <p className="kicker">{t("appName")}</p>
-          <h1>{mode === "login" ? t("auth.title") : t("auth.registerTitle")}</h1>
-          <p className="muted">{mode === "register" ? t("auth.registerLead") : t("auth.lead")}</p>
-          <div className="row" style={{ marginTop: "0.6rem" }}>
-            <button
-              type="button"
-              className={mode === "login" ? "" : "ghost"}
-              onClick={() => {
-                setMode("login");
-                setError(null);
-              }}
-            >
-              {t("auth.title")}
-            </button>
-            <button
-              type="button"
-              className={mode === "register" ? "" : "ghost"}
-              onClick={() => {
-                setMode("register");
-                setError(null);
-              }}
-            >
-              {t("auth.registerTitle")}
-            </button>
-          </div>
-          <label>
-            {t("auth.login")}
-            <input
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              placeholder={t("auth.loginPlaceholder")}
-              autoComplete="username"
-            />
-          </label>
-          <label>
-            {t("auth.password")}
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t("auth.passwordPlaceholder")}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-            />
-          </label>
-          {mode === "register" && (
-            <>
-              <label>
-                {t("auth.phone")}
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder={t("auth.phonePlaceholder")}
-                />
-              </label>
-              <label>
-                {t("profile.firstName")}
-                <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-              </label>
-              <label>
-                {t("auth.tariff")}
-                <select value={tariffId} onChange={(e) => setTariffId(e.target.value)} required>
-                  {tariffs.length === 0 && <option value="">{t("admin.loading")}</option>}
-                  {tariffs.map((tariff) => (
-                    <option key={tariff.id} value={tariff.id}>
-                      {tariff.name} — {tariff.priceKgs} сом
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <p className="muted" style={{ fontSize: "0.85rem" }}>
-                {t("auth.payNote")}
-              </p>
-            </>
-          )}
-          <div className="row" style={{ marginTop: "1rem" }}>
-            <button type="submit" disabled={busy}>
-              {busy
-                ? t("pay.working")
-                : mode === "login"
-                  ? t("auth.submitLogin")
-                  : t("auth.submitRegisterPay")}
-            </button>
-          </div>
-          {error && <p className="error">{error}</p>}
-          <p className="muted" style={{ marginTop: "1rem", fontSize: "0.85rem" }}>
-            <Link to="/admin/login">{t("auth.adminLink")}</Link>
-          </p>
-        </form>
+    <div className="auth-shell">
+      <div className="wrap">
+        <div className="split">
+          <img className="login-photo" src={photo("city")} alt="" />
+          <form className="card" onSubmit={(e) => void submit(e)}>
+            <p className="kicker">{t("appName")}</p>
+            <h1>{mode === "login" ? t("auth.title") : t("auth.registerTitle")}</h1>
+            <p className="muted">{mode === "register" ? t("auth.registerLead") : t("auth.lead")}</p>
+            <div className="auth-mode">
+              <button
+                type="button"
+                className={mode === "login" ? "" : "ghost"}
+                onClick={() => {
+                  setMode("login");
+                  setError(null);
+                }}
+              >
+                {t("auth.title")}
+              </button>
+              <button
+                type="button"
+                className={mode === "register" ? "" : "ghost"}
+                onClick={() => {
+                  setMode("register");
+                  setError(null);
+                }}
+              >
+                {t("auth.registerTitle")}
+              </button>
+            </div>
+            <label>
+              {t("auth.login")}
+              <input
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
+                placeholder={t("auth.loginPlaceholder")}
+                autoComplete="username"
+              />
+            </label>
+            <label>
+              {t("auth.password")}
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t("auth.passwordPlaceholder")}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+              />
+            </label>
+            {mode === "register" && (
+              <>
+                <label>
+                  {t("auth.phone")}
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={t("auth.phonePlaceholder")}
+                  />
+                </label>
+                <label>
+                  {t("profile.firstName")}
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                </label>
+                <label>
+                  {t("auth.tariff")}
+                  <select value={tariffId} onChange={(e) => setTariffId(e.target.value)} required>
+                    {tariffs.length === 0 && <option value="">{t("admin.loading")}</option>}
+                    {tariffs.map((tariff) => (
+                      <option key={tariff.id} value={tariff.id}>
+                        {tariff.name} — {tariff.priceKgs} сом
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="muted" style={{ fontSize: "0.85rem" }}>
+                  {t("auth.payNote")}
+                </p>
+              </>
+            )}
+            <div className="row" style={{ marginTop: "1.1rem" }}>
+              <button type="submit" disabled={busy}>
+                {busy
+                  ? t("pay.working")
+                  : mode === "login"
+                    ? t("auth.submitLogin")
+                    : t("auth.submitRegisterPay")}
+              </button>
+            </div>
+            {error && <p className="error">{error}</p>}
+            <p className="muted" style={{ marginTop: "1rem", fontSize: "0.85rem" }}>
+              <Link to="/admin/login">{t("auth.adminLink")}</Link>
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   );

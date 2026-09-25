@@ -37,9 +37,7 @@ export function HomePage() {
         <div className="hero-media">
           <img src={photo("hero")} alt="" />
         </div>
-        <img className="hero-ornament" src="/ornament.svg" alt="" />
         <div className="hero-inner">
-          <p className="kicker">{s("landing.kicker")}</p>
           <p className="hero-brand">{s("appName")}</p>
           <h1>{s("landing.title")}</h1>
           <p className="lead">{s("landing.lead")}</p>
@@ -56,27 +54,6 @@ export function HomePage() {
         </div>
       </section>
 
-      <div className="wrap">
-        <div className="stats">
-          <div className="stat">
-            <b>{s("landing.statValue1")}</b>
-            <span>{s("landing.stat1")}</span>
-          </div>
-          <div className="stat">
-            <b>
-              {s("landing.statValue2")} {s("landing.days")}
-            </b>
-            <span>{s("landing.stat2")}</span>
-          </div>
-          <div className="stat">
-            <b>
-              {s("landing.statValue3")} {s("landing.months")}
-            </b>
-            <span>{s("landing.stat3")}</span>
-          </div>
-        </div>
-      </div>
-
       <section className="band band-soft">
         <div className="wrap">
           <Reveal>
@@ -88,7 +65,7 @@ export function HomePage() {
           </Reveal>
           <div className="path">
             {[1, 2, 3, 4].map((n) => (
-              <Reveal key={n} delay={n * 70}>
+              <Reveal key={n} delay={n * 60}>
                 <article className="path-step">
                   <em>0{n}</em>
                   <h3>{s(`landing.step${n}t`)}</h3>
@@ -107,20 +84,19 @@ export function HomePage() {
               <p className="kicker">{s("landing.whyKicker")}</p>
               <h2>{s("landing.whyTitle")}</h2>
               <p className="lead">{s("landing.whyLead")}</p>
-              <p className="muted">{t("landing.whyExtra")}</p>
               <div className="cta-row">
-                <Link to="/workouts">
-                  <button type="button">{s("content.title")}</button>
-                </Link>
                 <Link to="/memberships">
+                  <button type="button">{t("nav.memberships")}</button>
+                </Link>
+                <Link to="/workouts">
                   <button className="ghost" type="button">
-                    {t("nav.memberships")}
+                    {s("content.title")}
                   </button>
                 </Link>
               </div>
             </div>
           </Reveal>
-          <Reveal delay={120}>
+          <Reveal delay={100}>
             <img src={photo("movement")} alt="" />
           </Reveal>
         </div>
@@ -160,28 +136,6 @@ export function HomePage() {
         <div className="wrap">
           <Reveal>
             <div className="section-head">
-              <p className="kicker">{t("landing.promiseKicker")}</p>
-              <h2>{t("landing.promiseTitle")}</h2>
-            </div>
-          </Reveal>
-          <div className="story-grid">
-            {[1, 2, 3].map((n) => (
-              <Reveal key={n} delay={n * 80}>
-                <article className="story-block">
-                  <p className="kicker">0{n}</p>
-                  <h3>{t(`landing.promise${n}t`)}</h3>
-                  <p className="muted">{t(`landing.promise${n}`)}</p>
-                </article>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="band band-soft">
-        <div className="wrap">
-          <Reveal>
-            <div className="section-head">
               <p className="kicker">{t("nav.news")}</p>
               <h2>{t("news.homeTitle")}</h2>
               <p className="muted">{t("news.homeLead")}</p>
@@ -190,9 +144,9 @@ export function HomePage() {
           {news.length > 0 ? (
             <div className="news-grid">
               {news.map((post, i) => (
-                <Reveal key={post.id} delay={i * 80}>
+                <Reveal key={post.id} delay={i * 70}>
                   <Link to={`/news/${post.id}`} className="news-card">
-                    {post.coverUrl ? <img src={post.coverUrl} alt="" /> : <img src={photo("city")} alt="" />}
+                    <img src={post.coverUrl || photo("city")} alt="" />
                     <div className="muted">
                       {new Date(post.publishedAt).toLocaleDateString(locale === "ky" ? "ky-KG" : "ru-KG")}
                     </div>
@@ -211,25 +165,24 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="band">
+      <section className="band band-soft">
         <div className="wrap">
-          <div className="grid two">
-            <Reveal>
-              <article>
-                <img src={photo("goals")} alt="" style={{ borderRadius: 18, marginBottom: "1rem" }} />
-                <span className="badge">{s("landing.card1b")}</span>
-                <h3>{s("landing.card1t")}</h3>
-                <p className="muted">{s("landing.card1")}</p>
-              </article>
-            </Reveal>
-            <Reveal delay={100}>
-              <article>
-                <img src={photo("discipline")} alt="" style={{ borderRadius: 18, marginBottom: "1rem" }} />
-                <span className="badge">{s("landing.card2b")}</span>
-                <h3>{s("landing.card2t")}</h3>
-                <p className="muted">{s("landing.card2")}</p>
-              </article>
-            </Reveal>
+          <Reveal>
+            <div className="section-head">
+              <p className="kicker">{s("landing.kicker")}</p>
+              <h2>{s("landing.card1t")}</h2>
+              <p className="muted">{s("landing.card1")}</p>
+            </div>
+          </Reveal>
+          <div className="cta-row">
+            <Link to={startTo}>
+              <button type="button">{s("landing.ctaStart")}</button>
+            </Link>
+            <Link to="/coaches">
+              <button className="ghost" type="button">
+                {t("nav.coaches")}
+              </button>
+            </Link>
           </div>
         </div>
       </section>

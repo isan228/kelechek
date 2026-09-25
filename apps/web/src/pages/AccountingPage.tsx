@@ -333,7 +333,7 @@ export function AccountingPage() {
   }
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("admin.tab.accounting")}</p>
       <h1>{t("admin.accountantCabinetTitle")}</h1>
       <p className="muted">{t("admin.accountantCabinetLead")}</p>

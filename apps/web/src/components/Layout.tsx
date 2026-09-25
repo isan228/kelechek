@@ -179,7 +179,7 @@ export function Layout() {
         <footer className="site-footer">
           <div className="wrap footer-grid">
             <div>
-              <div className="brand" style={{ color: "#f4efe6" }}>
+              <div className="brand" style={{ color: "#eef5f1" }}>
                 <img src="/ornament.svg" alt="" />
                 {s("appName")}
               </div>

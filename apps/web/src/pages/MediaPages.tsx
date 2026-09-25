@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 import { Reveal } from "../components/Reveal";
+import { PageHero } from "../components/PageHero";
 
 export function GalleryPage() {
   const { t, i18n } = useTranslation();
@@ -27,18 +28,12 @@ export function GalleryPage() {
 
   return (
     <>
-      <div className="page-hero">
-        <div className="wrap">
-          <p className="kicker">{t("nav.gallery")}</p>
-          <h1>{t("gallery.title")}</h1>
-          <p className="lead">{t("gallery.lead")}</p>
-        </div>
-      </div>
-      <section className="section" style={{ paddingTop: 0 }}>
+      <PageHero kicker={t("nav.gallery")} title={t("gallery.title")} lead={t("gallery.lead")} />
+      <section className="band" style={{ paddingTop: "1.5rem" }}>
         <div className="wrap">
           <div className="gallery-masonry">
             {list.map((item, i) => (
-              <Reveal key={item.id} delay={(i % 6) * 50}>
+              <Reveal key={item.id} delay={(i % 6) * 40}>
                 <figure>
                   <img src={item.src} alt={item.caption || ""} />
                   {item.caption ? <figcaption>{item.caption}</figcaption> : null}
@@ -64,19 +59,13 @@ export function NewsPage() {
 
   return (
     <>
-      <div className="page-hero">
-        <div className="wrap">
-          <p className="kicker">{t("nav.news")}</p>
-          <h1>{t("news.title")}</h1>
-          <p className="lead">{t("news.lead")}</p>
-        </div>
-      </div>
-      <section className="section" style={{ paddingTop: 0 }}>
+      <PageHero kicker={t("nav.news")} title={t("news.title")} lead={t("news.lead")} />
+      <section className="band" style={{ paddingTop: "1.5rem" }}>
         <div className="wrap">
           {posts.length === 0 && <p className="muted">{t("news.empty")}</p>}
           <div className="news-grid">
             {posts.map((post, i) => (
-              <Reveal key={post.id} delay={i * 60}>
+              <Reveal key={post.id} delay={i * 50}>
                 <Link to={`/news/${post.id}`} className="news-card">
                   <img src={post.coverUrl || photo("city")} alt="" />
                   <div className="muted">
@@ -111,7 +100,7 @@ export function NewsItemPage() {
 
   if (!post) {
     return (
-      <div className="wrap section">
+      <div className="wrap app-page">
         <p className="muted">{t("news.notFound")}</p>
         <Link to="/news">{t("news.back")}</Link>
       </div>
@@ -120,26 +109,18 @@ export function NewsItemPage() {
 
   return (
     <>
-      <div className="page-hero">
-        <div className="wrap">
-          <p className="kicker">{t("nav.news")}</p>
-          <h1>{post.title}</h1>
-          <p className="muted">
+      <PageHero kicker={t("nav.news")} title={post.title} lead={post.summary} />
+      <section className="band" style={{ paddingTop: "1rem" }}>
+        <div className="wrap" style={{ maxWidth: 820 }}>
+          <p className="muted" style={{ marginTop: 0 }}>
             {new Date(post.publishedAt).toLocaleDateString(locale === "ky" ? "ky-KG" : "ru-KG")}
           </p>
-          <p className="lead">{post.summary}</p>
-        </div>
-      </div>
-      <section className="section" style={{ paddingTop: 0 }}>
-        <div className="wrap" style={{ maxWidth: 820 }}>
           <img
+            className="news-cover"
             src={post.coverUrl || photo("city")}
             alt=""
-            style={{ width: "100%", borderRadius: 18, marginBottom: "1.4rem", aspectRatio: "16/9", objectFit: "cover" }}
           />
-          <div className="lead" style={{ whiteSpace: "pre-wrap" }}>
-            {post.body}
-          </div>
+          <div className="lead news-body">{post.body}</div>
           <div className="cta-row">
             <Link to="/news">
               <button className="ghost" type="button">

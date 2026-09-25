@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 import { Reveal } from "../components/Reveal";
+import { PageHero } from "../components/PageHero";
 
 function formatSom(value: number, locale: string) {
   return new Intl.NumberFormat(locale === "ky" ? "ky-KG" : "ru-KG", { maximumFractionDigits: 0 }).format(value);
@@ -39,18 +40,10 @@ export function MembershipsPage() {
 
   return (
     <>
-      <div className="page-hero">
+      <PageHero kicker={t("nav.memberships")} title={s("pay.title")} lead={s("pay.pageLead")} />
+      <img className="full-bleed-photo" src={photo("future")} alt="" />
+      <section className="band">
         <div className="wrap">
-          <p className="kicker">{t("nav.memberships")}</p>
-          <h1>{s("pay.title")}</h1>
-          <p className="lead">{s("pay.pageLead")}</p>
-        </div>
-      </div>
-      <section className="band" style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <img className="page-banner" src={photo("future")} alt="" />
-        </div>
-        <div className="wrap" style={{ marginTop: "2rem" }}>
           <Reveal>
             <div className="section-head">
               <p className="kicker">{t("pay.howKicker")}</p>
@@ -58,46 +51,43 @@ export function MembershipsPage() {
               <p className="muted">{t("pay.howLead")}</p>
             </div>
           </Reveal>
-          <div className="story-grid" style={{ marginBottom: "2.5rem" }}>
+          <div className="story-grid" style={{ marginBottom: "2.8rem" }}>
             {[1, 2, 3].map((n) => (
-              <Reveal key={n} delay={n * 60}>
+              <Reveal key={n} delay={n * 50}>
                 <article className="story-block">
+                  <em className="kicker">0{n}</em>
                   <h3>{t(`pay.how${n}t`)}</h3>
                   <p className="muted">{t(`pay.how${n}`)}</p>
                 </article>
               </Reveal>
             ))}
           </div>
-        </div>
-        <div className="wrap grid two">
-          {tariffs.map((tariff, i) => (
-            <Reveal key={tariff.id} delay={i * 80}>
-              <article className="card">
-                <span className="badge">{t("pay.period", { days: tariff.periodDays })}</span>
-                <h2>{tariff.name}</h2>
-                <div className="invest-amount">
-                  {formatSom(tariff.priceKgs, locale)} {t("pay.currency")}
-                </div>
-                <p className="muted">{t("pay.investLabel")}</p>
-                <p className="muted">{tariff.description}</p>
-                {user ? (
-                  <button type="button" disabled={busy} onClick={() => void pay(tariff.id)}>
-                    {busy ? t("pay.working") : t("pay.submit", { price: formatSom(tariff.priceKgs, locale) })}
-                  </button>
-                ) : (
-                  <Link to="/login">
-                    <button type="button">{t("nav.login")}</button>
-                  </Link>
-                )}
-              </article>
-            </Reveal>
-          ))}
-        </div>
-        {ok && (
-          <div className="wrap">
-            <p className="ok">{t("pay.success")}</p>
+          <div className="grid two">
+            {tariffs.map((tariff, i) => (
+              <Reveal key={tariff.id} delay={i * 70}>
+                <article className="card tariff-card">
+                  <span className="badge">{t("pay.period", { days: tariff.periodDays })}</span>
+                  <h2>{tariff.name}</h2>
+                  <div className="invest-amount">
+                    {formatSom(tariff.priceKgs, locale)} {t("pay.currency")}
+                  </div>
+                  <p className="muted">{t("pay.investLabel")}</p>
+                  <p className="muted">{tariff.description}</p>
+                  {user ? (
+                    <button type="button" disabled={busy} onClick={() => void pay(tariff.id)}>
+                      {busy ? t("pay.working") : t("pay.submit", { price: formatSom(tariff.priceKgs, locale) })}
+                    </button>
+                  ) : (
+                    <Link to="/login">
+                      <button type="button">{t("nav.login")}</button>
+                    </Link>
+                  )}
+                </article>
+              </Reveal>
+            ))}
           </div>
-        )}
+          {ok && <p className="ok" style={{ marginTop: "1.2rem" }}>{t("pay.success")}</p>}
+        </div>
       </section>
     </>
   );

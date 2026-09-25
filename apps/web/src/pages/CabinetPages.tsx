@@ -36,13 +36,14 @@ export function CabinetPage() {
   );
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("nav.cabinet")}</p>
       <h1>
         {user?.firstName ? `${t("home.greeting")}, ${user.firstName}` : s("cabinet.title")}
       </h1>
+      <p className="muted">{s("cabinet.nextLead")}</p>
       <div className="cabinet-grid">
-        <article className="card">
+        <article className="card cabinet-balance">
           <span className="badge">{t("home.accumulated")}</span>
           <div className="hero-sum serif">{formatSom(data?.balance.available ?? 0, locale)}</div>
           <p className="muted">{data && data.streak > 0 ? t("home.streak", { count: data.streak }) : t("home.streakZero")}</p>
@@ -68,34 +69,34 @@ export function CabinetPage() {
         </article>
         <article className="card">
           <h3>{s("cabinet.next")}</h3>
-          <p className="muted">{s("cabinet.nextLead")}</p>
-          <div className="cta-row">
+          <nav className="cabinet-nav" aria-label="cabinet">
             <Link to="/memberships">
-              <button type="button">{t("nav.memberships")}</button>
+              {t("nav.memberships")}
+              <span>→</span>
             </Link>
             <Link to="/workouts">
-              <button className="ghost" type="button">
-                {t("nav.workouts")}
-              </button>
+              {t("nav.workouts")}
+              <span>→</span>
+            </Link>
+            <Link to="/schedule">
+              {t("nav.schedule")}
+              <span>→</span>
             </Link>
             <Link to="/invites">
-              <button className="ghost" type="button">
-                {t("nav.invites")}
-              </button>
+              {t("nav.invites")}
+              <span>→</span>
             </Link>
             <Link to="/profile">
-              <button className="ghost" type="button">
-                {t("nav.profile")}
-              </button>
+              {t("nav.profile")}
+              <span>→</span>
             </Link>
             {user?.roles.includes("ADMIN") && (
               <Link to="/admin">
-                <button className="ghost" type="button">
-                  {t("nav.admin")}
-                </button>
+                {t("nav.admin")}
+                <span>→</span>
               </Link>
             )}
-          </div>
+          </nav>
         </article>
       </div>
     </div>
@@ -118,11 +119,11 @@ export function GoalPage() {
   const pct = Math.min(100, Math.round((have / min) * 100));
 
   return (
-    <div className="wrap section">
+    <div className="wrap app-page">
       <p className="kicker">{t("nav.goal")}</p>
       <h1>{s("goal.title")}</h1>
       <p className="lead">{s("goal.lead")}</p>
-      <article className="card photo">
+      <article className="card photo" style={{ maxWidth: 640, marginTop: "1.5rem" }}>
         <img src={photo("medal")} alt="" />
         <div className="pad">
         <h3>{s("goal.bar")}</h3>
