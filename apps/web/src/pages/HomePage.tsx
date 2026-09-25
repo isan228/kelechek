@@ -5,7 +5,6 @@ import { INVEST_ASSETS } from "../app/investData";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
-/** Органичный трейл: петли и зигзаги (viewBox 0 0 1000 3200) */
 const TRACK_D =
   "M 480 40 " +
   "C 620 120, 780 180, 720 320 " +
@@ -22,24 +21,28 @@ const TRACK_D =
 
 type CardLayout = {
   id: string;
-  n: number;
-  t: number; // 0..1 along path for order
-  x: string; // CSS left
-  y: string; // CSS top of map canvas
+  t: number;
+  x: string;
+  y: string;
   rotate: number;
   scale: number;
   side: "left" | "right" | "cross";
-  kind: "start" | "invest" | "how" | "stats" | "activity" | "finish" | "quote";
+  kind: "start" | "invest" | "how" | "stats" | "activity" | "finish" | "quote" | "chip";
+  chip?: string;
 };
 
+/** Плотнее по вертикали — меньше пустоты */
 const LAYOUT: CardLayout[] = [
-  { id: "start", n: 1, t: 0.04, x: "8%", y: "2%", rotate: -3, scale: 1.08, side: "left", kind: "start" },
-  { id: "invest", n: 2, t: 0.18, x: "52%", y: "11%", rotate: 4, scale: 1, side: "right", kind: "invest" },
-  { id: "how", n: 3, t: 0.34, x: "4%", y: "24%", rotate: -5, scale: 0.92, side: "left", kind: "how" },
-  { id: "stats", n: 4, t: 0.5, x: "48%", y: "38%", rotate: 2.5, scale: 1.12, side: "cross", kind: "stats" },
-  { id: "quote", n: 0, t: 0.58, x: "6%", y: "52%", rotate: -2, scale: 0.85, side: "left", kind: "quote" },
-  { id: "activity", n: 5, t: 0.72, x: "50%", y: "62%", rotate: 5, scale: 0.95, side: "right", kind: "activity" },
-  { id: "finish", n: 6, t: 0.92, x: "18%", y: "78%", rotate: -4, scale: 1.05, side: "cross", kind: "finish" },
+  { id: "start", t: 0.03, x: "5%", y: "1.5%", rotate: -2.5, scale: 1.06, side: "left", kind: "start" },
+  { id: "chip1", t: 0.1, x: "62%", y: "7%", rotate: 6, scale: 0.78, side: "right", kind: "chip", chip: "live" },
+  { id: "invest", t: 0.16, x: "48%", y: "10%", rotate: 3.5, scale: 1, side: "right", kind: "invest" },
+  { id: "how", t: 0.28, x: "3%", y: "22%", rotate: -4, scale: 0.94, side: "left", kind: "how" },
+  { id: "chip2", t: 0.36, x: "58%", y: "30%", rotate: -7, scale: 0.75, side: "right", kind: "chip", chip: "series" },
+  { id: "stats", t: 0.42, x: "42%", y: "34%", rotate: 2, scale: 1.08, side: "cross", kind: "stats" },
+  { id: "quote", t: 0.52, x: "4%", y: "46%", rotate: -3, scale: 0.88, side: "left", kind: "quote" },
+  { id: "chip3", t: 0.58, x: "55%", y: "52%", rotate: 5, scale: 0.72, side: "right", kind: "chip", chip: "balance" },
+  { id: "activity", t: 0.64, x: "46%", y: "56%", rotate: 4, scale: 0.96, side: "right", kind: "activity" },
+  { id: "finish", t: 0.82, x: "12%", y: "72%", rotate: -3.5, scale: 1.04, side: "cross", kind: "finish" },
 ];
 
 function formatSom(n: number) {
@@ -97,7 +100,7 @@ export function HomePage() {
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
 
   const [progress, setProgress] = useState(0);
-  const [activeN, setActiveN] = useState(1);
+  const [activeId, setActiveId] = useState("start");
   const [statsOn, setStatsOn] = useState(false);
   const [branches, setBranches] = useState<{ d: string; on: boolean }[]>([]);
 
@@ -130,7 +133,7 @@ export function HomePage() {
         draw.style.strokeDashoffset = `${len - drawLen}`;
       }
 
-      const pt = path.getPointAtLength(Math.min(1, Math.max(0, reduced ? Math.min(p * 1.2, 1) : p)) * len);
+      const pt = path.getPointAtLength(Math.min(1, Math.max(0, p)) * len);
       if (marker) {
         marker.setAttribute("cx", String(pt.x));
         marker.setAttribute("cy", String(pt.y));
@@ -140,45 +143,44 @@ export function HomePage() {
         core.setAttribute("cy", String(pt.y));
       }
 
-      // which checkpoint is nearest by t
       let best = LAYOUT[0];
       let bestD = Infinity;
       for (const c of LAYOUT) {
-        if (c.n === 0) continue;
+        if (c.kind === "chip") continue;
         const d = Math.abs(c.t - p);
         if (d < bestD) {
           bestD = d;
           best = c;
         }
       }
-      setActiveN(best.n);
+      setActiveId(best.id);
 
-      const statsCard = cardRefs.current[LAYOUT.findIndex((c) => c.id === "stats")];
+      const statsIdx = LAYOUT.findIndex((c) => c.id === "stats");
+      const statsCard = cardRefs.current[statsIdx];
       if (statsCard) {
         const r = statsCard.getBoundingClientRect();
-        if (r.top < view * 0.8 && r.bottom > 0) setStatsOn(true);
+        if (r.top < view * 0.85 && r.bottom > 0) setStatsOn(true);
       }
 
-      // branch lines from path to card centers (in SVG coords of viewBox)
       const mapW = map.clientWidth;
       const mapH = map.clientHeight;
-      const nextBranches = LAYOUT.map((card, i) => {
-        const el = cardRefs.current[i];
-        if (!el) return { d: "", on: false };
-        const er = el.getBoundingClientRect();
-        const mr = map.getBoundingClientRect();
-        const cx = ((er.left + er.width / 2 - mr.left) / mapW) * 1000;
-        const cy = ((er.top + er.height / 2 - mr.top) / mapH) * 3200;
-        const along = path.getPointAtLength(card.t * len);
-        const midX = (along.x + cx) / 2 + (card.side === "left" ? -40 : 40);
-        const midY = (along.y + cy) / 2;
-        return {
-          d: `M ${along.x} ${along.y} Q ${midX} ${midY} ${cx} ${cy}`,
-          on: p >= card.t - 0.04,
-        };
-      });
-      setBranches(nextBranches);
-
+      setBranches(
+        LAYOUT.map((card, i) => {
+          const el = cardRefs.current[i];
+          if (!el || card.kind === "chip") return { d: "", on: false };
+          const er = el.getBoundingClientRect();
+          const mr = map.getBoundingClientRect();
+          const cx = ((er.left + er.width / 2 - mr.left) / mapW) * 1000;
+          const cy = ((er.top + er.height / 2 - mr.top) / mapH) * 3200;
+          const along = path.getPointAtLength(card.t * len);
+          const midX = (along.x + cx) / 2 + (card.side === "left" ? -36 : 36);
+          const midY = (along.y + cy) / 2;
+          return {
+            d: `M ${along.x} ${along.y} Q ${midX} ${midY} ${cx} ${cy}`,
+            on: p >= card.t - 0.05,
+          };
+        }),
+      );
       raf = 0;
     }
 
@@ -206,51 +208,48 @@ export function HomePage() {
     return <Navigate to="/accounting" replace />;
   }
 
-  const pct = Math.round(progress * 100);
-
   function goCard(i: number) {
     cardRefs.current[i]?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
   }
 
+  const chipText = (key?: string) => {
+    if (key === "live") return t("landing.maprunWpStats");
+    if (key === "series") return t("landing.maprunRing2");
+    if (key === "balance") return t("landing.maprunStat1");
+    return "";
+  };
+
   return (
     <div className="home-chaos">
-      <header className="home-chaos-bar">
-        <div className="home-chaos-bar-inner wrap">
-          <div className="home-chaos-bar-track" aria-hidden>
-            <span style={{ width: `${pct}%` }} />
-          </div>
-          <p className="home-chaos-bar-meta">{t("landing.maprunProgress", { pct })}</p>
-          <nav className="home-chaos-dots" aria-label="Чекпоинты">
-            {LAYOUT.filter((c) => c.n > 0).map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={`home-chaos-dot ${activeN === c.n ? "is-on" : ""} ${progress >= c.t ? "is-passed" : ""}`}
-                onClick={() => goCard(LAYOUT.findIndex((x) => x.id === c.id))}
-                aria-label={`${c.n}`}
-              >
-                {c.n}
-              </button>
-            ))}
-          </nav>
-          <Link to={startTo} className="home-chaos-bar-cta">
-            {s("landing.ctaStart")}
-          </Link>
-        </div>
-      </header>
+      <div className="home-chaos-bg" aria-hidden>
+        <div className="home-chaos-topo" />
+        <div className="home-chaos-noise" />
+        <span className="home-chaos-orb a" />
+        <span className="home-chaos-orb b" />
+        <span className="home-chaos-orb c" />
+        <div className="home-chaos-grid" />
+      </div>
 
       <div className="home-chaos-map" ref={mapRef}>
         <svg className="home-chaos-svg" viewBox="0 0 1000 3200" preserveAspectRatio="none" aria-hidden>
+          {/* contour / map texture */}
+          <g className="home-chaos-contours" opacity="0.22">
+            <ellipse cx="200" cy="400" rx="160" ry="90" fill="none" stroke="currentColor" strokeDasharray="4 8" />
+            <ellipse cx="200" cy="400" rx="110" ry="55" fill="none" stroke="currentColor" strokeDasharray="3 7" />
+            <ellipse cx="780" cy="900" rx="140" ry="100" fill="none" stroke="currentColor" strokeDasharray="4 8" />
+            <ellipse cx="780" cy="900" rx="90" ry="60" fill="none" stroke="currentColor" strokeDasharray="3 7" />
+            <ellipse cx="300" cy="1600" rx="180" ry="110" fill="none" stroke="currentColor" strokeDasharray="5 9" />
+            <ellipse cx="700" cy="2100" rx="150" ry="80" fill="none" stroke="currentColor" strokeDasharray="4 8" />
+            <ellipse cx="400" cy="2700" rx="200" ry="120" fill="none" stroke="currentColor" strokeDasharray="5 10" />
+            <circle cx="150" cy="1200" r="40" fill="none" stroke="currentColor" strokeDasharray="2 6" />
+            <circle cx="850" cy="500" r="55" fill="none" stroke="currentColor" strokeDasharray="3 7" />
+            <circle cx="120" cy="2400" r="70" fill="none" stroke="currentColor" strokeDasharray="3 8" />
+          </g>
           <path ref={pathRef} className="home-chaos-path-base" d={TRACK_D} fill="none" />
           <path ref={drawRef} className="home-chaos-path-draw" d={TRACK_D} fill="none" />
           {branches.map((b, i) =>
             b.d ? (
-              <path
-                key={LAYOUT[i].id}
-                className={`home-chaos-branch ${b.on ? "is-on" : ""}`}
-                d={b.d}
-                fill="none"
-              />
+              <path key={LAYOUT[i].id} className={`home-chaos-branch ${b.on ? "is-on" : ""}`} d={b.d} fill="none" />
             ) : null,
           )}
           <circle ref={markerRef} className="home-chaos-marker" cx={480} cy={40} r={16} />
@@ -265,7 +264,7 @@ export function HomePage() {
             }}
             className={`home-chaos-card home-chaos-card-${card.kind} home-chaos-card-${card.side} ${
               progress >= card.t - 0.06 ? "is-visible" : ""
-            } ${activeN === card.n ? "is-active" : ""}`}
+            } ${activeId === card.id ? "is-active" : ""}`}
             style={{
               left: card.x,
               top: card.y,
@@ -273,8 +272,6 @@ export function HomePage() {
               ["--scale" as string]: String(card.scale),
             }}
           >
-            {card.n > 0 && <span className="home-chaos-num">{String(card.n).padStart(2, "0")}</span>}
-
             {card.kind === "start" && (
               <>
                 <p className="home-chaos-kicker">{t("landing.maprunWpStart")}</p>
@@ -285,11 +282,15 @@ export function HomePage() {
                   <Link to={startTo} className="home-chaos-btn">
                     {s("landing.ctaStart")}
                   </Link>
-                  <button type="button" className="home-chaos-btn-ghost" onClick={() => goCard(1)}>
+                  <button type="button" className="home-chaos-btn-ghost" onClick={() => goCard(2)}>
                     {t("landing.maprunScroll")}
                   </button>
                 </div>
               </>
+            )}
+
+            {card.kind === "chip" && (
+              <p className="home-chaos-chip-label">{chipText(card.chip)}</p>
             )}
 
             {card.kind === "invest" && (

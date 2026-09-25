@@ -3644,7 +3644,7 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   }
 }
 
-/* ===== Home: chaotic organic trail map ===== */
+/* ===== Home: chaotic trail (dense, no bar/nums) ===== */
 .home-chaos {
   --hc-bg: var(--bg);
   --hc-panel: var(--paper);
@@ -3653,96 +3653,90 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   --hc-line: var(--line);
   --hc-neon: var(--accent);
   --hc-glow: var(--signal);
+  position: relative;
   background: var(--hc-bg);
   color: var(--hc-ink);
   min-height: 100dvh;
   overflow-x: clip;
 }
-.home-chaos-bar {
-  position: sticky;
-  top: 0;
-  z-index: 70;
-  background: color-mix(in srgb, var(--bg-deep) 92%, transparent);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--hc-line);
+
+.home-chaos-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
-.home-chaos-bar-inner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 54px;
-  position: relative;
-  padding-top: 3px;
-  flex-wrap: wrap;
-}
-.home-chaos-bar-track {
+.home-chaos-topo {
   position: absolute;
-  left: 0; right: 0; top: 0;
-  height: 2px;
-  background: var(--hc-line);
+  inset: -10%;
+  background:
+    radial-gradient(ellipse 50% 35% at 15% 20%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    radial-gradient(ellipse 45% 40% at 85% 45%, color-mix(in srgb, var(--signal) 12%, transparent), transparent 55%),
+    radial-gradient(ellipse 40% 30% at 40% 80%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 50%),
+    repeating-radial-gradient(
+      circle at 20% 30%,
+      transparent 0 18px,
+      color-mix(in srgb, var(--line) 55%, transparent) 18px 19px
+    ),
+    repeating-radial-gradient(
+      circle at 75% 60%,
+      transparent 0 28px,
+      color-mix(in srgb, var(--line) 40%, transparent) 28px 29px
+    );
+  opacity: 0.55;
 }
-.home-chaos-bar-track > span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--hc-neon), var(--hc-glow));
+.home-chaos-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: soft-light;
 }
-.home-chaos-bar-meta {
-  margin: 0;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--hc-muted);
+.home-chaos-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--line) 35%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 35%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
+  opacity: 0.35;
 }
-.home-chaos-dots {
-  display: flex;
-  gap: 6px;
-  flex: 1;
-  justify-content: center;
-}
-.home-chaos-dot {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+.home-chaos-orb {
+  position: absolute;
   border-radius: 50%;
-  border: 1px dashed color-mix(in srgb, var(--hc-neon) 40%, var(--hc-line));
-  background: transparent;
-  color: var(--hc-muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  cursor: pointer;
+  filter: blur(40px);
+  opacity: 0.35;
 }
-.home-chaos-dot.is-passed {
-  border-style: solid;
-  color: var(--hc-neon);
-  border-color: var(--hc-neon);
+.home-chaos-orb.a {
+  width: 280px; height: 280px;
+  left: -60px; top: 12%;
+  background: var(--accent);
 }
-.home-chaos-dot.is-on {
-  background: var(--hc-neon);
-  color: #140c08;
-  border-color: var(--hc-neon);
+.home-chaos-orb.b {
+  width: 340px; height: 340px;
+  right: -80px; top: 42%;
+  background: var(--signal);
+  opacity: 0.22;
 }
-.home-chaos-bar-cta {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--hc-neon);
-  color: #140c08 !important;
-  font-weight: 800;
-  font-size: 0.82rem;
-  text-decoration: none;
+.home-chaos-orb.c {
+  width: 260px; height: 260px;
+  left: 30%; bottom: 8%;
+  background: var(--accent);
+  opacity: 0.18;
 }
 
 .home-chaos-map {
   position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  min-height: 3200px;
-  height: 3200px;
-  padding: 0 12px 80px;
+  min-height: 2800px;
+  height: 2800px;
+  padding: 0 12px 60px;
 }
 .home-chaos-svg {
   position: absolute;
@@ -3751,9 +3745,11 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   height: 100%;
   pointer-events: none;
   z-index: 0;
+  color: var(--hc-line);
 }
+.home-chaos-contours { color: var(--hc-line); }
 .home-chaos-path-base {
-  stroke: color-mix(in srgb, var(--hc-line) 80%, #000);
+  stroke: color-mix(in srgb, var(--hc-line) 90%, #000);
   stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -3765,16 +3761,15 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 4 9;
-  transition: stroke-dashoffset 0.05s linear;
 }
 .home-chaos-branch {
-  stroke: color-mix(in srgb, var(--hc-neon) 35%, var(--hc-line));
+  stroke: color-mix(in srgb, var(--hc-neon) 40%, var(--hc-line));
   stroke-width: 1.4;
   stroke-dasharray: 2 7;
-  opacity: 0.25;
+  opacity: 0.2;
   transition: opacity 0.35s ease;
 }
-.home-chaos-branch.is-on { opacity: 0.85; }
+.home-chaos-branch.is-on { opacity: 0.8; }
 .home-chaos-marker {
   fill: color-mix(in srgb, var(--hc-neon) 22%, transparent);
   stroke: var(--hc-neon);
@@ -3787,59 +3782,53 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   --scale: 1;
   position: absolute;
   z-index: 2;
-  width: min(420px, 86vw);
-  padding: 1.15rem 1.15rem 1.25rem;
+  width: min(400px, 84vw);
+  padding: 1.2rem 1.15rem 1.3rem;
   border-radius: 16px;
   border: 1px solid var(--hc-line);
-  background: color-mix(in srgb, var(--hc-panel) 94%, transparent);
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.35),
-    0 0 0 1px color-mix(in srgb, var(--hc-neon) 8%, transparent);
-  backdrop-filter: blur(8px);
-  transform: rotate(var(--rot)) scale(calc(var(--scale) * 0.96)) translateY(18px);
+  background: color-mix(in srgb, var(--hc-panel) 96%, transparent);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(10px);
+  transform: rotate(var(--rot)) scale(calc(var(--scale) * 0.97)) translateY(14px);
   opacity: 0;
-  transition: opacity 0.45s ease, transform 0.45s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-  scroll-margin-top: 90px;
+  transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.3s ease;
+  scroll-margin-top: 24px;
 }
 .home-chaos-card.is-visible {
   opacity: 1;
   transform: rotate(var(--rot)) scale(var(--scale)) translateY(0);
 }
 .home-chaos-card.is-active {
-  border-color: color-mix(in srgb, var(--hc-neon) 45%, var(--hc-line));
-  box-shadow:
-    0 22px 48px rgba(0, 0, 0, 0.4),
-    0 0 28px color-mix(in srgb, var(--hc-neon) 12%, transparent);
+  border-color: color-mix(in srgb, var(--hc-neon) 42%, var(--hc-line));
   z-index: 3;
 }
-.home-chaos-card-start { width: min(460px, 90vw); }
-.home-chaos-card-stats { width: min(480px, 92vw); }
+.home-chaos-card-start { width: min(440px, 90vw); }
+.home-chaos-card-stats { width: min(460px, 92vw); }
 .home-chaos-card-quote {
-  width: min(300px, 78vw);
-  background: color-mix(in srgb, var(--hc-neon) 8%, var(--hc-panel));
+  width: min(290px, 76vw);
+  background: color-mix(in srgb, var(--hc-neon) 10%, var(--hc-panel));
 }
-.home-chaos-card-finish { width: min(400px, 88vw); }
-
-.home-chaos-num {
-  position: absolute;
-  top: -12px;
-  left: 14px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 10px;
+.home-chaos-card-finish { width: min(380px, 88vw); }
+.home-chaos-card-chip {
+  width: auto;
+  min-width: 120px;
+  padding: 0.7rem 1rem;
   border-radius: 999px;
-  display: inline-grid;
-  place-items: center;
-  background: var(--hc-neon);
-  color: #140c08;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--hc-neon) 14%, var(--hc-panel));
+  border-color: color-mix(in srgb, var(--hc-neon) 35%, var(--hc-line));
 }
+.home-chaos-chip-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hc-neon);
+  white-space: nowrap;
+}
+
 .home-chaos-kicker {
-  margin: 0.55rem 0 0.4rem;
+  margin: 0 0 0.4rem;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -3848,21 +3837,21 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
 }
 .home-chaos-card h1 {
   margin: 0 0 0.5rem;
-  font-size: clamp(2rem, 6vw, 3.1rem);
+  font-size: clamp(2rem, 6vw, 3rem);
   letter-spacing: -0.04em;
   line-height: 0.95;
   color: #fff;
 }
 .home-chaos-card h2 {
   margin: 0 0 0.45rem;
-  font-size: clamp(1.25rem, 3vw, 1.7rem);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
   letter-spacing: -0.03em;
   color: #fff;
 }
 .home-chaos-hook {
   margin: 0 0 0.45rem;
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 700;
   color: var(--hc-glow);
   max-width: 18ch;
@@ -3870,7 +3859,7 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
 .home-chaos-note {
   margin: 0;
   color: var(--hc-muted);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   line-height: 1.45;
 }
 .home-chaos-actions {
@@ -3941,7 +3930,6 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   display: grid;
   grid-template-columns: 28px 1fr;
   gap: 8px;
-  align-items: start;
 }
 .home-chaos-steps b {
   width: 28px; height: 28px;
@@ -3971,7 +3959,7 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
 .home-chaos-stats b {
   display: block;
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 3.5vw, 1.9rem);
+  font-size: clamp(1.3rem, 3.5vw, 1.85rem);
   color: var(--hc-neon);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -3983,13 +3971,12 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   margin-top: 4px;
   font-size: 0.68rem;
   color: var(--hc-muted);
-  line-height: 1.25;
 }
 
 .home-chaos-quote {
-  margin: 0.4rem 0 0.55rem;
+  margin: 0.2rem 0 0.5rem;
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   line-height: 1.3;
   color: #fff;
 }
@@ -4036,36 +4023,28 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
   font-size: 0.85rem;
 }
 
-/* Mobile: tighter zigzags via narrower cards + stacked flow fallback */
 @media (max-width: 820px) {
   .home-chaos-map {
     min-height: auto;
     height: auto;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    padding: 1.25rem 12px 4rem;
+    gap: 1rem;
+    padding: 1rem 12px 3.5rem;
   }
-  .home-chaos-svg {
-    position: absolute;
-    opacity: 0.35;
-    /* keep path visible as background decoration with reduced amplitude feel */
-  }
+  .home-chaos-svg { position: absolute; opacity: 0.4; }
   .home-chaos-card {
     position: relative !important;
     left: auto !important;
     top: auto !important;
     width: 100% !important;
-    max-width: none;
-    transform: rotate(calc(var(--rot) * 0.35)) scale(1) !important;
+    transform: rotate(calc(var(--rot) * 0.3)) scale(1) !important;
     opacity: 1;
-    margin: 0;
   }
   .home-chaos-card.is-visible {
-    transform: rotate(calc(var(--rot) * 0.35)) scale(1) !important;
+    transform: rotate(calc(var(--rot) * 0.3)) scale(1) !important;
   }
-  .home-chaos-dots { display: none; }
-  .home-chaos-bar-meta { flex: 1; }
+  .home-chaos-card-chip { align-self: flex-start; width: auto !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4074,5 +4053,4 @@ label { display: block; font-weight: 600; margin-top: 0.8rem; }
     transform: rotate(var(--rot)) scale(var(--scale)) !important;
     transition: none !important;
   }
-  .home-chaos-path-draw { transition: none !important; }
 }
