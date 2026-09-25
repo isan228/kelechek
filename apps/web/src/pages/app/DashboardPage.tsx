@@ -13,7 +13,6 @@ export function DashboardPage() {
   const goal = getOnboardingGoal() ?? "both";
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeNode, setActiveNode] = useState(() => PATH_NODES.find((n) => n.status === "current")?.id ?? PATH_NODES[0]?.id);
 
   useEffect(() => {
     let alive = true;
@@ -33,8 +32,9 @@ export function DashboardPage() {
     };
   }, []);
 
-  const current = PATH_NODES.find((n) => n.id === activeNode) ?? PATH_NODES.find((n) => n.status === "current");
+  const current = PATH_NODES.find((n) => n.status === "current") ?? PATH_NODES[0];
   const doneCount = PATH_NODES.filter((n) => n.status === "done").length;
+  const people = CIRCLE.filter((p) => p.role !== "you");
 
   if (loading) {
     return (
@@ -47,124 +47,96 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="sx-page sx-home-circle">
+    <div className="sx-page">
       <header className="sx-dash-head">
         <div>
-          <p className="sx-kicker">Ваш круг</p>
-          <h1 className="sx-hello">{user?.firstName ? `${user.firstName}, вы в пути` : "Ваш круг"}</h1>
+          <p className="sx-kicker">Круг</p>
+          <h1 className="sx-hello">{user?.firstName ? `Привет, ${user.firstName}` : "Ваш круг"}</h1>
         </div>
         <Link to="/app/portfolio" className="sx-avatar" aria-label="Профиль">
           {(user?.firstName?.[0] || "K").toUpperCase()}
         </Link>
       </header>
 
-      <section className="sx-circle" aria-label="Люди в круге">
-        <div className="sx-circle-rail">
-          {CIRCLE.map((person) => {
-            const inner = (
-              <>
-                <span className={`sx-circle-ava ${person.role === "you" ? "is-you" : ""}`} aria-hidden>
-                  {person.initials}
-                </span>
-                <span className="sx-circle-name">{person.name}</span>
-                <span className="sx-circle-role">{person.subtitle}</span>
-                {person.pulse ? <span className="sx-circle-pulse">{person.pulse}</span> : null}
-              </>
-            );
-            if (person.to) {
-              return (
-                <Link key={person.id} to={person.to} className="sx-circle-person">
-                  {inner}
-                </Link>
-              );
-            }
-            return (
-              <div key={person.id} className="sx-circle-person">
-                {inner}
-              </div>
-            );
-          })}
-          <button type="button" className="sx-circle-person sx-circle-invite" aria-label="Пригласить в круг">
-            <span className="sx-circle-ava is-invite" aria-hidden>
-              +
-            </span>
-            <span className="sx-circle-name">Пригласить</span>
-            <span className="sx-circle-role">расширить круг</span>
-          </button>
-        </div>
-      </section>
-
-      <section className="sx-path-panel sx-glow" aria-labelledby="path-title">
-        <div className="sx-section-head">
-          <h2 id="path-title">Карта пути</h2>
-          <span className="sx-muted">
-            {doneCount}/{PATH_NODES.length}
-          </span>
-        </div>
-        <p className="sx-lead" style={{ maxWidth: "none" }}>
-          Узлы — цели, не награды. Тапните узел, чтобы увидеть следующий шаг.
-        </p>
-
-        <ol className="sx-path">
-          {PATH_NODES.map((node, i) => (
-            <li key={node.id} className={`sx-path-node is-${node.status}`}>
-              {i > 0 ? <span className="sx-path-line" aria-hidden /> : null}
-              <button
-                type="button"
-                className={`sx-path-dot ${activeNode === node.id ? "is-focus" : ""}`}
-                onClick={() => setActiveNode(node.id)}
-                aria-current={node.status === "current" ? "step" : undefined}
-                aria-label={`${node.title}, ${node.status === "done" ? "готово" : node.status === "current" ? "сейчас" : "дальше"}`}
-              >
-                <span>{node.status === "done" ? "✓" : String(i + 1)}</span>
-              </button>
-              <button type="button" className="sx-path-label" onClick={() => setActiveNode(node.id)}>
-                <strong>{node.title}</strong>
-                <span className="sx-muted">{node.hint}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-
-        {current && (
-          <div className="sx-path-detail">
-            <p className="sx-metric-label">Сейчас в фокусе</p>
-            <h3 className="sx-path-detail-title">{current.title}</h3>
-            <p className="sx-muted">{current.detail}</p>
-            <Link to={current.ctaTo} className="sx-cta sx-cta-block">
-              {current.cta}
+      {current && (
+        <section className="sx-next sx-glow" aria-labelledby="next-step">
+          <div className="sx-next-top">
+            <p className="sx-metric-label" id="next-step">
+              Следующий шаг · {doneCount}/{PATH_NODES.length}
+            </p>
+            <Link to="/app/activity" className="sx-text-link">
+              Весь путь
             </Link>
           </div>
-        )}
+          <h2 className="sx-next-title">{current.title}</h2>
+          <p className="sx-muted">{current.detail}</p>
+          <div className="sx-progress" role="progressbar" aria-valuenow={Math.round((doneCount / PATH_NODES.length) * 100)} aria-valuemin={0} aria-valuemax={100}>
+            <span style={{ width: `${(doneCount / PATH_NODES.length) * 100}%` }} />
+          </div>
+          <Link to={current.ctaTo} className="sx-cta sx-cta-block">
+            {current.cta}
+          </Link>
+        </section>
+      )}
+
+      <section className="sx-section" aria-labelledby="people-title">
+        <div className="sx-section-head">
+          <h2 id="people-title">Люди рядом</h2>
+          <Link to="/invites" className="sx-text-link">
+            + Пригласить
+          </Link>
+        </div>
+        <ul className="sx-people">
+          {people.map((person) => {
+            const row = (
+              <>
+                <span className="sx-people-ava" aria-hidden>
+                  {person.initials}
+                </span>
+                <span className="sx-people-text">
+                  <strong>{person.name}</strong>
+                  <span className="sx-muted">{person.subtitle}</span>
+                </span>
+                {person.pulse ? <span className="sx-people-meta">{person.pulse}</span> : null}
+              </>
+            );
+            return (
+              <li key={person.id}>
+                {person.to ? (
+                  <Link to={person.to} className="sx-people-row">
+                    {row}
+                  </Link>
+                ) : (
+                  <div className="sx-people-row">{row}</div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       {(goal === "invest" || goal === "both") && (
         <section className="sx-section">
-          <div className="sx-mini-balance">
-            <div>
-              <p className="sx-metric-label">Накоплено в круге</p>
-              <p className="sx-mini-value">{formatSom(balance ?? 0)} сом</p>
-            </div>
-            <Link to="/app/invest" className="sx-text-link">
-              Рынок →
-            </Link>
-          </div>
+          <Link to="/app/invest" className="sx-balance-link">
+            <span>
+              <span className="sx-metric-label">Баланс</span>
+              <strong className="sx-mini-value">{formatSom(balance ?? 0)} сом</strong>
+            </span>
+            <span className="sx-text-link">Рынок →</span>
+          </Link>
         </section>
       )}
 
       <section className="sx-section" aria-labelledby="feed-title">
-        <div className="sx-section-head">
-          <h2 id="feed-title">Живой круг</h2>
-        </div>
+        <h2 id="feed-title">Недавно в круге</h2>
         <ul className="sx-feed">
           <li>
-            <b>Айгуль</b> обновила серию тренировок · <span className="sx-muted">2ч</span>
+            <b>Айгуль</b> — серия тренировок
+            <span className="sx-muted"> · 2ч</span>
           </li>
           <li>
-            <b>Тимур</b> закрыл узел «Серия 7» · <span className="sx-muted">вчера</span>
-          </li>
-          <li>
-            <b>Вы</b> в круге с тренером · <span className="sx-muted">на этой неделе</span>
+            <b>Тимур</b> — закрыл шаг пути
+            <span className="sx-muted"> · вчера</span>
           </li>
         </ul>
       </section>
