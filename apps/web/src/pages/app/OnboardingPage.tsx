@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setOnboardingGoal, type OnboardingGoal } from "../app/investData";
+import { setOnboardingGoal, type OnboardingGoal } from "../../app/investData";
 
 const options: { id: OnboardingGoal; title: string; lead: string }[] = [
   {
