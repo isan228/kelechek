@@ -51,18 +51,17 @@ type Spot = {
   t: number;
   edge: Edge;
   y: string;
-  rotate: number;
   scale: number;
   kind: Kind;
 };
 
 const SPOTS: Spot[] = [
-  { id: "start", n: 1, t: 0.03, edge: "left", y: "1.2%", rotate: -3, scale: 1.05, kind: "start" },
-  { id: "streak", n: 2, t: 0.2, edge: "right", y: "13%", rotate: 4, scale: 1.08, kind: "streak" },
-  { id: "coach", n: 3, t: 0.38, edge: "left", y: "29%", rotate: -5, scale: 1, kind: "coach" },
-  { id: "gyms", n: 4, t: 0.55, edge: "right", y: "45%", rotate: 3, scale: 1.02, kind: "gyms" },
-  { id: "uni", n: 5, t: 0.72, edge: "left", y: "61%", rotate: -2.5, scale: 1, kind: "uni" },
-  { id: "finish", n: 6, t: 0.92, edge: "right", y: "77%", rotate: 5, scale: 1.04, kind: "finish" },
+  { id: "start", n: 1, t: 0.03, edge: "left", y: "1.2%", scale: 1.05, kind: "start" },
+  { id: "streak", n: 2, t: 0.2, edge: "right", y: "13%", scale: 1.08, kind: "streak" },
+  { id: "coach", n: 3, t: 0.38, edge: "left", y: "29%", scale: 1, kind: "coach" },
+  { id: "gyms", n: 4, t: 0.55, edge: "right", y: "45%", scale: 1.02, kind: "gyms" },
+  { id: "uni", n: 5, t: 0.72, edge: "left", y: "61%", scale: 1, kind: "uni" },
+  { id: "finish", n: 6, t: 0.92, edge: "right", y: "77%", scale: 1.04, kind: "finish" },
 ];
 
 const COACHES = [
@@ -387,7 +386,6 @@ export function HomePage() {
             } ${activeId === spot.id ? "is-active" : ""}`}
             style={{
               top: spot.y,
-              ["--rot" as string]: `${spot.rotate}deg`,
               ["--scale" as string]: String(spot.scale),
             }}
           >
