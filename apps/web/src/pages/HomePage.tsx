@@ -5,44 +5,113 @@ import { INVEST_ASSETS } from "../app/investData";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
+/** Хаотичная дорожка / трейл (viewBox 0 0 1000 3000) */
 const TRACK_D =
-  "M 480 40 " +
-  "C 620 120, 780 180, 720 320 " +
-  "S 280 420, 220 560 " +
-  "S 760 680, 820 820 " +
-  "S 180 980, 260 1120 " +
-  "S 880 1240, 780 1400 " +
-  "S 140 1520, 200 1680 " +
-  "S 860 1820, 720 1980 " +
-  "S 240 2140, 320 2300 " +
-  "S 780 2460, 640 2620 " +
-  "S 300 2780, 420 2940 " +
-  "S 560 3080, 500 3160";
+  "M 520 20 " +
+  "C 780 60, 920 140, 860 260 " +
+  "C 790 390, 120 430, 90 560 " +
+  "C 55 700, 880 740, 930 880 " +
+  "C 980 1020, 160 1080, 110 1220 " +
+  "C 60 1360, 840 1400, 900 1540 " +
+  "C 960 1680, 200 1720, 140 1860 " +
+  "C 80 2000, 820 2060, 860 2200 " +
+  "C 910 2340, 280 2400, 220 2540 " +
+  "C 160 2680, 700 2740, 640 2860 " +
+  "C 580 2940, 480 2980, 500 2990";
 
-type CardLayout = {
+type Edge = "left" | "right";
+
+type Spot = {
   id: string;
   t: number;
-  x: string;
+  edge: Edge;
   y: string;
   rotate: number;
   scale: number;
-  side: "left" | "right" | "cross";
-  kind: "start" | "invest" | "how" | "stats" | "activity" | "finish" | "quote" | "chip";
-  chip?: string;
+  kind: "start" | "invest" | "how" | "stats" | "activity" | "finish" | "quote";
+  /** Текст напротив карточки */
+  faceKey: string;
+  faceSubKey?: string;
 };
 
-/** Плотнее по вертикали — меньше пустоты */
-const LAYOUT: CardLayout[] = [
-  { id: "start", t: 0.03, x: "5%", y: "1.5%", rotate: -2.5, scale: 1.06, side: "left", kind: "start" },
-  { id: "chip1", t: 0.1, x: "62%", y: "7%", rotate: 6, scale: 0.78, side: "right", kind: "chip", chip: "live" },
-  { id: "invest", t: 0.16, x: "48%", y: "10%", rotate: 3.5, scale: 1, side: "right", kind: "invest" },
-  { id: "how", t: 0.28, x: "3%", y: "22%", rotate: -4, scale: 0.94, side: "left", kind: "how" },
-  { id: "chip2", t: 0.36, x: "58%", y: "30%", rotate: -7, scale: 0.75, side: "right", kind: "chip", chip: "series" },
-  { id: "stats", t: 0.42, x: "42%", y: "34%", rotate: 2, scale: 1.08, side: "cross", kind: "stats" },
-  { id: "quote", t: 0.52, x: "4%", y: "46%", rotate: -3, scale: 0.88, side: "left", kind: "quote" },
-  { id: "chip3", t: 0.58, x: "55%", y: "52%", rotate: 5, scale: 0.72, side: "right", kind: "chip", chip: "balance" },
-  { id: "activity", t: 0.64, x: "46%", y: "56%", rotate: 4, scale: 0.96, side: "right", kind: "activity" },
-  { id: "finish", t: 0.82, x: "12%", y: "72%", rotate: -3.5, scale: 1.04, side: "cross", kind: "finish" },
+const SPOTS: Spot[] = [
+  {
+    id: "start",
+    t: 0.04,
+    edge: "left",
+    y: "1%",
+    rotate: -3,
+    scale: 1.05,
+    kind: "start",
+    faceKey: "mapFaceStart",
+    faceSubKey: "mapFaceStartSub",
+  },
+  {
+    id: "invest",
+    t: 0.18,
+    edge: "right",
+    y: "12%",
+    rotate: 4,
+    scale: 1,
+    kind: "invest",
+    faceKey: "mapFaceInvest",
+    faceSubKey: "mapFaceInvestSub",
+  },
+  {
+    id: "how",
+    t: 0.34,
+    edge: "left",
+    y: "26%",
+    rotate: -5,
+    scale: 0.96,
+    kind: "how",
+    faceKey: "mapFaceHow",
+    faceSubKey: "mapFaceHowSub",
+  },
+  {
+    id: "stats",
+    t: 0.5,
+    edge: "right",
+    y: "40%",
+    rotate: 3,
+    scale: 1.06,
+    kind: "stats",
+    faceKey: "mapFaceStats",
+    faceSubKey: "mapFaceStatsSub",
+  },
+  {
+    id: "quote",
+    t: 0.62,
+    edge: "left",
+    y: "54%",
+    rotate: -2.5,
+    scale: 0.9,
+    kind: "quote",
+    faceKey: "mapFaceQuote",
+    faceSubKey: "mapFaceQuoteSub",
+  },
+  {
+    id: "activity",
+    t: 0.74,
+    edge: "right",
+    y: "66%",
+    rotate: 5,
+    scale: 0.98,
+    kind: "activity",
+    faceKey: "mapFaceAct",
+    faceSubKey: "mapFaceActSub",
+  },
+  {
+    id: "finish",
+    t: 0.9,
+    edge: "left",
+    y: "80%",
+    rotate: -4,
+    scale: 1.04,
+    kind: "finish",
+    faceKey: "mapFaceFinish",
+    faceSubKey: "mapFaceFinishSub",
+  },
 ];
 
 function formatSom(n: number) {
@@ -95,6 +164,7 @@ export function HomePage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const drawRef = useRef<SVGPathElement>(null);
+  const roadRef = useRef<SVGPathElement>(null);
   const markerRef = useRef<SVGCircleElement>(null);
   const coreRef = useRef<SVGCircleElement>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
@@ -115,6 +185,7 @@ export function HomePage() {
       const map = mapRef.current;
       const path = pathRef.current;
       const draw = drawRef.current;
+      const road = roadRef.current;
       const marker = markerRef.current;
       const core = coreRef.current;
       if (!map || !path) return;
@@ -132,21 +203,20 @@ export function HomePage() {
         draw.style.strokeDasharray = `${len}`;
         draw.style.strokeDashoffset = `${len - drawLen}`;
       }
+      if (road) {
+        road.style.strokeDasharray = `${len}`;
+        road.style.strokeDashoffset = `${len - drawLen}`;
+      }
 
       const pt = path.getPointAtLength(Math.min(1, Math.max(0, p)) * len);
-      if (marker) {
-        marker.setAttribute("cx", String(pt.x));
-        marker.setAttribute("cy", String(pt.y));
-      }
-      if (core) {
-        core.setAttribute("cx", String(pt.x));
-        core.setAttribute("cy", String(pt.y));
-      }
+      marker?.setAttribute("cx", String(pt.x));
+      marker?.setAttribute("cy", String(pt.y));
+      core?.setAttribute("cx", String(pt.x));
+      core?.setAttribute("cy", String(pt.y));
 
-      let best = LAYOUT[0];
+      let best = SPOTS[0];
       let bestD = Infinity;
-      for (const c of LAYOUT) {
-        if (c.kind === "chip") continue;
+      for (const c of SPOTS) {
         const d = Math.abs(c.t - p);
         if (d < bestD) {
           bestD = d;
@@ -155,7 +225,7 @@ export function HomePage() {
       }
       setActiveId(best.id);
 
-      const statsIdx = LAYOUT.findIndex((c) => c.id === "stats");
+      const statsIdx = SPOTS.findIndex((c) => c.id === "stats");
       const statsCard = cardRefs.current[statsIdx];
       if (statsCard) {
         const r = statsCard.getBoundingClientRect();
@@ -165,15 +235,15 @@ export function HomePage() {
       const mapW = map.clientWidth;
       const mapH = map.clientHeight;
       setBranches(
-        LAYOUT.map((card, i) => {
+        SPOTS.map((card, i) => {
           const el = cardRefs.current[i];
-          if (!el || card.kind === "chip") return { d: "", on: false };
+          if (!el) return { d: "", on: false };
           const er = el.getBoundingClientRect();
           const mr = map.getBoundingClientRect();
           const cx = ((er.left + er.width / 2 - mr.left) / mapW) * 1000;
-          const cy = ((er.top + er.height / 2 - mr.top) / mapH) * 3200;
+          const cy = ((er.top + er.height / 2 - mr.top) / mapH) * 3000;
           const along = path.getPointAtLength(card.t * len);
-          const midX = (along.x + cx) / 2 + (card.side === "left" ? -36 : 36);
+          const midX = (along.x + cx) / 2 + (card.edge === "left" ? -50 : 50);
           const midY = (along.y + cy) / 2;
           return {
             d: `M ${along.x} ${along.y} Q ${midX} ${midY} ${cx} ${cy}`,
@@ -208,16 +278,9 @@ export function HomePage() {
     return <Navigate to="/accounting" replace />;
   }
 
-  function goCard(i: number) {
+  function goSpot(i: number) {
     cardRefs.current[i]?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
   }
-
-  const chipText = (key?: string) => {
-    if (key === "live") return t("landing.maprunWpStats");
-    if (key === "series") return t("landing.maprunRing2");
-    if (key === "balance") return t("landing.maprunStat1");
-    return "";
-  };
 
   return (
     <div className="home-chaos">
@@ -231,178 +294,183 @@ export function HomePage() {
       </div>
 
       <div className="home-chaos-map" ref={mapRef}>
-        <svg className="home-chaos-svg" viewBox="0 0 1000 3200" preserveAspectRatio="none" aria-hidden>
-          {/* contour / map texture */}
-          <g className="home-chaos-contours" opacity="0.22">
-            <ellipse cx="200" cy="400" rx="160" ry="90" fill="none" stroke="currentColor" strokeDasharray="4 8" />
-            <ellipse cx="200" cy="400" rx="110" ry="55" fill="none" stroke="currentColor" strokeDasharray="3 7" />
-            <ellipse cx="780" cy="900" rx="140" ry="100" fill="none" stroke="currentColor" strokeDasharray="4 8" />
-            <ellipse cx="780" cy="900" rx="90" ry="60" fill="none" stroke="currentColor" strokeDasharray="3 7" />
-            <ellipse cx="300" cy="1600" rx="180" ry="110" fill="none" stroke="currentColor" strokeDasharray="5 9" />
-            <ellipse cx="700" cy="2100" rx="150" ry="80" fill="none" stroke="currentColor" strokeDasharray="4 8" />
-            <ellipse cx="400" cy="2700" rx="200" ry="120" fill="none" stroke="currentColor" strokeDasharray="5 10" />
-            <circle cx="150" cy="1200" r="40" fill="none" stroke="currentColor" strokeDasharray="2 6" />
-            <circle cx="850" cy="500" r="55" fill="none" stroke="currentColor" strokeDasharray="3 7" />
-            <circle cx="120" cy="2400" r="70" fill="none" stroke="currentColor" strokeDasharray="3 8" />
+        <svg className="home-chaos-svg" viewBox="0 0 1000 3000" preserveAspectRatio="none" aria-hidden>
+          <g className="home-chaos-contours" opacity="0.2">
+            <ellipse cx="180" cy="380" rx="150" ry="85" fill="none" stroke="currentColor" strokeDasharray="4 8" />
+            <ellipse cx="820" cy="860" rx="130" ry="95" fill="none" stroke="currentColor" strokeDasharray="4 8" />
+            <ellipse cx="250" cy="1550" rx="170" ry="100" fill="none" stroke="currentColor" strokeDasharray="5 9" />
+            <ellipse cx="760" cy="2100" rx="140" ry="75" fill="none" stroke="currentColor" strokeDasharray="4 8" />
+            <ellipse cx="380" cy="2650" rx="190" ry="110" fill="none" stroke="currentColor" strokeDasharray="5 10" />
           </g>
+          {/* дорожка: широкая основа + пунктир */}
+          <path className="home-chaos-road-bed" d={TRACK_D} fill="none" />
           <path ref={pathRef} className="home-chaos-path-base" d={TRACK_D} fill="none" />
+          <path ref={roadRef} className="home-chaos-road-glow" d={TRACK_D} fill="none" />
           <path ref={drawRef} className="home-chaos-path-draw" d={TRACK_D} fill="none" />
           {branches.map((b, i) =>
             b.d ? (
-              <path key={LAYOUT[i].id} className={`home-chaos-branch ${b.on ? "is-on" : ""}`} d={b.d} fill="none" />
+              <path key={SPOTS[i].id} className={`home-chaos-branch ${b.on ? "is-on" : ""}`} d={b.d} fill="none" />
             ) : null,
           )}
-          <circle ref={markerRef} className="home-chaos-marker" cx={480} cy={40} r={16} />
-          <circle ref={coreRef} className="home-chaos-marker-core" cx={480} cy={40} r={5} />
+          <circle ref={markerRef} className="home-chaos-marker" cx={520} cy={20} r={15} />
+          <circle ref={coreRef} className="home-chaos-marker-core" cx={520} cy={20} r={5} />
         </svg>
 
-        {LAYOUT.map((card, i) => (
-          <article
-            key={card.id}
-            ref={(n) => {
-              cardRefs.current[i] = n;
-            }}
-            className={`home-chaos-card home-chaos-card-${card.kind} home-chaos-card-${card.side} ${
-              progress >= card.t - 0.06 ? "is-visible" : ""
-            } ${activeId === card.id ? "is-active" : ""}`}
-            style={{
-              left: card.x,
-              top: card.y,
-              ["--rot" as string]: `${card.rotate}deg`,
-              ["--scale" as string]: String(card.scale),
-            }}
-          >
-            {card.kind === "start" && (
-              <>
-                <p className="home-chaos-kicker">{t("landing.maprunWpStart")}</p>
-                <h1>{s("appName")}</h1>
-                <p className="home-chaos-hook">{t("landing.maprunHook")}</p>
-                <p className="home-chaos-note">{t("landing.maprunSub")}</p>
-                <div className="home-chaos-actions">
-                  <Link to={startTo} className="home-chaos-btn">
-                    {s("landing.ctaStart")}
+        {SPOTS.map((spot, i) => (
+          <div key={spot.id} className={`home-chaos-row home-chaos-row-${spot.edge}`} style={{ top: spot.y }}>
+            {/* текст напротив карточки */}
+            <aside
+              className={`home-chaos-face ${progress >= spot.t - 0.06 ? "is-visible" : ""} ${
+                activeId === spot.id ? "is-active" : ""
+              }`}
+              style={{ ["--rot" as string]: `${-spot.rotate * 0.6}deg` }}
+            >
+              <p className="home-chaos-face-title">{t(`landing.${spot.faceKey}`)}</p>
+              {spot.faceSubKey && (
+                <p className="home-chaos-face-sub">{t(`landing.${spot.faceSubKey}`)}</p>
+              )}
+            </aside>
+
+            <article
+              ref={(n) => {
+                cardRefs.current[i] = n;
+              }}
+              className={`home-chaos-card home-chaos-card-${spot.kind} ${
+                progress >= spot.t - 0.06 ? "is-visible" : ""
+              } ${activeId === spot.id ? "is-active" : ""}`}
+              style={{
+                ["--rot" as string]: `${spot.rotate}deg`,
+                ["--scale" as string]: String(spot.scale),
+              }}
+            >
+              {spot.kind === "start" && (
+                <>
+                  <p className="home-chaos-kicker">{t("landing.maprunWpStart")}</p>
+                  <h1>{s("appName")}</h1>
+                  <p className="home-chaos-hook">{t("landing.maprunHook")}</p>
+                  <p className="home-chaos-note">{t("landing.maprunSub")}</p>
+                  <div className="home-chaos-actions">
+                    <Link to={startTo} className="home-chaos-btn">
+                      {s("landing.ctaStart")}
+                    </Link>
+                    <button type="button" className="home-chaos-btn-ghost" onClick={() => goSpot(1)}>
+                      {t("landing.maprunScroll")}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {spot.kind === "invest" && (
+                <>
+                  <p className="home-chaos-kicker">{t("landing.maprunWpInvest")}</p>
+                  <h2>{t("landing.maprunInvestTitle")}</h2>
+                  <p className="home-chaos-note">{t("landing.maprunInvestLead")}</p>
+                  <div className="home-chaos-assets">
+                    {assets.map((a) => (
+                      <div key={a.id} className="home-chaos-asset">
+                        <div className="home-chaos-asset-top">
+                          <span>{a.sport}</span>
+                          <em className={a.changePct >= 0 ? "up" : "down"}>
+                            {a.changePct >= 0 ? "+" : ""}
+                            {a.changePct}%
+                          </em>
+                        </div>
+                        <strong>{a.name}</strong>
+                        <span>
+                          {formatSom(a.price)} · YTD {a.yieldYtd}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {spot.kind === "how" && (
+                <>
+                  <p className="home-chaos-kicker">{t("landing.maprunWpHow")}</p>
+                  <h2>{t("landing.maprunHowTitle")}</h2>
+                  <ol className="home-chaos-steps">
+                    {[1, 2, 3].map((n) => (
+                      <li key={n}>
+                        <b>{n}</b>
+                        <div>
+                          <strong>{t(`landing.maprunHow${n}t`)}</strong>
+                          <span>{t(`landing.maprunHow${n}`)}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )}
+
+              {spot.kind === "stats" && (
+                <>
+                  <p className="home-chaos-kicker">{t("landing.maprunWpStats")}</p>
+                  <h2>{t("landing.maprunStatsTitle")}</h2>
+                  <div className="home-chaos-stats">
+                    <div>
+                      <b>
+                        {c82}
+                        <small>%</small>
+                      </b>
+                      <span>{t("landing.maprunStat1")}</span>
+                    </div>
+                    <div>
+                      <b>{c4820}</b>
+                      <span>{t("landing.maprunStat2")}</span>
+                    </div>
+                    <div>
+                      <b>
+                        {c96}
+                        <small>M</small>
+                      </b>
+                      <span>{t("landing.maprunStat3")}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {spot.kind === "quote" && (
+                <>
+                  <p className="home-chaos-quote">«{t("landing.manifesto")}»</p>
+                  <p className="home-chaos-note">{t("landing.manifestoLead")}</p>
+                </>
+              )}
+
+              {spot.kind === "activity" && (
+                <>
+                  <p className="home-chaos-kicker">{t("landing.maprunWpActivity")}</p>
+                  <h2>{t("landing.maprunActTitle")}</h2>
+                  <div className="home-chaos-rings">
+                    {[
+                      { label: t("landing.maprunRing1"), p: 72 },
+                      { label: t("landing.maprunRing2"), p: 45 },
+                      { label: t("landing.maprunRing3"), p: 88 },
+                    ].map((r) => (
+                      <div key={r.label} className="home-chaos-ring" style={{ ["--p" as string]: String(r.p) }}>
+                        <span>{r.p}%</span>
+                        <strong>{r.label}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {spot.kind === "finish" && (
+                <>
+                  <p className="home-chaos-kicker">{t("landing.maprunWpFinish")}</p>
+                  <h2>{t("landing.maprunFinishTitle")}</h2>
+                  <p className="home-chaos-note">{t("landing.maprunFinishLead")}</p>
+                  <div className="home-chaos-tape" aria-hidden>
+                    <span>{t("landing.maprunTape")}</span>
+                  </div>
+                  <Link to={startTo} className="home-chaos-btn home-chaos-btn-lg">
+                    {t("landing.maprunFinishCta")}
                   </Link>
-                  <button type="button" className="home-chaos-btn-ghost" onClick={() => goCard(2)}>
-                    {t("landing.maprunScroll")}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {card.kind === "chip" && (
-              <p className="home-chaos-chip-label">{chipText(card.chip)}</p>
-            )}
-
-            {card.kind === "invest" && (
-              <>
-                <p className="home-chaos-kicker">{t("landing.maprunWpInvest")}</p>
-                <h2>{t("landing.maprunInvestTitle")}</h2>
-                <p className="home-chaos-note">{t("landing.maprunInvestLead")}</p>
-                <div className="home-chaos-assets">
-                  {assets.map((a) => (
-                    <div key={a.id} className="home-chaos-asset">
-                      <div className="home-chaos-asset-top">
-                        <span>{a.sport}</span>
-                        <em className={a.changePct >= 0 ? "up" : "down"}>
-                          {a.changePct >= 0 ? "+" : ""}
-                          {a.changePct}%
-                        </em>
-                      </div>
-                      <strong>{a.name}</strong>
-                      <span>
-                        {formatSom(a.price)} · YTD {a.yieldYtd}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {card.kind === "how" && (
-              <>
-                <p className="home-chaos-kicker">{t("landing.maprunWpHow")}</p>
-                <h2>{t("landing.maprunHowTitle")}</h2>
-                <ol className="home-chaos-steps">
-                  {[1, 2, 3].map((n) => (
-                    <li key={n}>
-                      <b>{n}</b>
-                      <div>
-                        <strong>{t(`landing.maprunHow${n}t`)}</strong>
-                        <span>{t(`landing.maprunHow${n}`)}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </>
-            )}
-
-            {card.kind === "stats" && (
-              <>
-                <p className="home-chaos-kicker">{t("landing.maprunWpStats")}</p>
-                <h2>{t("landing.maprunStatsTitle")}</h2>
-                <div className="home-chaos-stats">
-                  <div>
-                    <b>
-                      {c82}
-                      <small>%</small>
-                    </b>
-                    <span>{t("landing.maprunStat1")}</span>
-                  </div>
-                  <div>
-                    <b>{c4820}</b>
-                    <span>{t("landing.maprunStat2")}</span>
-                  </div>
-                  <div>
-                    <b>
-                      {c96}
-                      <small>M</small>
-                    </b>
-                    <span>{t("landing.maprunStat3")}</span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {card.kind === "quote" && (
-              <>
-                <p className="home-chaos-quote">«{t("landing.manifesto")}»</p>
-                <p className="home-chaos-note">{t("landing.manifestoLead")}</p>
-              </>
-            )}
-
-            {card.kind === "activity" && (
-              <>
-                <p className="home-chaos-kicker">{t("landing.maprunWpActivity")}</p>
-                <h2>{t("landing.maprunActTitle")}</h2>
-                <div className="home-chaos-rings">
-                  {[
-                    { label: t("landing.maprunRing1"), p: 72 },
-                    { label: t("landing.maprunRing2"), p: 45 },
-                    { label: t("landing.maprunRing3"), p: 88 },
-                  ].map((r) => (
-                    <div key={r.label} className="home-chaos-ring" style={{ ["--p" as string]: String(r.p) }}>
-                      <span>{r.p}%</span>
-                      <strong>{r.label}</strong>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {card.kind === "finish" && (
-              <>
-                <p className="home-chaos-kicker">{t("landing.maprunWpFinish")}</p>
-                <h2>{t("landing.maprunFinishTitle")}</h2>
-                <p className="home-chaos-note">{t("landing.maprunFinishLead")}</p>
-                <div className="home-chaos-tape" aria-hidden>
-                  <span>{t("landing.maprunTape")}</span>
-                </div>
-                <Link to={startTo} className="home-chaos-btn home-chaos-btn-lg">
-                  {t("landing.maprunFinishCta")}
-                </Link>
-              </>
-            )}
-          </article>
+                </>
+              )}
+            </article>
+          </div>
         ))}
       </div>
     </div>

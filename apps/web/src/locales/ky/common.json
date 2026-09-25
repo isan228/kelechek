@@ -238,7 +238,21 @@
     "maprunFinishTitle": "Финиш лентасы",
     "maprunFinishLead": "Маркер финиште. Маршрутуңузду баштаңыз — кабинет даяр.",
     "maprunTape": "FINISH",
-    "maprunFinishCta": "Маршрутту баштоо"
+    "maprunFinishCta": "Маршрутту баштоо",
+    "mapFaceStart": "Маршруттун башы",
+    "mapFaceStartSub": "Жол ушул жерден башталат: бүгүн спорт — эртең билим.",
+    "mapFaceInvest": "Капиталдын чекиттери",
+    "mapFaceInvestSub": "Спортчулар, командалар, иш-чаралар — динамика көрүнөт.",
+    "mapFaceHow": "Үч кадам",
+    "mapFaceHowSub": "Тандоо → салым → ритм.",
+    "mapFaceStats": "Трек багыттары",
+    "mapFaceStatsSub": "Платформанын жандуу сандары.",
+    "mapFaceQuote": "Жолдун мааниси",
+    "mapFaceQuoteSub": "Машыгуу тартиби максатка топтоону күчөтөт.",
+    "mapFaceAct": "Жеке прогресс",
+    "mapFaceActSub": "Активдүүлүк шакектери серияны кармайт.",
+    "mapFaceFinish": "Финиш",
+    "mapFaceFinishSub": "Маркер лентада. Кабинетти ачыңыз."
   },
   "about": {
     "title": "Долбоор жөнүндө",
