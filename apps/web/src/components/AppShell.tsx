@@ -1,12 +1,10 @@
-import { useState } from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { AppSidebar, AppTopBar } from "./AppTabBar";
+import { AppBottomNav, AppTopBar } from "./AppTabBar";
 
 export function AppShell() {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
   const hideChrome = location.pathname.startsWith("/app/onboarding");
 
   if (loading) {
@@ -33,14 +31,12 @@ export function AppShell() {
   }
 
   return (
-    <div className="uw-shell uw-shell-sidebar">
-      <AppSidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
-      <div className="uw-shell-content">
-        <AppTopBar onMenu={() => setMenuOpen(true)} />
-        <div className="uw-shell-main">
-          <Outlet />
-        </div>
+    <div className="uw-shell uw-shell-social">
+      <AppTopBar />
+      <div className="uw-shell-main">
+        <Outlet />
       </div>
+      <AppBottomNav />
     </div>
   );
 }

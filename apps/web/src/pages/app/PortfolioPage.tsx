@@ -27,49 +27,52 @@ export function PortfolioPage() {
       .catch(() => undefined);
   }, []);
 
+  const name = user?.firstName || user?.login || "Аккаунт";
   const rows = [
-    { label: "Корректность серии", value: streak > 0 ? "Стабильно" : "Низкая", pct: Math.min(100, streak * 10) },
-    { label: "Темп накопления", value: balance > 0 ? "Активен" : "Пауза", pct: Math.min(100, Math.round(balance / 50)) },
+    { label: "Серия", value: streak > 0 ? "Стабильно" : "Пауза", pct: Math.min(100, streak * 10) },
+    { label: "Накопление", value: balance > 0 ? "Активен" : "Пауза", pct: Math.min(100, Math.round(balance / 50)) },
     { label: "Выдержка", value: `${hold.have}/${hold.need}`, pct: Math.round((hold.have / hold.need) * 100) },
   ];
 
   return (
-    <div className="uw-page">
-      <header className="uw-top">
-        <div>
-          <p className="uw-eyebrow">Аналитика</p>
-          <h1 className="uw-h1">Портфель</h1>
-        </div>
-        <Link to="/profile" className="uw-ghost-btn">
-          {user?.firstName || "Аккаунт"}
-        </Link>
-      </header>
-
-      <section className="uw-panel">
-        <h2 className="uw-h2">Сводка</h2>
-        <div className="uw-stats">
-          <div className="uw-stat">
-            <span className="uw-sub">Баланс</span>
+    <div className="uw-page uw-feed">
+      <header className="uw-profile-head">
+        <span className="uw-profile-ava">{name.slice(0, 1).toUpperCase()}</span>
+        <div className="uw-profile-stats">
+          <div>
             <b>{formatSom(balance)}</b>
+            <span>баланс</span>
           </div>
-          <div className="uw-stat">
-            <span className="uw-sub">Серия</span>
+          <div>
             <b>{streak}</b>
+            <span>серия</span>
           </div>
-          <div className="uw-stat">
-            <span className="uw-sub">Выдержка</span>
+          <div>
             <b>
               {hold.have}/{hold.need}
             </b>
+            <span>выдержка</span>
           </div>
         </div>
-      </section>
+      </header>
+      <div className="uw-profile-bio">
+        <strong>{name}</strong>
+        <p className="uw-sub">Портфель и прогресс к цели</p>
+      </div>
+      <div className="uw-profile-actions">
+        <Link to="/profile" className="uw-ghost-btn">
+          Редактировать
+        </Link>
+        <Link to="/memberships" className="uw-ghost-btn">
+          Абонемент
+        </Link>
+      </div>
 
       <section className="uw-panel">
         <h2 className="uw-h2">Метрики</h2>
         <ul className="uw-subjects">
           {rows.map((r) => (
-            <li key={r.label} className="uw-subject" style={{ cursor: "default" }}>
+            <li key={r.label} className="uw-subject">
               <div className="uw-subject-top">
                 <strong>{r.label}</strong>
                 <span>{r.value}</span>
@@ -85,7 +88,6 @@ export function PortfolioPage() {
       <div className="uw-link-stack">
         <Link to="/progress">История операций →</Link>
         <Link to="/goal">Цель и правила →</Link>
-        <Link to="/memberships">Абонемент →</Link>
         <Link to="/notifications">Уведомления →</Link>
       </div>
     </div>

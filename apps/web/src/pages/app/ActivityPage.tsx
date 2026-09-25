@@ -5,63 +5,56 @@ const blocks = [
     id: "b1",
     title: "Ритм недели",
     meta: "4 сессии · ~40 мин",
-    status: "open" as const,
     to: "/workouts",
+    time: "сегодня",
   },
   {
     id: "b2",
     title: "С тренером",
     meta: "чек-ин и расписание",
-    status: "open" as const,
     to: "/schedule",
+    time: "скоро",
   },
   {
     id: "b3",
     title: "Материалы",
     meta: "статьи и программы",
-    status: "open" as const,
     to: "/workouts",
+    time: "лента",
   },
   {
     id: "b4",
     title: "Отметка посещения",
     meta: "QR / токен",
-    status: "action" as const,
     to: "/checkin",
+    time: "сейчас",
   },
 ];
 
 export function ActivityPage() {
   return (
-    <div className="uw-page">
-      <header className="uw-top">
-        <div>
-          <p className="uw-eyebrow">Операции</p>
-          <h1 className="uw-h1">Активность</h1>
-        </div>
+    <div className="uw-page uw-feed">
+      <header className="uw-social-head">
+        <h1 className="uw-h1">Активность</h1>
       </header>
-      <p className="uw-sub" style={{ marginTop: -8 }}>
-        Тренировки, расписание и отметки — всё для серии и накопления.
-      </p>
 
-      <ul className="uw-blocks">
+      <ul className="uw-activity-feed">
         {blocks.map((b) => (
           <li key={b.id}>
-            <Link to={b.to} className="uw-block">
+            <Link to={b.to} className="uw-activity-row">
+              <span className="uw-activity-ava">{b.title.slice(0, 1)}</span>
               <div>
                 <strong>{b.title}</strong>
                 <span className="uw-sub">{b.meta}</span>
               </div>
-              <span className={`uw-pill ${b.status === "action" ? "is-timed" : ""}`}>
-                {b.status === "action" ? "Отметить" : "Открыть"}
-              </span>
+              <span className="uw-activity-time">{b.time}</span>
             </Link>
           </li>
         ))}
       </ul>
 
       <Link to="/workouts" className="uw-primary">
-        Перейти к материалам
+        Открыть материалы
       </Link>
     </div>
   );

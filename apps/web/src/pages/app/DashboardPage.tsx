@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
+import { useAuth } from "../../auth/AuthProvider";
 
 function formatSom(n: number) {
   return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
@@ -8,9 +9,20 @@ function formatSom(n: number) {
 
 type Balance = Awaited<ReturnType<typeof api.balance>>;
 
+const stories = [
+  { to: "/checkin", label: "Отметка", ring: true },
+  { to: "/app/activity", label: "Тренировка", ring: true },
+  { to: "/app/invest", label: "Инвест", ring: false },
+  { to: "/schedule", label: "Расписание", ring: false },
+  { to: "/memberships", label: "Абонемент", ring: false },
+  { to: "/goal", label: "Цель", ring: false },
+] as const;
+
 export function DashboardPage() {
+  const { user } = useAuth();
   const [data, setData] = useState<Balance | null>(null);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -35,26 +47,14 @@ export function DashboardPage() {
   const holdPct = Math.min(100, Math.round((holdHave / holdNeed) * 100));
   const streak = data?.streak ?? 0;
   const balance = data?.balance.available ?? 0;
-  const minGoal = data?.withdrawalProgress.minAmountKgs ?? 1000;
-  const savePct = Math.min(100, Math.round((balance / minGoal) * 100));
-
-  const metrics = [
-    { name: "Накопление", pct: savePct, to: "/progress", hint: `${formatSom(balance)} сом` },
-    { name: "Выдержка", pct: holdPct, to: "/goal", hint: `${holdHave} из ${holdNeed} мес.` },
-    {
-      name: "Серия",
-      pct: Math.min(100, streak * 10),
-      to: "/app/activity",
-      hint: streak ? `${streak} мес.` : "не начата",
-    },
-  ];
+  const name = user?.firstName || user?.login || "kelechek";
 
   const continueTo = !data?.membership ? "/memberships" : streak < 1 ? "/app/activity" : "/workouts";
   const continueLabel = !data?.membership
     ? "Оформить абонемент"
     : streak < 1
-      ? "Отметить активность"
-      : "Продолжить";
+      ? "Начать серию"
+      : "Продолжить практику";
 
   if (loading) {
     return (
@@ -67,77 +67,108 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="uw-page">
-      <header className="uw-top">
-        <div>
-          <p className="uw-eyebrow">Обзор</p>
-          <h1 className="uw-h1">Рабочий стол</h1>
-        </div>
-        <Link to={continueTo} className="uw-primary uw-primary-inline">
-          {continueLabel}
-        </Link>
-      </header>
-
-      <section className="uw-stats" aria-label="Ключевые показатели">
-        <div className="uw-stat">
-          <span className="uw-sub">Баланс, сом</span>
-          <b>{formatSom(balance)}</b>
-        </div>
-        <div className="uw-stat">
-          <span className="uw-sub">Серия, мес.</span>
-          <b>{streak || 0}</b>
-        </div>
-        <div className="uw-stat">
-          <span className="uw-sub">До вывода</span>
-          <b>
-            {holdHave}/{holdNeed}
-          </b>
-        </div>
+    <div className="uw-page uw-feed">
+      <section className="uw-stories" aria-label="Быстрые действия">
+        {stories.map((s) => (
+          <Link key={s.to} to={s.to} className={`uw-story ${s.ring ? "is-new" : ""}`}>
+            <span className="uw-story-ring">
+              <span className="uw-story-ava">{s.label.slice(0, 1)}</span>
+            </span>
+            <span className="uw-story-label">{s.label}</span>
+          </Link>
+        ))}
       </section>
 
-      <section className="uw-panel">
-        <div className="uw-panel-head">
-          <h2 className="uw-h2">Показатели</h2>
-          <span className="uw-sub">к цели</span>
+      <article className="uw-post">
+        <header className="uw-post-head">
+          <span className="uw-post-ava">{name.slice(0, 1).toUpperCase()}</span>
+          <div className="uw-post-meta">
+            <strong>{name}</strong>
+            <span>баланс · сегодня</span>
+          </div>
+          <Link to="/progress" className="uw-post-more">
+            ···
+          </Link>
+        </header>
+        <div className="uw-post-hero">
+          <p className="uw-post-kicker">Доступно</p>
+          <p className="uw-post-amount">{formatSom(balance)} сом</p>
+          <p className="uw-post-sub">
+            Серия {streak || 0} мес. · до вывода {holdHave}/{holdNeed}
+          </p>
         </div>
-        <ul className="uw-subjects">
-          {metrics.map((s) => (
-            <li key={s.name}>
-              <Link to={s.to} className="uw-subject">
-                <div className="uw-subject-top">
-                  <strong>{s.name}</strong>
-                  <span>
-                    {s.pct}% · {s.hint}
-                  </span>
-                </div>
-                <div className="uw-bar" aria-hidden>
-                  <span style={{ width: `${s.pct}%` }} />
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <div className="uw-post-actions">
+          <button type="button" className={`uw-ico-btn ${liked ? "is-on" : ""}`} onClick={() => setLiked((v) => !v)}>
+            {liked ? "♥" : "♡"}
+          </button>
+          <Link to="/app/invest" className="uw-ico-btn">
+            ✉
+          </Link>
+          <Link to={continueTo} className="uw-ico-btn">
+            ↪
+          </Link>
+          <Link to="/goal" className="uw-ico-btn uw-ico-end">
+            ✦
+          </Link>
+        </div>
+        <div className="uw-post-caption">
+          <strong>{name}</strong> {continueLabel.toLowerCase()} —{" "}
+          <Link to={continueTo}>{continueLabel}</Link>
+        </div>
+        <div className="uw-bar uw-bar-feed" aria-hidden>
+          <span style={{ width: `${holdPct}%` }} />
+        </div>
+      </article>
 
-      <section className="uw-panel">
-        <div className="uw-panel-head">
-          <h2 className="uw-h2">Задачи</h2>
-        </div>
-        <ul className="uw-review">
+      <article className="uw-post">
+        <header className="uw-post-head">
+          <span className="uw-post-ava uw-post-ava-brand">K</span>
+          <div className="uw-post-meta">
+            <strong>kelechek</strong>
+            <span>активность</span>
+          </div>
+        </header>
+        <ul className="uw-post-list">
           <li>
             <Link to="/schedule">Расписание тренировок</Link>
-            <span className="uw-tag">сегодня</span>
+            <span>сегодня</span>
           </li>
           <li>
             <Link to="/invites">Приглашения тренера</Link>
-            <span className="uw-tag">входящие</span>
+            <span>inbox</span>
           </li>
           <li>
-            <Link to="/goal">Условия цели</Link>
-            <span className="uw-tag">правила</span>
+            <Link to="/workouts">Материалы и программы</Link>
+            <span>лента</span>
           </li>
         </ul>
-      </section>
+      </article>
+
+      <article className="uw-post">
+        <header className="uw-post-head">
+          <span className="uw-post-ava">▦</span>
+          <div className="uw-post-meta">
+            <strong>прогресс</strong>
+            <span>к цели</span>
+          </div>
+        </header>
+        <div className="uw-stats uw-stats-feed">
+          <div className="uw-stat">
+            <span className="uw-sub">Баланс</span>
+            <b>{formatSom(balance)}</b>
+          </div>
+          <div className="uw-stat">
+            <span className="uw-sub">Серия</span>
+            <b>{streak || 0}</b>
+          </div>
+          <div className="uw-stat">
+            <span className="uw-sub">Выдержка</span>
+            <b>
+              {holdHave}/{holdNeed}
+            </b>
+          </div>
+        </div>
+      </article>
     </div>
   );
 }

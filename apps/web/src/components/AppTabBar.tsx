@@ -3,33 +3,41 @@ import { useAuth } from "../auth/AuthProvider";
 import { api } from "../api/client";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
-const navMain = [
-  { to: "/app", end: true, label: "Главная" },
-  { to: "/app/activity", end: false, label: "Активность" },
-  { to: "/app/invest", end: false, label: "Инвестиции" },
-  { to: "/app/portfolio", end: false, label: "Портфель" },
+const tabs = [
+  { to: "/app", end: true, label: "Лента", icon: "⌂" },
+  { to: "/app/activity", end: false, label: "Активность", icon: "▣" },
+  { to: "/app/invest", end: false, label: "Инвест", icon: "＋", center: true },
+  { to: "/app/portfolio", end: false, label: "Портфель", icon: "▦" },
+  { to: "/profile", end: false, label: "Профиль", icon: "◎" },
 ] as const;
 
-const navMore = [
-  { to: "/workouts", label: "Материалы" },
-  { to: "/schedule", label: "Расписание" },
-  { to: "/memberships", label: "Абонемент" },
-  { to: "/goal", label: "Цель" },
-  { to: "/notifications", label: "Уведомления" },
-  { to: "/invites", label: "Приглашения" },
-  { to: "/profile", label: "Настройки" },
-] as const;
+export function AppBottomNav() {
+  return (
+    <nav className="uw-tabbar" aria-label="Навигация">
+      {tabs.map((tab) => (
+        <NavLink
+          key={tab.to}
+          to={tab.to}
+          end={"end" in tab ? tab.end : false}
+          className={({ isActive }) =>
+            `uw-tab ${"center" in tab && tab.center ? "uw-tab-center" : ""} ${isActive ? "is-active" : ""}`
+          }
+        >
+          <span className="uw-tab-ico" aria-hidden>
+            {tab.icon}
+          </span>
+          <span className="uw-tab-label">{tab.label}</span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-};
-
-export function AppSidebar({ open, onClose }: Props) {
+export function AppTopBar() {
   const { user, setUser } = useAuth();
   const { s } = useSiteCopy();
   const navigate = useNavigate();
-  const name = user?.firstName || user?.login || "Аккаунт";
+  const name = user?.firstName || user?.login || "Вы";
 
   async function logout() {
     try {
@@ -42,91 +50,32 @@ export function AppSidebar({ open, onClose }: Props) {
   }
 
   return (
-    <>
-      <button
-        type="button"
-        className={`uw-sidebar-backdrop ${open ? "is-open" : ""}`}
-        aria-label="Закрыть меню"
-        onClick={onClose}
-      />
-      <aside className={`uw-sidebar ${open ? "is-open" : ""}`} aria-label="Навигация кабинета">
-        <div className="uw-sidebar-brand">
-          <img src="/ornament.svg" alt="" />
-          <div>
-            <strong>{s("appName")}</strong>
-            <span>Личный кабинет</span>
-          </div>
-        </div>
-
-        <nav className="uw-sidebar-nav">
-          <p className="uw-side-label">Разделы</p>
-          {navMain.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => `uw-side-link ${isActive ? "is-active" : ""}`}
-              onClick={onClose}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-          <div className="uw-side-sep" />
-          <p className="uw-side-label">Сервисы</p>
-          {navMore.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => `uw-side-link ${isActive ? "is-active" : ""}`}
-              onClick={onClose}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="uw-sidebar-account">
-          <Link to="/profile" className="uw-side-user" onClick={onClose}>
-            <span className="uw-side-user-ava" aria-hidden>
-              {name.slice(0, 1).toUpperCase()}
-            </span>
-            <span className="uw-side-user-name">{name}</span>
-          </Link>
-          <button type="button" className="uw-side-logout" onClick={() => void logout()}>
-            Выйти
-          </button>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-export function AppTopBar({ onMenu }: { onMenu: () => void }) {
-  const { user } = useAuth();
-  const name = user?.firstName || user?.login || "пользователь";
-
-  return (
     <header className="uw-topbar">
-      <button type="button" className="uw-topbar-menu" aria-label="Меню" onClick={onMenu}>
-        ☰
-      </button>
-      <div className="uw-topbar-title">
-        <span className="uw-topbar-kicker">Кабинет</span>
-        <p className="uw-topbar-hello">{name}</p>
-      </div>
+      <Link to="/app" className="uw-topbar-brand">
+        <img src="/ornament.svg" alt="" />
+        <strong>{s("appName")}</strong>
+      </Link>
       <div className="uw-topbar-actions">
         <Link to="/notifications" className="uw-topbar-ico" aria-label="Уведомления">
-          Увед.
+          ♡
         </Link>
-        <Link to="/" className="uw-topbar-home">
-          На сайт
+        <Link to="/invites" className="uw-topbar-ico" aria-label="Сообщения">
+          ✉
         </Link>
+        <button type="button" className="uw-topbar-ava" onClick={() => void logout()} title="Выйти">
+          {name.slice(0, 1).toUpperCase()}
+        </button>
       </div>
     </header>
   );
 }
 
-/** @deprecated bottom tabs removed — sidebar used instead */
+/** @deprecated — use AppBottomNav */
 export function AppTabBar() {
+  return <AppBottomNav />;
+}
+
+/** @deprecated — sidebar removed */
+export function AppSidebar(_props: { open: boolean; onClose: () => void }) {
   return null;
 }

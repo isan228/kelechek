@@ -28,12 +28,16 @@ export function InvestAssetPage() {
   const risk = asset.risk === "low" ? "Low" : asset.risk === "mid" ? "Moderate" : "High";
 
   return (
-    <div className="uw-page">
+    <div className="uw-page uw-feed">
       <Link to="/app/invest" className="uw-back">
         ← Инвестиции
       </Link>
-      <p className="uw-eyebrow">{asset.sport}</p>
-      <h1 className="uw-h1">{asset.name}</h1>
+      <div className="uw-social-head" style={{ paddingTop: 4 }}>
+        <div>
+          <p className="uw-eyebrow">{asset.sport}</p>
+          <h1 className="uw-h1">{asset.name}</h1>
+        </div>
+      </div>
       <p className="uw-sub">{asset.tagline}</p>
 
       <section className="uw-panel">
