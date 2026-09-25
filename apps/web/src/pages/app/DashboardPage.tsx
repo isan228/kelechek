@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 
@@ -38,22 +38,23 @@ export function DashboardPage() {
   const minGoal = data?.withdrawalProgress.minAmountKgs ?? 1000;
   const savePct = Math.min(100, Math.round((balance / minGoal) * 100));
 
-  const readiness = useMemo(() => {
-    const a = holdPct * 0.4;
-    const b = Math.min(100, streak * 12) * 0.25;
-    const c = savePct * 0.35;
-    return Math.round(a + b + c);
-  }, [holdPct, streak, savePct]);
-
-  const subjects = [
+  const metrics = [
     { name: "Накопление", pct: savePct, to: "/progress", hint: `${formatSom(balance)} сом` },
-    { name: "Выдержка", pct: holdPct, to: "/goal", hint: `${holdHave}/${holdNeed} мес.` },
-    { name: "Серия", pct: Math.min(100, streak * 10), to: "/app/activity", hint: streak ? `${streak} мес.` : "не начата" },
-    { name: "Материалы", pct: 62, to: "/workouts", hint: "практика" },
+    { name: "Выдержка", pct: holdPct, to: "/goal", hint: `${holdHave} из ${holdNeed} мес.` },
+    {
+      name: "Серия",
+      pct: Math.min(100, streak * 10),
+      to: "/app/activity",
+      hint: streak ? `${streak} мес.` : "не начата",
+    },
   ];
 
   const continueTo = !data?.membership ? "/memberships" : streak < 1 ? "/app/activity" : "/workouts";
-  const continueLabel = !data?.membership ? "Оформить абонемент" : streak < 1 ? "Начать серию" : "Продолжить практику";
+  const continueLabel = !data?.membership
+    ? "Оформить абонемент"
+    : streak < 1
+      ? "Отметить активность"
+      : "Продолжить";
 
   if (loading) {
     return (
@@ -69,60 +70,21 @@ export function DashboardPage() {
     <div className="uw-page">
       <header className="uw-top">
         <div>
-          <p className="uw-eyebrow">Статистика</p>
-          <h1 className="uw-h1">Обзор</h1>
+          <p className="uw-eyebrow">Обзор</p>
+          <h1 className="uw-h1">Рабочий стол</h1>
         </div>
-      </header>
-
-      <section className="uw-ready" aria-labelledby="ready-title">
-        <div className="uw-ready-score" aria-labelledby="ready-title">
-          <div className="uw-score-ring" style={{ ["--p" as string]: `${readiness}` }}>
-            <span>{readiness}%</span>
-          </div>
-          <div>
-            <h2 id="ready-title" className="uw-h2">
-              Готовность к цели
-            </h2>
-            <p className="uw-sub">
-              Сводный индекс: накопление, выдержка и серия — как readiness в учебном кабинете.
-            </p>
-          </div>
-        </div>
-        <Link to={continueTo} className="uw-primary">
+        <Link to={continueTo} className="uw-primary uw-primary-inline">
           {continueLabel}
         </Link>
-      </section>
+      </header>
 
-      <section className="uw-panel">
-        <div className="uw-panel-head">
-          <h2 className="uw-h2">По блокам</h2>
-          <span className="uw-sub">как subjects</span>
-        </div>
-        <ul className="uw-subjects">
-          {subjects.map((s) => (
-            <li key={s.name}>
-              <Link to={s.to} className="uw-subject">
-                <div className="uw-subject-top">
-                  <strong>{s.name}</strong>
-                  <span>{s.pct}%</span>
-                </div>
-                <div className="uw-bar" aria-hidden>
-                  <span style={{ width: `${s.pct}%` }} />
-                </div>
-                <span className="uw-sub">{s.hint}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="uw-stats">
+      <section className="uw-stats" aria-label="Ключевые показатели">
         <div className="uw-stat">
-          <span className="uw-sub">Баланс</span>
+          <span className="uw-sub">Баланс, сом</span>
           <b>{formatSom(balance)}</b>
         </div>
         <div className="uw-stat">
-          <span className="uw-sub">Серия</span>
+          <span className="uw-sub">Серия, мес.</span>
           <b>{streak || 0}</b>
         </div>
         <div className="uw-stat">
@@ -135,7 +97,31 @@ export function DashboardPage() {
 
       <section className="uw-panel">
         <div className="uw-panel-head">
-          <h2 className="uw-h2">К повторению</h2>
+          <h2 className="uw-h2">Показатели</h2>
+          <span className="uw-sub">к цели</span>
+        </div>
+        <ul className="uw-subjects">
+          {metrics.map((s) => (
+            <li key={s.name}>
+              <Link to={s.to} className="uw-subject">
+                <div className="uw-subject-top">
+                  <strong>{s.name}</strong>
+                  <span>
+                    {s.pct}% · {s.hint}
+                  </span>
+                </div>
+                <div className="uw-bar" aria-hidden>
+                  <span style={{ width: `${s.pct}%` }} />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="uw-panel">
+        <div className="uw-panel-head">
+          <h2 className="uw-h2">Задачи</h2>
         </div>
         <ul className="uw-review">
           <li>
@@ -144,7 +130,7 @@ export function DashboardPage() {
           </li>
           <li>
             <Link to="/invites">Приглашения тренера</Link>
-            <span className="uw-tag">inbox</span>
+            <span className="uw-tag">входящие</span>
           </li>
           <li>
             <Link to="/goal">Условия цели</Link>

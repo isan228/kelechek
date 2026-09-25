@@ -4,20 +4,20 @@ import { api } from "../api/client";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 
 const navMain = [
-  { to: "/app", end: true, label: "Добро пожаловать", icon: "⌂" },
-  { to: "/app/activity", end: false, label: "Практика", icon: "▣" },
-  { to: "/app/invest", end: false, label: "Банк объектов", icon: "▤" },
-  { to: "/app/portfolio", end: false, label: "Производительность", icon: "▦" },
+  { to: "/app", end: true, label: "Главная" },
+  { to: "/app/activity", end: false, label: "Активность" },
+  { to: "/app/invest", end: false, label: "Инвестиции" },
+  { to: "/app/portfolio", end: false, label: "Портфель" },
 ] as const;
 
 const navMore = [
-  { to: "/workouts", label: "Материалы", icon: "☰" },
-  { to: "/schedule", label: "Расписание", icon: "◷" },
-  { to: "/memberships", label: "Абонемент", icon: "◇" },
-  { to: "/goal", label: "Цель", icon: "◎" },
-  { to: "/notifications", label: "Уведомления", icon: "◉" },
-  { to: "/invites", label: "Приглашения", icon: "↷" },
-  { to: "/profile", label: "Настройки", icon: "⚙" },
+  { to: "/workouts", label: "Материалы" },
+  { to: "/schedule", label: "Расписание" },
+  { to: "/memberships", label: "Абонемент" },
+  { to: "/goal", label: "Цель" },
+  { to: "/notifications", label: "Уведомления" },
+  { to: "/invites", label: "Приглашения" },
+  { to: "/profile", label: "Настройки" },
 ] as const;
 
 type Props = {
@@ -54,11 +54,12 @@ export function AppSidebar({ open, onClose }: Props) {
           <img src="/ornament.svg" alt="" />
           <div>
             <strong>{s("appName")}</strong>
-            <span>Кабинет</span>
+            <span>Личный кабинет</span>
           </div>
         </div>
 
         <nav className="uw-sidebar-nav">
+          <p className="uw-side-label">Разделы</p>
           {navMain.map((item) => (
             <NavLink
               key={item.to}
@@ -67,13 +68,11 @@ export function AppSidebar({ open, onClose }: Props) {
               className={({ isActive }) => `uw-side-link ${isActive ? "is-active" : ""}`}
               onClick={onClose}
             >
-              <span className="uw-side-ico" aria-hidden>
-                {item.icon}
-              </span>
               {item.label}
             </NavLink>
           ))}
           <div className="uw-side-sep" />
+          <p className="uw-side-label">Сервисы</p>
           {navMore.map((item) => (
             <NavLink
               key={item.to}
@@ -81,9 +80,6 @@ export function AppSidebar({ open, onClose }: Props) {
               className={({ isActive }) => `uw-side-link ${isActive ? "is-active" : ""}`}
               onClick={onClose}
             >
-              <span className="uw-side-ico" aria-hidden>
-                {item.icon}
-              </span>
               {item.label}
             </NavLink>
           ))}
@@ -107,20 +103,23 @@ export function AppSidebar({ open, onClose }: Props) {
 
 export function AppTopBar({ onMenu }: { onMenu: () => void }) {
   const { user } = useAuth();
-  const name = user?.firstName || "друг";
+  const name = user?.firstName || user?.login || "пользователь";
 
   return (
     <header className="uw-topbar">
       <button type="button" className="uw-topbar-menu" aria-label="Меню" onClick={onMenu}>
         ☰
       </button>
-      <p className="uw-topbar-hello">Добро пожаловать, {name}!</p>
+      <div className="uw-topbar-title">
+        <span className="uw-topbar-kicker">Кабинет</span>
+        <p className="uw-topbar-hello">{name}</p>
+      </div>
       <div className="uw-topbar-actions">
         <Link to="/notifications" className="uw-topbar-ico" aria-label="Уведомления">
-          ◉
+          Увед.
         </Link>
         <Link to="/" className="uw-topbar-home">
-          Home
+          На сайт
         </Link>
       </div>
     </header>

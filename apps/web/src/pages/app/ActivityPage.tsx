@@ -3,30 +3,30 @@ import { Link } from "react-router-dom";
 const blocks = [
   {
     id: "b1",
-    title: "Блок: ритм недели",
+    title: "Ритм недели",
     meta: "4 сессии · ~40 мин",
-    status: "available" as const,
+    status: "open" as const,
     to: "/workouts",
   },
   {
     id: "b2",
-    title: "Блок: с тренером",
+    title: "С тренером",
     meta: "чек-ин и расписание",
-    status: "available" as const,
+    status: "open" as const,
     to: "/schedule",
   },
   {
     id: "b3",
-    title: "Блок: материалы",
+    title: "Материалы",
     meta: "статьи и программы",
-    status: "available" as const,
+    status: "open" as const,
     to: "/workouts",
   },
   {
     id: "b4",
-    title: "Блок: отметка",
+    title: "Отметка посещения",
     meta: "QR / токен",
-    status: "timed" as const,
+    status: "action" as const,
     to: "/checkin",
   },
 ];
@@ -36,22 +36,13 @@ export function ActivityPage() {
     <div className="uw-page">
       <header className="uw-top">
         <div>
-          <p className="uw-eyebrow">Практика</p>
-          <h1 className="uw-h1">Блоки</h1>
+          <p className="uw-eyebrow">Операции</p>
+          <h1 className="uw-h1">Активность</h1>
         </div>
       </header>
       <p className="uw-sub" style={{ marginTop: -8 }}>
-        Как учебные блоки: выберите набор и продолжайте с того места, где остановились.
+        Тренировки, расписание и отметки — всё для серии и накопления.
       </p>
-
-      <div className="uw-mode-row" role="group" aria-label="Режим">
-        <button type="button" className="uw-mode is-on">
-          Tutor
-        </button>
-        <button type="button" className="uw-mode">
-          Timed
-        </button>
-      </div>
 
       <ul className="uw-blocks">
         {blocks.map((b) => (
@@ -61,8 +52,8 @@ export function ActivityPage() {
                 <strong>{b.title}</strong>
                 <span className="uw-sub">{b.meta}</span>
               </div>
-              <span className={`uw-pill ${b.status === "timed" ? "is-timed" : ""}`}>
-                {b.status === "timed" ? "Timed" : "Start"}
+              <span className={`uw-pill ${b.status === "action" ? "is-timed" : ""}`}>
+                {b.status === "action" ? "Отметить" : "Открыть"}
               </span>
             </Link>
           </li>
@@ -70,7 +61,7 @@ export function ActivityPage() {
       </ul>
 
       <Link to="/workouts" className="uw-primary">
-        Продолжить практику
+        Перейти к материалам
       </Link>
     </div>
   );

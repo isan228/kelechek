@@ -18,7 +18,7 @@ export function InvestAssetPage() {
       <div className="uw-page">
         <h1 className="uw-h1">Не найдено</h1>
         <Link to="/app/invest" className="uw-primary">
-          К банку
+          К инвестициям
         </Link>
       </div>
     );
@@ -30,7 +30,7 @@ export function InvestAssetPage() {
   return (
     <div className="uw-page">
       <Link to="/app/invest" className="uw-back">
-        ← Банк
+        ← Инвестиции
       </Link>
       <p className="uw-eyebrow">{asset.sport}</p>
       <h1 className="uw-h1">{asset.name}</h1>
@@ -50,8 +50,8 @@ export function InvestAssetPage() {
             <b>{formatSom(asset.price)}</b>
           </div>
           <div className="uw-stat">
-            <span className="uw-sub">Risk</span>
-            <b>{risk}</b>
+            <span className="uw-sub">Риск</span>
+            <b>{risk === "Low" ? "Низкий" : risk === "Moderate" ? "Средний" : "Высокий"}</b>
           </div>
         </div>
         <div className="uw-subject-top" style={{ marginTop: 12 }}>
@@ -64,11 +64,11 @@ export function InvestAssetPage() {
       </section>
 
       <button type="button" className="uw-explain" onClick={() => setShowExplain((v) => !v)}>
-        {showExplain ? "Скрыть пояснение" : "Показать пояснение"} (как explanation)
+        {showExplain ? "Скрыть детали" : "Подробнее об объекте"}
       </button>
       {showExplain && (
         <p className="uw-sub">
-          Риск и доходность — учебная сводка по объекту. Не индивидуальная рекомендация. Статистика:{" "}
+          Сводка по объекту, не индивидуальная рекомендация.{" "}
           {asset.stats.map((s) => `${s.label} ${s.value}`).join(" · ")}.
         </p>
       )}

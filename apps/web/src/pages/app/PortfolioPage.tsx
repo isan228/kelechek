@@ -37,8 +37,8 @@ export function PortfolioPage() {
     <div className="uw-page">
       <header className="uw-top">
         <div>
-          <p className="uw-eyebrow">Performance</p>
-          <h1 className="uw-h1">Отчёт</h1>
+          <p className="uw-eyebrow">Аналитика</p>
+          <h1 className="uw-h1">Портфель</h1>
         </div>
         <Link to="/profile" className="uw-ghost-btn">
           {user?.firstName || "Аккаунт"}
@@ -66,7 +66,7 @@ export function PortfolioPage() {
       </section>
 
       <section className="uw-panel">
-        <h2 className="uw-h2">Разбор по метрикам</h2>
+        <h2 className="uw-h2">Метрики</h2>
         <ul className="uw-subjects">
           {rows.map((r) => (
             <li key={r.label} className="uw-subject" style={{ cursor: "default" }}>
