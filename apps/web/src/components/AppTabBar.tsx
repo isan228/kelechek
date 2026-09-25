@@ -5,9 +5,7 @@ import { api } from "../api/client";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 import {
   IconActivity,
-  IconChat,
   IconGrid,
-  IconHeart,
   IconHome,
   IconLogout,
   IconPlus,
@@ -111,11 +109,11 @@ export function AppTopBar() {
       </Link>
       <p className="uw-topbar-title">Лента</p>
       <div className="uw-topbar-actions">
-        <Link to="/notifications" className="uw-topbar-ico" aria-label="Уведомления">
-          <IconHeart />
+        <Link to="/notifications" className="uw-ghost-btn">
+          Уведомления
         </Link>
-        <Link to="/invites" className="uw-topbar-ico" aria-label="Приглашения">
-          <IconChat />
+        <Link to="/invites" className="uw-ghost-btn">
+          Приглашения
         </Link>
         <Link to="/profile" className="uw-topbar-ava" aria-label="Профиль" title={name}>
           {name.slice(0, 1).toUpperCase()}

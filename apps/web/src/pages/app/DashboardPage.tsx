@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
-import { IconBookmark, IconChat, IconHeart, IconHeartFill, IconMore, IconShare } from "../../components/UwIcons";
 
 function formatSom(n: number) {
   return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
@@ -23,7 +22,6 @@ export function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Balance | null>(null);
   const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -87,8 +85,8 @@ export function DashboardPage() {
             <strong>{name}</strong>
             <span>баланс · сегодня</span>
           </div>
-          <Link to="/progress" className="uw-post-more" aria-label="Ещё">
-            <IconMore />
+          <Link to="/progress" className="uw-ghost-btn">
+            История
           </Link>
         </header>
         <div className="uw-post-hero">
@@ -98,32 +96,12 @@ export function DashboardPage() {
             Серия {streak || 0} мес. · до вывода {holdHave}/{holdNeed}
           </p>
         </div>
-        <div className="uw-post-actions">
-          <button
-            type="button"
-            className={`uw-ico-btn ${liked ? "is-on" : ""}`}
-            onClick={() => setLiked((v) => !v)}
-            aria-label="Нравится"
-          >
-            {liked ? <IconHeartFill /> : <IconHeart />}
-          </button>
-          <Link to="/app/invest" className="uw-ico-btn" aria-label="Инвестиции">
-            <IconChat />
-          </Link>
-          <Link to={continueTo} className="uw-ico-btn" aria-label="Продолжить">
-            <IconShare />
-          </Link>
-          <Link to="/goal" className="uw-ico-btn uw-ico-end" aria-label="Цель">
-            <IconBookmark />
-          </Link>
-        </div>
-        <div className="uw-post-caption">
-          <strong>{name}</strong> {continueLabel.toLowerCase()} —{" "}
-          <Link to={continueTo}>{continueLabel}</Link>
-        </div>
         <div className="uw-bar uw-bar-feed" aria-hidden>
           <span style={{ width: `${holdPct}%` }} />
         </div>
+        <Link to={continueTo} className="uw-primary">
+          {continueLabel}
+        </Link>
       </article>
 
       <article className="uw-post">
