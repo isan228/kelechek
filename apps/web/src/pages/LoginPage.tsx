@@ -41,7 +41,7 @@ export function LoginPage() {
         else if (res.user.roles.includes("ADMIN")) navigate("/admin");
         else if (res.user.roles.includes("ACCOUNTANT")) navigate("/accounting");
         else if (res.user.roles.includes("COACH")) navigate("/coach");
-        else navigate("/cabinet");
+        else navigate("/app");
         return;
       }
       if (!tariffId) {
@@ -54,7 +54,7 @@ export function LoginPage() {
         window.location.href = res.paymentUrl;
         return;
       }
-      navigate("/cabinet");
+      navigate("/app");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg === "BAD_CREDENTIALS") setError(t("auth.badCredentials"));

@@ -11,7 +11,7 @@ export function HomePage() {
   const { s } = useSiteCopy();
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
-  const startTo = user ? "/memberships" : "/login";
+  const startTo = user ? "/app" : "/login";
   const [news, setNews] = useState<Awaited<ReturnType<typeof api.news>>["posts"]>([]);
 
   useEffect(() => {

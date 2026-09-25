@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { Layout } from "./components/Layout";
+import { AppShell } from "./components/AppShell";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { HomePage } from "./pages/HomePage";
@@ -8,7 +9,7 @@ import { AboutPage } from "./pages/AboutPage";
 import { MembershipsPage } from "./pages/MembershipsPage";
 import { WorkoutItemPage, WorkoutsPage } from "./pages/WorkoutsPage";
 import { CoachesPublicPage } from "./pages/CoachesPublicPage";
-import { CabinetPage, GoalPage } from "./pages/CabinetPages";
+import { GoalPage } from "./pages/CabinetPages";
 import { BalancePage } from "./pages/PayPage";
 import { CoachPage, InvitesPage, ProfilePage } from "./pages/MiscPages";
 import { JoinCoachPage } from "./pages/JoinCoachPage";
@@ -21,12 +22,18 @@ import { AdminPage } from "./pages/AdminPage";
 import { AccountingPage } from "./pages/AccountingPage";
 import { GalleryPage, NewsItemPage, NewsPage } from "./pages/MediaPages";
 import { PaymentSuccessPage } from "./pages/PaymentSuccessPage";
+import { OnboardingPage } from "./pages/app/OnboardingPage";
+import { DashboardPage } from "./pages/app/DashboardPage";
+import { InvestMarketPage } from "./pages/app/InvestMarketPage";
+import { InvestAssetPage } from "./pages/app/InvestAssetPage";
+import { ActivityPage } from "./pages/app/ActivityPage";
+import { PortfolioPage } from "./pages/app/PortfolioPage";
 
 function homeFor(roles: string[]) {
   if (roles.includes("ADMIN")) return "/admin";
   if (roles.includes("ACCOUNTANT")) return "/accounting";
   if (roles.includes("COACH")) return "/coach";
-  return "/cabinet";
+  return "/app";
 }
 
 function Guard() {
@@ -40,7 +47,7 @@ function AdminGuard() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/admin/login" replace />;
-  if (!user.roles.includes("ADMIN")) return <Navigate to="/cabinet" replace />;
+  if (!user.roles.includes("ADMIN")) return <Navigate to="/app" replace />;
   return <Outlet />;
 }
 
@@ -49,7 +56,7 @@ function AccountantGuard() {
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!user.roles.includes("ACCOUNTANT") && !user.roles.includes("ADMIN")) {
-    return <Navigate to="/cabinet" replace />;
+    return <Navigate to="/app" replace />;
   }
   return <Outlet />;
 }
@@ -88,8 +95,16 @@ export function App() {
             user?.roles.includes("ADMIN") && !loading ? <Navigate to="/admin" replace /> : <AdminLoginPage />
           }
         />
+        <Route path="/app" element={<AppShell />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="onboarding" element={<OnboardingPage />} />
+          <Route path="invest" element={<InvestMarketPage />} />
+          <Route path="invest/:id" element={<InvestAssetPage />} />
+          <Route path="activity" element={<ActivityPage />} />
+          <Route path="portfolio" element={<PortfolioPage />} />
+        </Route>
         <Route element={<Guard />}>
-          <Route path="/cabinet" element={<CabinetPage />} />
+          <Route path="/cabinet" element={<Navigate to="/app" replace />} />
           <Route path="/progress" element={<BalancePage />} />
           <Route path="/schedule" element={<TraineeSchedulePage />} />
           <Route path="/notifications" element={<NotificationsPage />} />

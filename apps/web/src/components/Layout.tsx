@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
 import { api } from "../api/client";
@@ -11,6 +11,8 @@ export function Layout() {
   const { s } = useSiteCopy();
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isApp = location.pathname.startsWith("/app");
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -69,6 +71,16 @@ export function Layout() {
         </>
       );
 
+  if (isApp) {
+    return (
+      <div className="site site-app">
+        <main className="site-main">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="site">
       <header className="site-header">
@@ -112,7 +124,7 @@ export function Layout() {
                 </button>
                 {accountOpen && (
                   <div className="account-dropdown">
-                    {!isCoachOnly && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
+                    {!isCoachOnly && <NavLink to="/app" onClick={close}>{t("nav.cabinet")}</NavLink>}
                     {!isCoachOnly && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
                     {isTrainee && <NavLink to="/schedule" onClick={close}>{t("nav.schedule")}</NavLink>}
                     {isTrainee && <NavLink to="/checkin" onClick={close}>{t("nav.checkin")}</NavLink>}
@@ -158,7 +170,7 @@ export function Layout() {
               {user && (
                 <>
                   <hr className="nav-divider" />
-                  {!isCoachOnly && <NavLink to="/cabinet" onClick={close}>{t("nav.cabinet")}</NavLink>}
+                  {!isCoachOnly && <NavLink to="/app" onClick={close}>{t("nav.cabinet")}</NavLink>}
                   {!isCoachOnly && <NavLink to="/progress" onClick={close}>{t("nav.progress")}</NavLink>}
                   {isTrainee && <NavLink to="/schedule" onClick={close}>{t("nav.schedule")}</NavLink>}
                   {isTrainee && <NavLink to="/checkin" onClick={close}>{t("nav.checkin")}</NavLink>}
