@@ -28,6 +28,12 @@ import { InvestMarketPage } from "./pages/app/InvestMarketPage";
 import { InvestAssetPage } from "./pages/app/InvestAssetPage";
 import { ActivityPage } from "./pages/app/ActivityPage";
 import { PortfolioPage } from "./pages/app/PortfolioPage";
+import {
+  CabAdmissionPage,
+  CabCoachPage,
+  CabProfilePage,
+  CabTrainingPage,
+} from "./pages/app/CabinetSections";
 
 function homeFor(roles: string[]) {
   if (roles.includes("ADMIN")) return "/admin";
@@ -102,6 +108,10 @@ export function App() {
           <Route path="invest/:id" element={<InvestAssetPage />} />
           <Route path="activity" element={<ActivityPage />} />
           <Route path="portfolio" element={<PortfolioPage />} />
+          <Route path="coach" element={<CabCoachPage />} />
+          <Route path="training" element={<CabTrainingPage />} />
+          <Route path="admission" element={<CabAdmissionPage />} />
+          <Route path="profile" element={<CabProfilePage />} />
         </Route>
         <Route element={<Guard />}>
           <Route path="/cabinet" element={<Navigate to="/app" replace />} />

@@ -218,7 +218,7 @@ export function DashboardPage() {
             <>
               <p className="cab-strong-sm">{coachName}</p>
               <p className="cab-mut cab-line">{coach.sportRu || "Персональные тренировки"}</p>
-              <Link to="/invites" className="cab-btn2">
+              <Link to="/app/coach" className="cab-btn2">
                 Открыть
               </Link>
             </>

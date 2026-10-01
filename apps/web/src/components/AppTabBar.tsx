@@ -14,25 +14,25 @@ const NAV: NavItem[] = [
     icon: "M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",
   },
   {
-    to: "/invites",
+    to: "/app/coach",
     label: "Тренер",
     short: "Тренер",
     icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
   },
   {
-    to: "/schedule",
+    to: "/app/training",
     label: "Тренировки",
     short: "Тренировки",
     icon: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",
   },
   {
-    to: "/goal",
+    to: "/app/admission",
     label: "Поступление",
     short: "Вуз",
     icon: "M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5",
   },
   {
-    to: "/profile",
+    to: "/app/profile",
     label: "Профиль",
     short: "Профиль",
     icon: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 15c2 2 5 2 7 0M9 10h.01M15 10h.01",
@@ -85,7 +85,7 @@ export function CabTopNav() {
       </nav>
 
       <div className="cab-top-user">
-        <Link to="/profile" className="cab-ava" aria-label="Профиль" title={name}>
+        <Link to="/app/profile" className="cab-ava" aria-label="Профиль" title={name}>
           {name.slice(0, 1).toUpperCase()}
         </Link>
         <button type="button" className="cab-logout" onClick={() => void logout()}>
