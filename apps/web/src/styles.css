@@ -122,7 +122,7 @@ h1, h2, h3, .serif, .brand {
   padding: 0.4rem 0.75rem;
   border-radius: 10px;
 }
-.nav-cta, button.primary, button:not(.ghost):not(.lang-btn):not(.menu-btn):not(.icon-btn):not(.admin-journal-head):not(.account-trigger):not(.account-logout):not(.support-chat-fab):not(.support-chat-close):not(.support-chat-back):not(.support-chat-thread) {
+.nav-cta, button.primary, button:not(.ghost):not(.lang-btn):not(.menu-btn):not(.icon-btn):not(.admin-journal-head):not(.account-trigger):not(.account-logout):not(.support-chat-fab):not(.support-chat-close):not(.support-chat-back):not(.support-chat-thread):not(.cab-btn-ghost):not(.cab-seg-btn):not(.cab-logout) {
   background: var(--accent);
   color: #0f1115 !important;
   border: 0;
@@ -132,7 +132,7 @@ h1, h2, h3, .serif, .brand {
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease;
 }
-.nav-cta:hover, button:not(.ghost):not(.lang-btn):not(.menu-btn):not(.icon-btn):not(.admin-journal-head):not(.account-trigger):not(.account-logout):not(.support-chat-fab):not(.support-chat-close):not(.support-chat-back):not(.support-chat-thread):hover {
+.nav-cta:hover, button:not(.ghost):not(.lang-btn):not(.menu-btn):not(.icon-btn):not(.admin-journal-head):not(.account-trigger):not(.account-logout):not(.support-chat-fab):not(.support-chat-close):not(.support-chat-back):not(.support-chat-thread):not(.cab-btn-ghost):not(.cab-seg-btn):not(.cab-logout):hover {
   background: var(--accent-2);
   transform: translateY(-1px);
 }

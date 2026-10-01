@@ -534,7 +534,7 @@ export function CabProfilePage() {
           <div className="cab-seg" role="group" aria-label="Язык интерфейса">
             <button
               type="button"
-              className={locale === "ru" ? "is-on" : ""}
+              className={locale === "ru" ? "cab-seg-btn is-on" : "cab-seg-btn"}
               aria-pressed={locale === "ru"}
               onClick={() => void setLang("ru")}
             >
@@ -542,7 +542,7 @@ export function CabProfilePage() {
             </button>
             <button
               type="button"
-              className={locale === "ky" ? "is-on" : ""}
+              className={locale === "ky" ? "cab-seg-btn is-on" : "cab-seg-btn"}
               aria-pressed={locale === "ky"}
               onClick={() => void setLang("ky")}
             >
