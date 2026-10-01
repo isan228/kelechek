@@ -1,6 +1,6 @@
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { AppAside, AppBottomNav, AppTopBar } from "./AppTabBar";
+import { CabBottomNav, CabTopNav } from "./AppTabBar";
 
 export function AppShell() {
   const { user, loading } = useAuth();
@@ -9,8 +9,8 @@ export function AppShell() {
 
   if (loading) {
     return (
-      <div className="uw-shell">
-        <div className="uw-page" role="status" aria-label="Загрузка">
+      <div className="uw-shell cab">
+        <div className="cab-main" role="status" aria-label="Загрузка">
           <div className="uw-skel" />
           <div className="uw-skel uw-skel-lg" />
           <div className="uw-skel" />
@@ -31,17 +31,12 @@ export function AppShell() {
   }
 
   return (
-    <div className="uw-shell uw-shell-social">
-      <AppBottomNav />
-      <div className="uw-shell-stage">
-        <div className="uw-shell-column">
-          <AppTopBar />
-          <div className="uw-shell-main">
-            <Outlet />
-          </div>
-        </div>
-        <AppAside />
-      </div>
+    <div className="uw-shell cab">
+      <CabTopNav />
+      <main className="cab-main">
+        <Outlet />
+      </main>
+      <CabBottomNav />
     </div>
   );
 }

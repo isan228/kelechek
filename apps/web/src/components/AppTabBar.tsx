@@ -1,33 +1,53 @@
-import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { api } from "../api/client";
 import { useSiteCopy } from "../content/SiteCopyProvider";
-import {
-  IconActivity,
-  IconGrid,
-  IconHome,
-  IconLogout,
-  IconPlus,
-  IconUser,
-} from "./UwIcons";
 
-const tabs = [
-  { to: "/app", end: true, label: "Лента", Icon: IconHome },
-  { to: "/app/activity", end: false, label: "Активность", Icon: IconActivity },
-  { to: "/app/invest", end: false, label: "Инвест", Icon: IconPlus, center: true },
-  { to: "/app/portfolio", end: false, label: "Портфель", Icon: IconGrid },
-  { to: "/profile", end: false, label: "Профиль", Icon: IconUser },
-] as const;
+type NavItem = { to: string; end?: boolean; label: string; short: string; icon: string };
 
-const moreLinks = [
-  { to: "/schedule", label: "Расписание" },
-  { to: "/workouts", label: "Материалы" },
-  { to: "/memberships", label: "Абонемент" },
-  { to: "/goal", label: "Цель" },
-] as const;
+const NAV: NavItem[] = [
+  {
+    to: "/app",
+    end: true,
+    label: "Стрик и возврат",
+    short: "Стрик",
+    icon: "M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",
+  },
+  {
+    to: "/invites",
+    label: "Тренер",
+    short: "Тренер",
+    icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+  },
+  {
+    to: "/schedule",
+    label: "Тренировки",
+    short: "Тренировки",
+    icon: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",
+  },
+  {
+    to: "/goal",
+    label: "Поступление",
+    short: "Вуз",
+    icon: "M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5",
+  },
+  {
+    to: "/profile",
+    label: "Профиль",
+    short: "Профиль",
+    icon: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 15c2 2 5 2 7 0M9 10h.01M15 10h.01",
+  },
+];
 
-export function AppBottomNav() {
+function NavIcon({ d }: { d: string }) {
+  return (
+    <svg className="cab-nv-ico" viewBox="0 0 24 24" aria-hidden>
+      <path d={d} />
+    </svg>
+  );
+}
+
+export function CabTopNav() {
   const { user, setUser } = useAuth();
   const { s } = useSiteCopy();
   const navigate = useNavigate();
@@ -44,161 +64,54 @@ export function AppBottomNav() {
   }
 
   return (
-    <nav className="uw-nav" aria-label="Навигация">
-      <Link to="/app" className="uw-nav-brand">
-        <img src="/ornament.svg" alt="" width={28} height={28} />
-        <strong>{s("appName")}</strong>
+    <header className="cab-top">
+      <Link to="/app" className="cab-logo">
+        <span className="cab-logo-dot" aria-hidden />
+        {s("appName")}
       </Link>
 
-      <div className="uw-nav-inner">
-        {tabs.map((tab) => (
+      <nav className="cab-top-nav" aria-label="Разделы кабинета">
+        {NAV.map((item) => (
           <NavLink
-            key={tab.to}
-            to={tab.to}
-            end={"end" in tab ? tab.end : false}
-            className={({ isActive }) =>
-              `uw-tab ${"center" in tab && tab.center ? "uw-tab-center" : ""} ${isActive ? "is-active" : ""}`
-            }
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) => `cab-nv ${isActive ? "is-active" : ""}`}
           >
-            <span className="uw-tab-ico" aria-hidden>
-              <tab.Icon />
-            </span>
-            <span className="uw-tab-label">{tab.label}</span>
+            <NavIcon d={item.icon} />
+            {item.label}
           </NavLink>
         ))}
-      </div>
+      </nav>
 
-      <div className="uw-nav-more" aria-label="Сервисы">
-        <p className="uw-nav-more-label">Сервисы</p>
-        {moreLinks.map((link) => (
-          <Link key={link.to} to={link.to} className="uw-nav-more-link">
-            {link.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="uw-nav-foot">
-        <Link to="/profile" className="uw-nav-user">
-          <span className="uw-nav-user-ava" aria-hidden>
-            {name.slice(0, 1).toUpperCase()}
-          </span>
-          <span className="uw-nav-user-meta">
-            <strong>{name}</strong>
-            <span>Личный кабинет</span>
-          </span>
-        </Link>
-        <button type="button" className="uw-nav-logout" onClick={() => void logout()} aria-label="Выйти">
-          <IconLogout />
-          <span>Выйти</span>
-        </button>
-      </div>
-    </nav>
-  );
-}
-
-export function AppTopBar() {
-  const { user } = useAuth();
-  const { s } = useSiteCopy();
-  const name = user?.firstName || user?.login || "Вы";
-
-  return (
-    <header className="uw-topbar">
-      <Link to="/app" className="uw-topbar-brand">
-        <img src="/ornament.svg" alt="" width={24} height={24} />
-        <strong>{s("appName")}</strong>
-      </Link>
-      <p className="uw-topbar-title">Лента</p>
-      <div className="uw-topbar-actions">
-        <Link to="/notifications" className="uw-ghost-btn">
-          Уведомления
-        </Link>
-        <Link to="/invites" className="uw-ghost-btn">
-          Приглашения
-        </Link>
-        <Link to="/profile" className="uw-topbar-ava" aria-label="Профиль" title={name}>
+      <div className="cab-top-user">
+        <Link to="/profile" className="cab-ava" aria-label="Профиль" title={name}>
           {name.slice(0, 1).toUpperCase()}
         </Link>
+        <button type="button" className="cab-logout" onClick={() => void logout()}>
+          Выйти
+        </button>
       </div>
     </header>
   );
 }
 
-function formatSom(n: number) {
-  return new Intl.NumberFormat("ru-KG", { maximumFractionDigits: 0 }).format(n);
-}
-
-export function AppAside() {
-  const { user } = useAuth();
-  const [balance, setBalance] = useState<number | null>(null);
-  const [streak, setStreak] = useState(0);
-  const name = user?.firstName || user?.login || "Аккаунт";
-
-  useEffect(() => {
-    void api
-      .balance()
-      .then((r) => {
-        setBalance(r.balance.available);
-        setStreak(r.streak);
-      })
-      .catch(() => {
-        setBalance(null);
-      });
-  }, []);
-
+export function CabBottomNav() {
   return (
-    <aside className="uw-aside" aria-label="Сводка">
-      <div className="uw-aside-card">
-        <div className="uw-aside-user">
-          <span className="uw-aside-ava">{name.slice(0, 1).toUpperCase()}</span>
-          <div>
-            <strong>{name}</strong>
-            <span>Ваш прогресс</span>
-          </div>
-        </div>
-        <div className="uw-aside-kpis">
-          <div>
-            <b>{balance == null ? "—" : formatSom(balance)}</b>
-            <span>баланс, сом</span>
-          </div>
-          <div>
-            <b>{streak}</b>
-            <span>серия, мес.</span>
-          </div>
-        </div>
-        <Link to="/app/invest" className="uw-aside-cta">
-          Смотреть инвестиции
-        </Link>
+    <nav className="cab-bottom" aria-label="Разделы кабинета">
+      <div className="cab-bottom-inner">
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) => `cab-bnv ${isActive ? "is-active" : ""}`}
+          >
+            <NavIcon d={item.icon} />
+            <span>{item.short}</span>
+          </NavLink>
+        ))}
       </div>
-
-      <div className="uw-aside-card">
-        <h2 className="uw-aside-h">Быстрые ссылки</h2>
-        <ul className="uw-aside-links">
-          <li>
-            <Link to="/checkin">Отметить посещение</Link>
-          </li>
-          <li>
-            <Link to="/schedule">Расписание</Link>
-          </li>
-          <li>
-            <Link to="/goal">Условия цели</Link>
-          </li>
-          <li>
-            <Link to="/">На сайт</Link>
-          </li>
-        </ul>
-      </div>
-
-      <p className="uw-aside-foot">Kelechek · спорт и накопления</p>
-    </aside>
+    </nav>
   );
-}
-
-/** @deprecated — use AppBottomNav */
-export function AppTabBar() {
-  return <AppBottomNav />;
-}
-
-/** @deprecated — sidebar removed */
-export function AppSidebar(_props: { open: boolean; onClose: () => void }) {
-  return null;
 }
