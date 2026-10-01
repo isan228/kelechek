@@ -5,6 +5,7 @@ import { AppShell } from "./components/AppShell";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { HomePage } from "./pages/HomePage";
+import { MobileAppPage } from "./pages/MobileAppPage";
 import { AboutPage } from "./pages/AboutPage";
 import { MembershipsPage } from "./pages/MembershipsPage";
 import { WorkoutItemPage, WorkoutsPage } from "./pages/WorkoutsPage";
@@ -85,6 +86,7 @@ export function App() {
         <Route path="/join" element={<JoinCoachPage />} />
         <Route path="/checkin" element={<CheckInPage />} />
         <Route path="/goal" element={<GoalPage />} />
+        <Route path="/mobile" element={<MobileAppPage />} />
         <Route
           path="/login"
           element={

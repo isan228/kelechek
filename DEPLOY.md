@@ -198,3 +198,13 @@ FINIK_WEBHOOK_HOST=qelechek.kg
 `systemctl restart kelech-api`
 
 Webhook: `https://qelechek.kg/api/webhooks/finik`. Файлы `finik_*.pem` в `.gitignore` — `git reset` их не трогает.
+
+## 8. Android-приложение (APK)
+
+Flutter-проект — `apps/mobile`. Сборка на ПК (нужны Flutter и Android SDK):
+
+```powershell
+npm run apk
+```
+
+APK попадает в `apps/web/public/downloads/kelechek.apk` и уходит на сервер обычным деплоем вместе с сайтом. Страница скачивания: `https://qelechek.kg/mobile`. Подробности и подпись — в `apps/mobile/README.md`.

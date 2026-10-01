@@ -13,7 +13,8 @@
     "db:studio": "npm run db:studio -w @kelech/api",
     "build": "npm run build -w @kelech/web",
     "start:api": "npm run start -w @kelech/api",
-    "push": "node scripts/push.mjs"
+    "push": "node scripts/push.mjs",
+    "apk": "node scripts/build-apk.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

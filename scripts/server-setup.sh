@@ -92,6 +92,11 @@ server {
         proxy_pass_header Set-Cookie;
     }
 
+    location /downloads/ {
+        add_header Cache-Control "no-cache";
+        try_files \$uri =404;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.html;
     }
