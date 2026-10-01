@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthProvider";
@@ -158,6 +158,32 @@ function Rings({ values, size }: { values: number[]; size: number }) {
   );
 }
 
+const STAGE_W = 390;
+const STAGE_H = 400;
+
+function ScaledStage({ children }: { children: ReactNode }) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setScale(Math.min(1, entry.contentRect.width / STAGE_W));
+    });
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={boxRef} className="hm-stage-box" style={{ height: STAGE_H * scale }}>
+      <div className="hm-stage" style={{ transform: `scale(${scale})` }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function Badge({ icon, tone, small }: { icon: IconName; tone: string; small?: boolean }) {
   return (
     <span className={`hm-badge ${small ? "hm-badge-sm" : ""}`} style={{ "--c": tone } as CSSProperties}>
@@ -249,25 +275,27 @@ export function HomePage() {
           </div>
 
           <div className="hm-phone-wrap">
-            <div className="hm-phone">
-              <small>{k("phoneTop")}</small>
-              <div className="hm-phone-rings">
-                <Rings values={[100, 68, 0, 0]} size={190} />
-                <div className="hm-phone-ctr">
-                  <small>{k("phoneRefund")}</small>
-                  <b>{k("phoneAmount")}</b>
+            <ScaledStage>
+              <div className="hm-phone">
+                <small>{k("phoneTop")}</small>
+                <div className="hm-phone-rings">
+                  <Rings values={[100, 68, 0, 0]} size={190} />
+                  <div className="hm-phone-ctr">
+                    <small>{k("phoneRefund")}</small>
+                    <b>{k("phoneAmount")}</b>
+                  </div>
                 </div>
+                <Link to={checkTo} className="hm-btn hm-btn-block">
+                  {k("phoneBtn")}
+                </Link>
               </div>
-              <Link to={checkTo} className="hm-btn hm-btn-block">
-                {k("phoneBtn")}
-              </Link>
-            </div>
-            {chips.map((c, i) => (
-              <div key={c} className={`hm-chip hm-chip-${i + 1}`} style={{ "--c": CHIP_TONES[i] } as CSSProperties}>
-                <Icon name={chipIcons[i]} size={16} />
-                {c}
-              </div>
-            ))}
+              {chips.map((c, i) => (
+                <div key={c} className={`hm-chip hm-chip-${i + 1}`} style={{ "--c": CHIP_TONES[i] } as CSSProperties}>
+                  <Icon name={chipIcons[i]} size={16} />
+                  {c}
+                </div>
+              ))}
+            </ScaledStage>
           </div>
         </div>
       </section>

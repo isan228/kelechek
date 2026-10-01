@@ -4400,8 +4400,21 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   letter-spacing: -0.02em;
 }
 
-.hm-phone-wrap { position: relative; justify-self: center; padding: 20px 60px; }
+.hm-phone-wrap { justify-self: center; width: min(100%, 390px); }
+.hm-stage-box { position: relative; width: 100%; }
+.hm-stage {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 390px;
+  height: 400px;
+  margin-left: -195px;
+  transform-origin: top center;
+}
 .hm-phone {
+  position: absolute;
+  top: 24px;
+  left: 60px;
   width: 270px;
   padding: 22px 16px;
   border-radius: 42px;
@@ -4411,7 +4424,8 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   box-shadow: 0 30px 80px #6f9bff40;
   transform: rotate(-4deg);
 }
-.hm-phone small { color: var(--hm-mut); font-size: 0.78rem; }
+.hm-phone small { color: var(--hm-mut); font-size: 12.5px; }
+.hm-phone .hm-btn-block { font-size: 14.5px; }
 .hm-phone-rings { position: relative; width: 190px; margin: 8px auto; }
 .hm-phone-rings svg { display: block; }
 .hm-phone-ctr {
@@ -4421,7 +4435,7 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   place-content: center;
   text-align: center;
 }
-.hm-phone-ctr b { display: block; font-family: var(--font-display); font-size: 1.3rem; }
+.hm-phone-ctr b { display: block; font-family: var(--font-display); font-size: 21px; }
 .hm-ring { animation: hm-draw 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 @keyframes hm-draw { from { stroke-dasharray: 0 var(--L); } }
 
@@ -4435,14 +4449,14 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   background: var(--c);
   color: #04101a;
   font-weight: 600;
-  font-size: 0.86rem;
+  font-size: 14px;
   white-space: nowrap;
   box-shadow: 0 10px 30px #00000055;
   animation: hm-float 4s ease-in-out infinite;
 }
-.hm-chip-1 { top: 30px; left: 0; }
-.hm-chip-2 { top: 200px; right: 0; animation-delay: -1s; }
-.hm-chip-3 { bottom: 30px; left: 10px; animation-delay: -2s; }
+.hm-chip-1 { top: 34px; left: 0; }
+.hm-chip-2 { top: 236px; right: 0; animation-delay: -1s; }
+.hm-chip-3 { bottom: 26px; left: 10px; animation-delay: -2s; }
 @keyframes hm-float { 50% { transform: translateY(-10px); } }
 
 /* strip */
@@ -4627,6 +4641,17 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   .hm-sec-tight { padding-top: 0; }
   .hm-band { padding: 32px; }
   .hm-hero { padding: 40px 0 56px; }
+  .hm-phone-wrap {
+    width: 100%;
+    margin-top: 8px;
+    padding: 18px 10px;
+    border-radius: 28px;
+    border: 1px solid var(--hm-ln);
+    background:
+      radial-gradient(circle at 70% 10%, #6f9bff26, transparent 60%),
+      radial-gradient(circle at 20% 90%, #3ddc971f, transparent 55%),
+      #0f1219;
+  }
 }
 
 @media (max-width: 560px) {
@@ -4641,27 +4666,7 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   .hm-facts b { font-size: 1.3rem; }
   .hm-blob-a { width: 340px; height: 340px; right: -160px; }
   .hm-blob-b { width: 260px; height: 260px; }
-  .hm-phone-wrap {
-    width: 100%;
-    padding: 8px 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-  }
-  .hm-phone {
-    flex: 0 0 100%;
-    max-width: 270px;
-    margin-bottom: 6px;
-    transform: none;
-  }
-  .hm-chip {
-    position: static;
-    animation: none;
-    box-shadow: none;
-    font-size: 0.8rem;
-    padding: 8px 12px;
-  }
+  .hm-phone-wrap { padding: 14px 6px; border-radius: 22px; }
   .hm-strip-grid { gap: 20px 12px; }
   .hm-strip b { font-size: 1.4rem; }
   .hm-bento { grid-template-columns: 1fr; }
@@ -4686,16 +4691,12 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   .hm-facts b { font-size: clamp(0.92rem, 4.4vw, 1.25rem); }
   .hm-strip b { font-size: clamp(1rem, 5vw, 1.35rem); }
   .hm-strip span { font-size: 0.8rem; }
-  .hm-chip { max-width: 100%; white-space: normal; }
-  .hm-phone-ctr b { font-size: 1.05rem; }
   .hm-faq summary { font-size: 0.92rem; min-height: 56px; }
   .hm-card p, .hm-par-list span { font-size: 0.9rem; }
 }
 
 @media (max-width: 360px) {
   .hm-w { padding: 0 12px; }
-  .hm-phone { padding: 18px 10px; border-width: 6px; }
-  .hm-phone-rings, .hm-phone-rings svg { width: 170px; height: 170px; }
   .hm-facts { grid-template-columns: 1fr 1fr; }
 }
 
