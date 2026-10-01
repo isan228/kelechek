@@ -4276,7 +4276,15 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   background: var(--hm-bg);
   color: var(--hm-ink);
   overflow-x: clip;
+  overflow-wrap: break-word;
 }
+.hm-hero-grid > *,
+.hm-par-grid > *,
+.hm-steps > *,
+.hm-bento > *,
+.hm-stories > *,
+.hm-strip-grid > *,
+.hm-faq summary { min-width: 0; }
 .hm h1, .hm h2, .hm h3, .hm p, .hm figure, .hm blockquote { margin: 0; }
 .hm-w {
   position: relative;
@@ -4517,7 +4525,7 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
 .hm-par-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
 .hm-par .hm-hd { margin-bottom: 28px; }
 .hm-par-list { display: grid; gap: 18px; }
-.hm-par-list > div { display: grid; grid-template-columns: 46px 1fr; gap: 14px; align-items: start; }
+.hm-par-list > div { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 14px; align-items: start; }
 .hm-par-list .hm-badge { margin: 0; }
 .hm-par-list b { display: block; margin-bottom: 2px; }
 .hm-par-list span { color: var(--hm-mut); font-size: 0.95rem; line-height: 1.5; }
@@ -4536,7 +4544,7 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
 .hm-notes small { color: var(--hm-mut); }
 .hm-notes > div {
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 40px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   padding: 14px;
@@ -4661,6 +4669,42 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   .hm-faq details p { padding-right: 0; }
   .hm-band { margin-top: 48px; padding: 26px 20px; border-radius: 22px; }
   .hm-band .hm-btn { width: 100%; }
+
+  .hm h1 { font-size: clamp(1.7rem, 8.4vw, 2.5rem); letter-spacing: -0.035em; }
+  .hm h2 { font-size: clamp(1.25rem, 6vw, 1.8rem); letter-spacing: -0.025em; }
+  .hm h3 { font-size: 1rem; }
+  .hm-eye { font-size: 0.72rem; letter-spacing: 0.08em; }
+  .hm-pill { max-width: 100%; font-size: 0.76rem; }
+  .hm-btn { padding: 0 16px; font-size: 0.95rem; white-space: normal; }
+  .hm-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    font-size: 0.8rem;
+  }
+  .hm-facts b { font-size: clamp(0.92rem, 4.4vw, 1.25rem); }
+  .hm-strip b { font-size: clamp(1rem, 5vw, 1.35rem); }
+  .hm-strip span { font-size: 0.8rem; }
+  .hm-chip { max-width: 100%; white-space: normal; }
+  .hm-phone-ctr b { font-size: 1.05rem; }
+  .hm-faq summary { font-size: 0.92rem; min-height: 56px; }
+  .hm-card p, .hm-par-list span { font-size: 0.9rem; }
+}
+
+@media (max-width: 360px) {
+  .hm-w { padding: 0 12px; }
+  .hm-phone { padding: 18px 10px; border-width: 6px; }
+  .hm-phone-rings, .hm-phone-rings svg { width: 170px; height: 170px; }
+  .hm-facts { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 420px) {
+  .header-bar { gap: 0.5rem; }
+  .brand { font-size: 1.05rem; gap: 0.4rem; min-width: 0; }
+  .brand img { width: 24px; height: 24px; }
+  .header-actions { gap: 0.3rem; }
+  .nav-cta { padding: 0.42rem 0.7rem; }
+  .account-trigger { max-width: 120px; overflow: hidden; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {
