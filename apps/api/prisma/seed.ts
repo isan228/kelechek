@@ -78,7 +78,7 @@ async function main() {
 
   const tariff = await prisma.tariff.create({
     data: {
-      priceKgs: 1000,
+      priceKgs: 4000,
       periodDays: 30,
       isActive: true,
       translations: {

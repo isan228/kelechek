@@ -23,7 +23,7 @@ const TYPES = ["ARTICLE", "EXERCISE", "PROGRAM"] as const;
 const STATUSES = ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"] as const;
 
 const emptyTariff = {
-  priceKgs: 1000,
+  priceKgs: 4000,
   periodDays: 30,
   isActive: true,
   ru: { name: "", description: "" },
