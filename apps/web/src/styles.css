@@ -82,7 +82,7 @@ h1, h2, h3, .serif, .brand {
   color: var(--ink);
   letter-spacing: -0.03em;
 }
-.brand img { width: 28px; height: 28px; filter: none; }
+.brand img { width: 32px; height: 32px; filter: none; }
 .nav-desktop {
   display: none;
   align-items: center;

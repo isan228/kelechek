@@ -86,7 +86,7 @@ export function Layout() {
       <header className="site-header">
         <div className="wrap header-bar">
           <NavLink to={isAccountantOnly ? "/accounting" : "/"} className="brand" onClick={close}>
-            <img src="/ornament.svg" alt="" />
+            <img src="/logo.svg" alt="" />
             <span>{s("appName")}</span>
           </NavLink>
 
@@ -192,7 +192,7 @@ export function Layout() {
           <div className="wrap footer-grid">
             <div>
               <div className="brand" style={{ color: "#eef5f1" }}>
-                <img src="/ornament.svg" alt="" />
+                <img src="/logo.svg" alt="" />
                 {s("appName")}
               </div>
               <p>{s("footer.tag")}</p>
