@@ -21,8 +21,8 @@ export async function verifyPassword(password: string, stored: string): Promise<
 }
 
 export function normalizeLogin(input: string): string | null {
-  const login = input.trim().toLowerCase();
-  if (!/^[a-z0-9_]{3,32}$/.test(login)) return null;
+  const login = input.normalize("NFC").trim().toLowerCase();
+  if (!/^[a-z0-9_а-яёңөү]{3,32}$/u.test(login)) return null;
   return login;
 }
 

@@ -93,13 +93,18 @@ async function ensureIndexes() {
   `);
 }
 
-/** Разовая миграция: месячный абонемент стоит 4000 сом. Дальше цену меняет админ. */
-async function ensureMonthlyPrice4000() {
-  const key = "migration.monthlyTariffPrice4000";
+/**
+ * Цена месячного абонемента выставляется один раз на каждое новое значение, дальше её меняет админ.
+ * Временно 100 сом; чтобы вернуть обычную цену, поменять на 4000 и задеплоить.
+ */
+const MONTHLY_PRICE_KGS = 100;
+
+async function ensureMonthlyPrice() {
+  const key = `migration.monthlyTariffPrice.${MONTHLY_PRICE_KGS}`;
   if (await prisma.systemConfig.findUnique({ where: { key } })) return;
-  const res = await prisma.tariff.updateMany({ where: { periodDays: 30 }, data: { priceKgs: 4000 } });
+  const res = await prisma.tariff.updateMany({ where: { periodDays: 30 }, data: { priceKgs: MONTHLY_PRICE_KGS } });
   await prisma.systemConfig.create({ data: { key, value: { updated: res.count, at: new Date().toISOString() } } });
-  app.log.info({ updated: res.count }, "monthly tariff price set to 4000");
+  app.log.info({ updated: res.count, priceKgs: MONTHLY_PRICE_KGS }, "monthly tariff price set");
 }
 
 const port = Number(process.env.API_PORT ?? 3001);
@@ -113,7 +118,7 @@ try {
   app.log.warn({ err }, "index bootstrap skipped (database may not be ready)");
 }
 try {
-  await ensureMonthlyPrice4000();
+  await ensureMonthlyPrice();
 } catch (err) {
   app.log.warn({ err }, "monthly price migration skipped");
 }
