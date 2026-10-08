@@ -1,5 +1,5 @@
 import "./loadEnv.js";
-import Fastify from "fastify";
+import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
@@ -40,6 +40,20 @@ await app.register(fastifyStatic, {
 
 app.addHook("onRequest", async (request) => {
   request.authUser = await loadUserFromRequest(request);
+});
+
+app.setErrorHandler((err: FastifyError, request, reply) => {
+  const code = err.code;
+  // P2023 — невалидный UUID в параметре, P2025 — запись не найдена.
+  if (code === "P2023" || code === "P2025") {
+    return reply.code(404).send({ error: "NOT_FOUND" });
+  }
+  const status = err.statusCode && err.statusCode >= 400 ? err.statusCode : 500;
+  if (status >= 500) {
+    request.log.error({ err }, "unhandled error");
+    return reply.code(500).send({ error: "INTERNAL_ERROR" });
+  }
+  return reply.code(status).send({ error: err.code ?? err.message });
 });
 
 app.get("/api/health", async () => ({ ok: true }));
