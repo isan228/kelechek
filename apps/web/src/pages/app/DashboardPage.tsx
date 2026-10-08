@@ -165,9 +165,14 @@ export function DashboardPage() {
             <i style={{ width: `${pathPct}%` }} />
           </div>
           <p className="cab-mut cab-small">{pathPct}% пути · выплата после Года 4</p>
-          <Link to="/progress" className="cab-btn2 cab-mt">
-            История начислений
-          </Link>
+          <div className="cab-actions cab-mt">
+            <Link to="/app/withdraw" className="cab-btn">
+              Вывести
+            </Link>
+            <Link to="/progress" className="cab-btn2">
+              История начислений
+            </Link>
+          </div>
         </section>
 
         <section className="cab-card cab-s4" aria-labelledby="cab-sub-h">

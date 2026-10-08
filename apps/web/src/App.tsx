@@ -34,6 +34,7 @@ import {
   CabCoachPage,
   CabProfilePage,
   CabTrainingPage,
+  CabWithdrawPage,
 } from "./pages/app/CabinetSections";
 
 function homeFor(roles: string[]) {
@@ -114,6 +115,7 @@ export function App() {
           <Route path="training" element={<CabTrainingPage />} />
           <Route path="admission" element={<CabAdmissionPage />} />
           <Route path="profile" element={<CabProfilePage />} />
+          <Route path="withdraw" element={<CabWithdrawPage />} />
         </Route>
         <Route element={<Guard />}>
           <Route path="/cabinet" element={<Navigate to="/app" replace />} />

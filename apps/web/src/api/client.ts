@@ -8,6 +8,23 @@ export type ApiUser = {
   lastName: string | null;
 };
 
+export type WithdrawalRequisites =
+  | { kind: "BANK_ACCOUNT"; bankName: string; accountNumber: string; recipientName: string }
+  | { kind: "PHONE"; phone: string; provider: string; recipientName: string };
+
+export type Withdrawal = {
+  id: string;
+  status: string;
+  method: string;
+  amountKgs: number;
+  requisites: WithdrawalRequisites;
+  conditions: { streakMonths?: number; monthsHeld?: number; availableAtSubmit?: number } | null;
+  createdAt: string;
+  processedAt: string | null;
+  payoutReference: string | null;
+  adminComment: string | null;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     ...((init?.headers as Record<string, string> | undefined) ?? {}),
@@ -84,7 +101,7 @@ export const api = {
     ),
   balance: () =>
     request<{
-      balance: { accrued: number; available: number; hold: number };
+      balance: { accrued: number; available: number; hold: number; withdrawn: number };
       streak: number;
       membership: { startsAt: string; endsAtExclusive: string } | null;
       withdrawalProgress: {
@@ -106,6 +123,57 @@ export const api = {
         appliedTraineeRateBps: number | null;
       }[];
     }>("/api/me/ledger"),
+  myWithdrawals: () =>
+    request<{
+      balance: { accrued: number; available: number; hold: number; withdrawn: number };
+      open: Withdrawal | null;
+      items: Withdrawal[];
+    }>("/api/me/withdrawals"),
+  createWithdrawal: (data: {
+    amountKgs: number;
+    method: "BANK_ACCOUNT" | "PHONE";
+    requisites: { bankName?: string; accountNumber?: string; phone?: string; provider?: string; recipientName: string };
+  }) =>
+    request<{ withdrawal: Withdrawal }>("/api/me/withdrawals", { method: "POST", body: JSON.stringify(data) }),
+  cancelWithdrawal: (id: string) =>
+    request<{ withdrawal: Withdrawal }>(`/api/me/withdrawals/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+      body: "{}",
+    }),
+  adminWithdrawals: () =>
+    request<{
+      summary: {
+        incomingKgs: number;
+        incomingCount: number;
+        outgoingKgs: number;
+        outgoingCount: number;
+        pendingKgs: number;
+        pendingCount: number;
+      };
+      monthly: { month: string; inKgs: number; outKgs: number }[];
+      flow: {
+        id: string;
+        direction: "in" | "out";
+        at: string;
+        amountKgs: number;
+        person: string;
+        phone: string;
+      }[];
+      items: (Withdrawal & {
+        user: { id: string; firstName: string | null; lastName: string | null; login: string | null; phone: string };
+        processedBy: string | null;
+      })[];
+    }>("/api/admin/withdrawals"),
+  adminMarkWithdrawalPaid: (id: string, data: { payoutReference?: string; comment?: string }) =>
+    request<{ withdrawal: Withdrawal }>(`/api/admin/withdrawals/${encodeURIComponent(id)}/paid`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  adminRejectWithdrawal: (id: string, reason: string) =>
+    request<{ withdrawal: Withdrawal }>(`/api/admin/withdrawals/${encodeURIComponent(id)}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
   content: (locale = "ru") =>
     request<{
       canReadBody: boolean;

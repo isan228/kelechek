@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { api } from "../../api/client";
+import { api, type Withdrawal } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
 
 type Invitations = Awaited<ReturnType<typeof api.invitations>>;
@@ -377,9 +377,14 @@ export function CabAdmissionPage() {
               </li>
             ))}
           </ul>
-          <Link to="/progress" className="cab-btn2 cab-mt">
-            История начислений
-          </Link>
+          <div className="cab-actions cab-mt">
+            <Link to="/app/withdraw" className="cab-btn">
+              Вывести средства
+            </Link>
+            <Link to="/progress" className="cab-btn2">
+              История начислений
+            </Link>
+          </div>
         </section>
 
         <section className="cab-card cab-s12" aria-labelledby="as-h">
@@ -395,6 +400,294 @@ export function CabAdmissionPage() {
               </li>
             ))}
           </ol>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Вывод средств ---------- */
+
+type MyWithdrawals = Awaited<ReturnType<typeof api.myWithdrawals>>;
+
+export const WITHDRAWAL_STATUS: Record<string, { label: string; tone: "" | "ok" | "warn" | "bad" }> = {
+  SUBMITTED: { label: "Заявка отправлена", tone: "warn" },
+  IN_REVIEW: { label: "На проверке", tone: "warn" },
+  NEED_INFO: { label: "Нужны данные", tone: "warn" },
+  APPROVED: { label: "Одобрено", tone: "warn" },
+  PAYOUT_IN_PROGRESS: { label: "Перевод в процессе", tone: "warn" },
+  PAID: { label: "Выплачено", tone: "ok" },
+  REJECTED: { label: "Отклонено", tone: "bad" },
+  CANCELED: { label: "Отменено", tone: "" },
+  PAYOUT_FAILED: { label: "Ошибка перевода", tone: "bad" },
+  EXPIRED: { label: "Истекло", tone: "" },
+};
+
+const WITHDRAW_ERRORS: Record<string, string> = {
+  INVALID_AMOUNT: "Укажите сумму целым числом.",
+  INSUFFICIENT_BALANCE: "Сумма больше, чем доступно к выводу.",
+  WITHDRAWAL_ALREADY_OPEN: "У вас уже есть открытая заявка.",
+  BANK_REQUIRED: "Укажите банк.",
+  INVALID_ACCOUNT: "Номер счёта: 8–34 латинских букв или цифр.",
+  INVALID_PHONE: "Телефон в формате +996XXXXXXXXX.",
+  RECIPIENT_REQUIRED: "Укажите ФИО получателя.",
+};
+
+export function requisitesText(r: Withdrawal["requisites"]) {
+  if (r.kind === "PHONE") return [r.phone, r.provider].filter(Boolean).join(" · ");
+  return `${r.bankName} · ${r.accountNumber}`;
+}
+
+function formatDate(iso: string) {
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+}
+
+export function CabWithdrawPage() {
+  const { user } = useAuth();
+  const [data, setData] = useState<MyWithdrawals | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [method, setMethod] = useState<"PHONE" | "BANK_ACCOUNT">("PHONE");
+  const [amount, setAmount] = useState("");
+  const [phone, setPhone] = useState(user?.phone ?? "+996");
+  const [provider, setProvider] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [recipientName, setRecipientName] = useState(
+    [user?.lastName, user?.firstName].filter(Boolean).join(" "),
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    try {
+      setData(await api.myWithdrawals());
+    } catch {
+      setFailed(true);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function submit() {
+    setError(null);
+    setBusy(true);
+    try {
+      await api.createWithdrawal({
+        amountKgs: Number(amount),
+        method,
+        requisites:
+          method === "PHONE" ? { phone, provider, recipientName } : { bankName, accountNumber, recipientName },
+      });
+      setAmount("");
+      await load();
+    } catch (e) {
+      const code = e instanceof Error ? e.message : "";
+      setError(WITHDRAW_ERRORS[code] ?? "Не удалось отправить заявку. Попробуйте позже.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancel(id: string) {
+    setBusy(true);
+    try {
+      await api.cancelWithdrawal(id);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (failed) {
+    return (
+      <div className="cab-page">
+        <PageHead kicker="Вывод средств" title="Не удалось загрузить" />
+        <p className="cab-mut">Обновите страницу чуть позже.</p>
+      </div>
+    );
+  }
+  if (!data) return <Skeleton />;
+
+  const { balance, open, items } = data;
+  const amountNum = Number(amount);
+  const canSubmit = !busy && Number.isInteger(amountNum) && amountNum > 0 && amountNum <= balance.available;
+
+  return (
+    <div className="cab-page">
+      <PageHead kicker="Вывод средств" title="Вывести накопления" />
+
+      <div className="cab-grid">
+        <section className="cab-card cab-s5" aria-labelledby="wb-h">
+          <h2 id="wb-h" className="cab-h">Доступно к выводу</h2>
+          <p className="cab-big">{formatSom(balance.available)} с</p>
+          <div className="cab-kpis">
+            <div>
+              <b>{formatSom(balance.hold)}</b>
+              <span>в заявке</span>
+            </div>
+            <div>
+              <b>{formatSom(balance.withdrawn)}</b>
+              <span>выплачено</span>
+            </div>
+            <div>
+              <b>{formatSom(balance.accrued + balance.withdrawn)}</b>
+              <span>всего накоплено</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="cab-card cab-s7" aria-labelledby="wf-h">
+          {open ? (
+            <>
+              <h2 id="wf-h" className="cab-h">Текущая заявка</h2>
+              <p className="cab-big">{formatSom(open.amountKgs)} с</p>
+              <dl className="cab-dl cab-mt">
+                <dt>Статус</dt>
+                <dd>
+                  <span className={`cab-tag cab-tag-${WITHDRAWAL_STATUS[open.status]?.tone || "none"}`}>
+                    {WITHDRAWAL_STATUS[open.status]?.label ?? open.status}
+                  </span>
+                </dd>
+                <dt>{open.requisites.kind === "PHONE" ? "По номеру" : "На счёт"}</dt>
+                <dd>{requisitesText(open.requisites)}</dd>
+                <dt>Получатель</dt>
+                <dd>{open.requisites.recipientName}</dd>
+                <dt>Отправлена</dt>
+                <dd>{formatDate(open.createdAt)}</dd>
+              </dl>
+              <p className="cab-mut cab-line">
+                Бухгалтер получил уведомление. После перевода статус сменится на «Выплачено».
+              </p>
+              {open.status === "SUBMITTED" && (
+                <button
+                  type="button"
+                  className="cab-btn-ghost cab-btn-danger"
+                  disabled={busy}
+                  onClick={() => void cancel(open.id)}
+                >
+                  Отменить заявку
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <h2 id="wf-h" className="cab-h">Новая заявка</h2>
+              <form
+                className="cab-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (canSubmit) void submit();
+                }}
+              >
+                <label className="cab-full">
+                  <span>Сумма, сом (до {formatSom(balance.available)})</span>
+                  <input
+                    inputMode="numeric"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                    placeholder="0"
+                  />
+                </label>
+                <div className="cab-full">
+                  <div className="cab-seg" role="group" aria-label="Куда перевести">
+                    <button
+                      type="button"
+                      className={method === "PHONE" ? "cab-seg-btn is-on" : "cab-seg-btn"}
+                      aria-pressed={method === "PHONE"}
+                      onClick={() => setMethod("PHONE")}
+                    >
+                      По номеру телефона
+                    </button>
+                    <button
+                      type="button"
+                      className={method === "BANK_ACCOUNT" ? "cab-seg-btn is-on" : "cab-seg-btn"}
+                      aria-pressed={method === "BANK_ACCOUNT"}
+                      onClick={() => setMethod("BANK_ACCOUNT")}
+                    >
+                      На банковский счёт
+                    </button>
+                  </div>
+                </div>
+                {method === "PHONE" ? (
+                  <>
+                    <label>
+                      <span>Номер телефона</span>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+996XXXXXXXXX"
+                        autoComplete="tel"
+                      />
+                    </label>
+                    <label>
+                      <span>Кошелёк или банк (необязательно)</span>
+                      <input
+                        value={provider}
+                        onChange={(e) => setProvider(e.target.value)}
+                        placeholder="MBank, O!Деньги, Элсом…"
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <>
+                    <label>
+                      <span>Банк</span>
+                      <input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Например, Оптима Банк" />
+                    </label>
+                    <label>
+                      <span>Номер счёта</span>
+                      <input
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                        placeholder="1234567890123456"
+                        inputMode="numeric"
+                      />
+                    </label>
+                  </>
+                )}
+                <label className="cab-full">
+                  <span>ФИО получателя</span>
+                  <input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} autoComplete="name" />
+                </label>
+                {error && <p className="cab-err cab-full">{error}</p>}
+                <div className="cab-form-foot">
+                  <button type="submit" className="cab-btn-solid" disabled={!canSubmit}>
+                    Отправить заявку
+                  </button>
+                  {balance.available <= 0 && <span className="cab-mut cab-small">Пока нечего выводить</span>}
+                </div>
+              </form>
+            </>
+          )}
+        </section>
+
+        <section className="cab-card cab-s12" aria-labelledby="wh-h">
+          <h2 id="wh-h" className="cab-h">История заявок</h2>
+          {items.length ? (
+            <ul className="cab-list">
+              {items.map((w) => {
+                const st = WITHDRAWAL_STATUS[w.status];
+                return (
+                  <li key={w.id}>
+                    <span className="cab-list-main">
+                      <strong>{formatSom(w.amountKgs)} с</strong>
+                      <small className="cab-mut">
+                        {formatDate(w.createdAt)} · {requisitesText(w.requisites)}
+                        {w.processedAt && w.status === "PAID" ? ` · выплачено ${formatDate(w.processedAt)}` : ""}
+                        {w.status === "REJECTED" && w.adminComment ? ` · ${w.adminComment}` : ""}
+                      </small>
+                    </span>
+                    <span className={`cab-tag cab-tag-${st?.tone || "none"}`}>{st?.label ?? w.status}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="cab-mut">Заявок пока не было.</p>
+          )}
         </section>
       </div>
     </div>
@@ -556,6 +849,7 @@ export function CabProfilePage() {
           <nav className="cab-links">
             <Link to="/memberships">Абонемент и оплата</Link>
             <Link to="/progress">История начислений</Link>
+            <Link to="/app/withdraw">Вывод средств</Link>
             <Link to="/notifications">Уведомления</Link>
             <Link to="/">На сайт</Link>
           </nav>

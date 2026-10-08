@@ -15,6 +15,7 @@ import { registerFinikWebhook } from "./routes/finikWebhook.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerCmsRoutes } from "./routes/cms.js";
 import { registerChatRoutes } from "./routes/chat.js";
+import { registerWithdrawalRoutes } from "./routes/withdrawals.js";
 
 ensureUploadsDir();
 
@@ -52,6 +53,7 @@ await registerFinikWebhook(app);
 await registerScheduleRoutes(app);
 await registerCmsRoutes(app);
 await registerChatRoutes(app);
+await registerWithdrawalRoutes(app);
 
 async function ensureIndexes() {
   await prisma.$executeRawUnsafe(`
@@ -77,6 +79,15 @@ async function ensureIndexes() {
   `);
 }
 
+/** Разовая миграция: месячный абонемент стоит 4000 сом. Дальше цену меняет админ. */
+async function ensureMonthlyPrice4000() {
+  const key = "migration.monthlyTariffPrice4000";
+  if (await prisma.systemConfig.findUnique({ where: { key } })) return;
+  const res = await prisma.tariff.updateMany({ where: { periodDays: 30 }, data: { priceKgs: 4000 } });
+  await prisma.systemConfig.create({ data: { key, value: { updated: res.count, at: new Date().toISOString() } } });
+  app.log.info({ updated: res.count }, "monthly tariff price set to 4000");
+}
+
 const port = Number(process.env.API_PORT ?? 3001);
 const host =
   process.env.API_HOST ??
@@ -86,6 +97,11 @@ try {
   await ensureIndexes();
 } catch (err) {
   app.log.warn({ err }, "index bootstrap skipped (database may not be ready)");
+}
+try {
+  await ensureMonthlyPrice4000();
+} catch (err) {
+  app.log.warn({ err }, "monthly price migration skipped");
 }
 
 await app.listen({ port, host });

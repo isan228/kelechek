@@ -596,6 +596,23 @@ export function NotificationsPage() {
         time: `${startHm}–${endHm}`,
       });
     }
+    if (n.type === "WITHDRAWAL_REQUESTED") {
+      return t("withdrawals.notifRequested", {
+        name: String(n.payload.userName ?? ""),
+        phone: String(n.payload.phone ?? ""),
+        amount: Number(n.payload.amountKgs ?? 0),
+        method: t(`withdrawals.methods.${String(n.payload.method ?? "PHONE")}`),
+      });
+    }
+    if (n.type === "WITHDRAWAL_PAID") {
+      return t("withdrawals.notifPaid", { amount: Number(n.payload.amountKgs ?? 0) });
+    }
+    if (n.type === "WITHDRAWAL_REJECTED") {
+      return t("withdrawals.notifRejected", {
+        amount: Number(n.payload.amountKgs ?? 0),
+        reason: String(n.payload.reason ?? ""),
+      });
+    }
     return n.type;
   }
 

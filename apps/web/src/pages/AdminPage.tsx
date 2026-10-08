@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { useSiteCopy } from "../content/SiteCopyProvider";
 import { AccountingPanel } from "./AccountingPage";
+import { WithdrawalsPanel } from "./WithdrawalsPanel";
 
 type Tab =
   | "home"
@@ -17,7 +18,8 @@ type Tab =
   | "accountants"
   | "tariffs"
   | "content"
-  | "accounting";
+  | "accounting"
+  | "withdrawals";
 const ROLES = ["TRAINEE", "COACH", "ADMIN", "CONTENT_EDITOR", "ACCOUNTANT"] as const;
 const TYPES = ["ARTICLE", "EXERCISE", "PROGRAM"] as const;
 const STATUSES = ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"] as const;
@@ -41,10 +43,20 @@ export function AdminPage() {
   const { user, loading } = useAuth();
   const [tab, setTab] = useState<Tab>("home");
   const [msg, setMsg] = useState<string | null>(null);
+  const [pendingWithdrawals, setPendingWithdrawals] = useState(0);
+  const isAdmin = Boolean(user?.roles.includes("ADMIN"));
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void api
+      .adminWithdrawals()
+      .then((r) => setPendingWithdrawals(r.summary.pendingCount))
+      .catch(() => setPendingWithdrawals(0));
+  }, [isAdmin, tab]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/admin/login" replace />;
-  if (!user.roles.includes("ADMIN")) return <Navigate to="/cabinet" replace />;
+  if (!isAdmin) return <Navigate to="/cabinet" replace />;
 
   return (
     <div className="wrap app-page">
@@ -52,7 +64,7 @@ export function AdminPage() {
       <h1>{t("admin.title")}</h1>
       <p className="muted">{t("admin.lead")}</p>
       <div className="admin-tabs">
-        {(["home", "site", "photos", "gallery", "news", "users", "coaches", "accountants", "tariffs", "content", "accounting"] as Tab[]).map((id) => (
+        {(["home", "site", "photos", "gallery", "news", "users", "coaches", "accountants", "tariffs", "content", "accounting", "withdrawals"] as Tab[]).map((id) => (
           <button
             key={id}
             type="button"
@@ -63,6 +75,7 @@ export function AdminPage() {
             }}
           >
             {t(`admin.tab.${id}`)}
+            {id === "withdrawals" && pendingWithdrawals > 0 && <span className="wd-count">{pendingWithdrawals}</span>}
           </button>
         ))}
       </div>
@@ -78,6 +91,7 @@ export function AdminPage() {
       {tab === "content" && <ContentTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "accountants" && <AccountantsTab onSaved={() => setMsg(t("profile.saved"))} />}
       {tab === "accounting" && <AccountingPanel />}
+      {tab === "withdrawals" && <WithdrawalsPanel />}
     </div>
   );
 }

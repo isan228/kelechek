@@ -76,11 +76,14 @@ enum WithdrawalStatus {
   PAID
   PAYOUT_FAILED
   EXPIRED
+  CANCELED
 }
 
 enum PayoutMethod {
   CARD
   GRANT
+  BANK_ACCOUNT
+  PHONE
 }
 
 enum ContentType {
@@ -480,6 +483,10 @@ model WithdrawalApplication {
   requisitesJson   Json
   holdEntryId      String?                 @db.Uuid
   assignedAdminId  String?                 @db.Uuid
+  processedById    String?                 @db.Uuid
+  processedAt      DateTime?
+  payoutReference  String?
+  adminComment     String?
   createdAt        DateTime                @default(now())
   user             User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
   policyVersion    WithdrawalPolicyVersion @relation(fields: [policyVersionId], references: [id])

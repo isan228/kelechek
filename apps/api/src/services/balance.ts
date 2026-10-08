@@ -2,21 +2,33 @@ import { DateTime } from "luxon";
 import { prisma } from "../lib/prisma.js";
 import { BISHKEK } from "../lib/prisma.js";
 
+export const LEDGER_HOLD = "HOLD";
+export const LEDGER_HOLD_RELEASE = "HOLD_RELEASE";
+export const LEDGER_PAYOUT = "PAYOUT";
+
+/**
+ * available — можно вывести сейчас; hold — заморожено открытой заявкой;
+ * accrued = available + hold (накоплено и ещё не выплачено); withdrawn — уже выплачено.
+ */
 export async function getTraineeBalance(userId: string) {
-  const agg = await prisma.traineeLedgerEntry.aggregate({
-    where: { userId },
-    _sum: { signedAmount: true },
-  });
-  const holds = await prisma.traineeLedgerEntry.aggregate({
-    where: { userId, type: "HOLD" },
-    _sum: { signedAmount: true },
-  });
-  const accrued = agg._sum.signedAmount ?? 0;
-  const holdSum = Math.abs(holds._sum.signedAmount ?? 0);
+  const [all, holds, payouts] = await Promise.all([
+    prisma.traineeLedgerEntry.aggregate({ where: { userId }, _sum: { signedAmount: true } }),
+    prisma.traineeLedgerEntry.aggregate({
+      where: { userId, type: { in: [LEDGER_HOLD, LEDGER_HOLD_RELEASE] } },
+      _sum: { signedAmount: true },
+    }),
+    prisma.traineeLedgerEntry.aggregate({
+      where: { userId, type: LEDGER_PAYOUT },
+      _sum: { signedAmount: true },
+    }),
+  ]);
+  const available = all._sum.signedAmount ?? 0;
+  const hold = Math.max(0, -(holds._sum.signedAmount ?? 0));
   return {
-    accrued,
-    hold: holdSum,
-    available: accrued,
+    accrued: available + hold,
+    hold,
+    available,
+    withdrawn: Math.max(0, -(payouts._sum.signedAmount ?? 0)),
   };
 }
 

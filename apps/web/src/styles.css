@@ -4263,6 +4263,70 @@ button.cab-logout:hover { color: var(--cab-ink) !important; background: transpar
   .cab-kpis b { font-size: 1.15rem; }
 }
 
+/* ===== Withdrawals ===== */
+.cab-full { grid-column: 1 / -1; }
+.cab-err { margin: 0; color: var(--danger); font-size: 0.9rem; }
+.cab-tag-warn {
+  background: color-mix(in srgb, #ffb84d 18%, transparent);
+  color: #ffb84d;
+}
+.cab-tag-bad {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}
+.cab-dl dd { overflow-wrap: anywhere; }
+
+.wd-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.wd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 14px;
+  margin-top: 1rem;
+}
+.wd-card { display: grid; gap: 14px; margin: 0; min-width: 0; }
+.wd-card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.wd-amount { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.wd-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  white-space: nowrap;
+}
+.wd-badge-warn { color: #d98a12; }
+.wd-badge-ok { color: #1f9d63; }
+.wd-req {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 0.92rem;
+}
+.wd-req dt { opacity: 0.65; }
+.wd-req dd { margin: 0; overflow-wrap: anywhere; }
+.wd-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.02em; }
+.wd-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.wd-form { display: grid; gap: 10px; }
+.wd-form label { display: grid; gap: 4px; font-size: 0.88rem; }
+.wd-err { margin: 0; color: var(--danger); font-size: 0.88rem; }
+.wd-in { color: #1f9d63; }
+.wd-out { color: var(--danger); }
+
 /* ===== Home: club landing ===== */
 .hm {
   --hm-g: #3ddc97;

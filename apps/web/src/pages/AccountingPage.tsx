@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
+import { WithdrawalsPanel } from "./WithdrawalsPanel";
 
 function displayPerson(p: {
   firstName: string | null;
@@ -325,6 +326,17 @@ export function AccountingPanel() {
 export function AccountingPage() {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
+  const [view, setView] = useState<"accounting" | "withdrawals">("withdrawals");
+  const [pending, setPending] = useState(0);
+  const allowed = Boolean(user && (user.roles.includes("ACCOUNTANT") || user.roles.includes("ADMIN")));
+
+  useEffect(() => {
+    if (!allowed) return;
+    void api
+      .adminWithdrawals()
+      .then((r) => setPending(r.summary.pendingCount))
+      .catch(() => setPending(0));
+  }, [allowed, view]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
@@ -337,7 +349,16 @@ export function AccountingPage() {
       <p className="kicker">{t("admin.tab.accounting")}</p>
       <h1>{t("admin.accountantCabinetTitle")}</h1>
       <p className="muted">{t("admin.accountantCabinetLead")}</p>
-      <AccountingPanel />
+      <div className="admin-tabs" style={{ marginTop: "1rem" }}>
+        <button type="button" className={view === "withdrawals" ? "" : "ghost"} onClick={() => setView("withdrawals")}>
+          {t("admin.tab.withdrawals")}
+          {pending > 0 && <span className="wd-count">{pending}</span>}
+        </button>
+        <button type="button" className={view === "accounting" ? "" : "ghost"} onClick={() => setView("accounting")}>
+          {t("admin.tab.accounting")}
+        </button>
+      </div>
+      {view === "withdrawals" ? <WithdrawalsPanel /> : <AccountingPanel />}
     </div>
   );
 }
