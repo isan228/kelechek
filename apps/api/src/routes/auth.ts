@@ -11,6 +11,7 @@ import {
 } from "../services/password.js";
 import { startTariffPayment } from "../services/startPayment.js";
 import { isMockPayments } from "../services/finik.js";
+import { PENDING_REGISTRATION_TTL_MS, purgePendingUser } from "../services/pendingRegistration.js";
 
 function publicUser(user: {
   id: string;
@@ -63,24 +64,39 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       }
     }
 
-    const taken = await prisma.user.findFirst({
-      where: { OR: [{ login }, { phone }] },
-    });
-    if (taken?.login === login) return reply.code(409).send({ error: "LOGIN_TAKEN" });
-    if (taken?.phone === phone) return reply.code(409).send({ error: "PHONE_TAKEN" });
+    const profile = {
+      passwordHash: await hashPassword(password),
+      firstName: (body.firstName ?? "").trim().slice(0, 80) || null,
+      lastName: (body.lastName ?? "").trim().slice(0, 80) || null,
+    };
 
-    const user = await prisma.user.create({
-      data: {
-        login,
-        phone,
-        passwordHash: await hashPassword(password),
-        phoneVerifiedAt: new Date(),
-        firstName: (body.firstName ?? "").trim().slice(0, 80) || null,
-        lastName: (body.lastName ?? "").trim().slice(0, 80) || null,
-        roles: [UserRole.TRAINEE],
-        locale: Locale.ru,
-      },
-    });
+    // Аккаунт активируется только успешной оплатой; до этого он в статусе PENDING_PAYMENT.
+    let resumeId: string | null = null;
+    const conflicts = await prisma.user.findMany({ where: { OR: [{ login }, { phone }] } });
+    for (const c of conflicts) {
+      const takenError = c.login === login ? "LOGIN_TAKEN" : "PHONE_TAKEN";
+      if (c.status !== "PENDING_PAYMENT") return reply.code(409).send({ error: takenError });
+      if (c.login === login && c.phone === phone) {
+        resumeId = c.id;
+        continue;
+      }
+      const stale = Date.now() - c.createdAt.getTime() > PENDING_REGISTRATION_TTL_MS;
+      if (!stale || !(await purgePendingUser(c.id))) return reply.code(409).send({ error: takenError });
+    }
+
+    const user = resumeId
+      ? await prisma.user.update({ where: { id: resumeId }, data: profile })
+      : await prisma.user.create({
+          data: {
+            ...profile,
+            login,
+            phone,
+            phoneVerifiedAt: new Date(),
+            roles: [UserRole.TRAINEE],
+            locale: Locale.ru,
+            status: "PENDING_PAYMENT",
+          },
+        });
 
     setSessionCookie(reply, signSession(user.id));
 
@@ -115,11 +131,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const user = await prisma.user.findFirst({
       where: { login, deletedAt: null },
     });
-    if (!user?.passwordHash || user.status !== "ACTIVE") {
+    if (!user?.passwordHash || (user.status !== "ACTIVE" && user.status !== "PENDING_PAYMENT")) {
       return reply.code(401).send({ error: "BAD_CREDENTIALS" });
     }
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) return reply.code(401).send({ error: "BAD_CREDENTIALS" });
+    if (user.status === "PENDING_PAYMENT") return reply.code(402).send({ error: "PAYMENT_REQUIRED" });
 
     setSessionCookie(reply, signSession(user.id));
     return { user: publicUser(user) };

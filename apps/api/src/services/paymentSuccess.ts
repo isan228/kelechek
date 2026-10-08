@@ -59,6 +59,11 @@ export async function applySuccessfulPayment(paymentId: string): Promise<void> {
       },
     });
 
+    await tx.user.updateMany({
+      where: { id: fresh.userId, status: "PENDING_PAYMENT" },
+      data: { status: "ACTIVE" },
+    });
+
     await tx.membershipPeriod.create({
       data: {
         userId: fresh.userId,

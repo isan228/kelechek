@@ -16,6 +16,7 @@ import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerCmsRoutes } from "./routes/cms.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerWithdrawalRoutes } from "./routes/withdrawals.js";
+import { purgeStalePendingUsers } from "./services/pendingRegistration.js";
 
 ensureUploadsDir();
 
@@ -122,5 +123,16 @@ try {
 } catch (err) {
   app.log.warn({ err }, "monthly price migration skipped");
 }
+
+async function cleanupPendingRegistrations() {
+  try {
+    const removed = await purgeStalePendingUsers();
+    if (removed) app.log.info({ removed }, "stale unpaid registrations removed");
+  } catch (err) {
+    app.log.warn({ err }, "unpaid registrations cleanup failed");
+  }
+}
+void cleanupPendingRegistrations();
+setInterval(() => void cleanupPendingRegistrations(), 60 * 60 * 1000).unref();
 
 await app.listen({ port, host });

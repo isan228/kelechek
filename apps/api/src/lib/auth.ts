@@ -45,6 +45,17 @@ export function clearSessionCookie(reply: FastifyReply) {
   reply.clearCookie(COOKIE_NAME, sessionCookieOpts());
 }
 
+/** id из подписанной сессии без проверки статуса — нужен регистрации, ожидающей оплаты. */
+export function sessionUserId(request: FastifyRequest): string | null {
+  const token = request.cookies[COOKIE_NAME];
+  if (!token) return null;
+  try {
+    return (jwt.verify(token, JWT_SECRET) as { sub: string }).sub;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadUserFromRequest(request: FastifyRequest): Promise<AuthUser | null> {
   const token = request.cookies[COOKIE_NAME];
   if (!token) return null;

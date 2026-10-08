@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../lib/prisma.js";
-import { hasRole, requireAuth, requireRole } from "../lib/auth.js";
+import { hasRole, requireRole, sessionUserId } from "../lib/auth.js";
 import {
   computeStreak,
   firstAccrualAt,
@@ -62,11 +62,11 @@ export async function registerFinanceRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/payments/:id", async (request, reply) => {
-    const user = requireAuth(request, reply);
-    if (!user) return;
+    const userId = request.authUser?.id ?? sessionUserId(request);
+    if (!userId) return reply.code(401).send({ error: "UNAUTHORIZED" });
     const id = (request.params as { id: string }).id;
     const payment = await prisma.payment.findFirst({
-      where: { id, userId: user.id },
+      where: { id, userId },
       select: { id: true, status: true, amountKgs: true, paidAt: true, createdAt: true },
     });
     if (!payment) return reply.code(404).send({ error: "NOT_FOUND" });

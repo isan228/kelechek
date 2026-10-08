@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
@@ -17,7 +17,7 @@ export function MembershipsPage() {
   const { user } = useAuth();
   const locale = i18n.language.startsWith("ky") ? "ky" : "ru";
   const [tariffs, setTariffs] = useState<Awaited<ReturnType<typeof api.tariffs>>["tariffs"]>([]);
-  const [ok, setOk] = useState(false);
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -32,7 +32,11 @@ export function MembershipsPage() {
         window.location.href = res.paymentUrl;
         return;
       }
-      setOk(true);
+      if (res.payment.status === "SUCCEEDED") {
+        navigate("/app", { replace: true });
+        return;
+      }
+      navigate(`/pay/success?paymentId=${encodeURIComponent(res.payment.id)}`);
     } finally {
       setBusy(false);
     }
@@ -85,7 +89,6 @@ export function MembershipsPage() {
               </Reveal>
             ))}
           </div>
-          {ok && <p className="ok" style={{ marginTop: "1.2rem" }}>{t("pay.success")}</p>}
         </div>
       </section>
     </>

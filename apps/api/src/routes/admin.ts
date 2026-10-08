@@ -137,8 +137,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       activeRelations,
       operatorLedger,
     ] = await Promise.all([
-      prisma.user.count({ where: { deletedAt: null } }),
-      prisma.user.count({ where: { deletedAt: null, roles: { has: "TRAINEE" } } }),
+      prisma.user.count({ where: { deletedAt: null, status: { not: "PENDING_PAYMENT" } } }),
+      prisma.user.count({ where: { deletedAt: null, status: { not: "PENDING_PAYMENT" }, roles: { has: "TRAINEE" } } }),
       prisma.user.count({ where: { deletedAt: null, roles: { has: "COACH" } } }),
       prisma.tariff.count(),
       prisma.contentItem.count(),
@@ -240,6 +240,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       where: q
         ? {
             deletedAt: null,
+            status: { not: "PENDING_PAYMENT" },
             OR: [
               { phone: { contains: q } },
               { login: { contains: q, mode: "insensitive" } },
@@ -247,7 +248,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
               { lastName: { contains: q, mode: "insensitive" } },
             ],
           }
-        : { deletedAt: null },
+        : { deletedAt: null, status: { not: "PENDING_PAYMENT" } },
       orderBy: { createdAt: "desc" },
       take: 200,
       select: {

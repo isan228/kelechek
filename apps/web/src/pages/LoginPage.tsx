@@ -50,15 +50,21 @@ export function LoginPage() {
         return;
       }
       const res = await api.register({ login, password, phone, firstName, tariffId });
-      setUser(res.user);
       if (res.paymentUrl) {
         window.location.href = res.paymentUrl;
         return;
       }
-      navigate("/app");
+      if (res.payment?.status === "SUCCEEDED") {
+        setUser((await api.me()).user);
+        navigate("/app", { replace: true });
+        return;
+      }
+      if (res.payment) navigate(`/pay/success?paymentId=${encodeURIComponent(res.payment.id)}`);
+      else setError(t("auth.paymentError"));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg === "BAD_CREDENTIALS") setError(t("auth.badCredentials"));
+      else if (msg === "PAYMENT_REQUIRED") setError(t("auth.paymentRequired"));
       else if (msg === "INVALID_LOGIN") setError(t("auth.invalidLogin"));
       else if (msg === "INVALID_PASSWORD") setError(t("auth.invalidPassword"));
       else if (msg === "INVALID_PHONE") setError(t("auth.invalidPhone"));

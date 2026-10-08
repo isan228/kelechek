@@ -23,6 +23,7 @@ enum UserRole {
 enum UserStatus {
   ACTIVE
   BLOCKED
+  PENDING_PAYMENT
 }
 
 enum PaymentStatus {
