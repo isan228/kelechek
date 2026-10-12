@@ -30,7 +30,7 @@ export const SITE_TEXT_GROUPS: SiteTextGroup[] = [
       { key: "landing.lead", labelRu: "Лид", multiline: true },
       { key: "landing.ctaStart", labelRu: "Кнопка «начать»" },
       { key: "landing.ctaAbout", labelRu: "Кнопка «о проекте»" },
-      { key: "landing.statValue1", labelRu: "Стат 1 — значение (напр. 82%)" },
+      { key: "landing.statValue1", labelRu: "Стат 1 — значение (напр. 84%)" },
       { key: "landing.stat1", labelRu: "Стат 1 — подпись", multiline: true },
       { key: "landing.statValue2", labelRu: "Стат 2 — значение (напр. 30)" },
       { key: "landing.days", labelRu: "Стат 2 — единица (дней)" },

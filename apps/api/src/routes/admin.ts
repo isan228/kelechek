@@ -1106,7 +1106,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         direction: "credit",
         amountKgs: p.operatorShareKgs ?? 0,
         party: null,
-        why: "Доля оператора (остаток ~18% после долей ученика и тренера)",
+        why: "Доля оператора (остаток ~16% после долей ученика и тренера)",
       });
 
       return {

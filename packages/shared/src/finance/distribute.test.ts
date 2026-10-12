@@ -3,17 +3,17 @@ import { distributePayment, roundHalfUp } from "./distribute.js";
 
 const SOLO: Array<[number, number, number, number]> = [
   [1, 1, 0, 0],
-  [3, 2, 0, 1],
+  [3, 3, 0, 0],
   [7, 6, 0, 1],
-  [15, 12, 0, 3],
-  [50, 41, 0, 9],
-  [99, 81, 0, 18],
-  [100, 82, 0, 18],
-  [101, 83, 0, 18],
-  [333, 273, 0, 60],
-  [999, 819, 0, 180],
-  [1000, 820, 0, 180],
-  [4999, 4099, 0, 900],
+  [15, 13, 0, 2],
+  [50, 42, 0, 8],
+  [99, 83, 0, 16],
+  [100, 84, 0, 16],
+  [101, 85, 0, 16],
+  [333, 280, 0, 53],
+  [999, 839, 0, 160],
+  [1000, 840, 0, 160],
+  [4999, 4199, 0, 800],
 ];
 
 const WITH_COACH: Array<[number, number, number, number]> = [
@@ -21,14 +21,14 @@ const WITH_COACH: Array<[number, number, number, number]> = [
   [3, 1, 2, 0],
   [7, 2, 4, 1],
   [15, 5, 8, 2],
-  [50, 16, 25, 9],
-  [99, 32, 50, 17],
-  [100, 32, 50, 18],
-  [101, 32, 51, 18],
-  [333, 107, 167, 59],
-  [999, 320, 500, 179],
-  [1000, 320, 500, 180],
-  [4999, 1600, 2500, 899],
+  [50, 17, 25, 8],
+  [99, 34, 50, 15],
+  [100, 34, 50, 16],
+  [101, 34, 51, 16],
+  [333, 113, 167, 53],
+  [999, 340, 500, 159],
+  [1000, 340, 500, 160],
+  [4999, 1700, 2500, 799],
 ];
 
 describe("roundHalfUp", () => {
@@ -60,7 +60,7 @@ describe("distributePayment", () => {
       for (const withCoach of [false, true]) {
         const d = distributePayment(amount, withCoach);
         expect(d.trainee + d.coach + d.operator).toBe(amount);
-        expect(Math.abs(d.operator - amount * 0.18)).toBeLessThanOrEqual(1);
+        expect(Math.abs(d.operator - amount * 0.16)).toBeLessThanOrEqual(1);
       }
     }
   });

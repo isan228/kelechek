@@ -238,6 +238,7 @@ export function LoginPage() {
 
           <div className="au-foot">
             <Link to="/">{t("auth.backHome")}</Link>
+            <Link to="/documents">{t("statement.nav")}</Link>
             <Link to="/admin/login">{t("auth.adminLink")}</Link>
           </div>
         </form>

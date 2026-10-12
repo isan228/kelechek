@@ -212,6 +212,8 @@ export function Layout() {
               <NavLink to="/coaches">{t("nav.coaches")}</NavLink>
               <br />
               <NavLink to="/mobile">{t("mobileApp.nav")}</NavLink>
+              <br />
+              <NavLink to="/documents">{t("statement.nav")}</NavLink>
             </div>
           </div>
           <div className="wrap">

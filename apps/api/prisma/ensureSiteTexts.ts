@@ -25,7 +25,7 @@ function pick(obj: Record<string, unknown>, path: string): string {
 }
 
 const EXTRA: Record<string, { ru: string; ky: string }> = {
-  "landing.statValue1": { ru: "82%", ky: "82%" },
+  "landing.statValue1": { ru: "84%", ky: "84%" },
   "landing.statValue2": { ru: "30", ky: "30" },
   "landing.statValue3": { ru: "12", ky: "12" },
 };

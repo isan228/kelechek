@@ -69,8 +69,8 @@ async function main() {
 
   await prisma.ratePlan.create({
     data: {
-      traineeSoloBps: 8200,
-      traineeWithCoachBps: 3200,
+      traineeSoloBps: 8400,
+      traineeWithCoachBps: 3400,
       coachBps: 5000,
       validFrom: new Date("2026-01-01T00:00:00Z"),
     },

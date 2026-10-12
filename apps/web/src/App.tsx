@@ -7,6 +7,7 @@ import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { HomePage } from "./pages/HomePage";
 import { MobileAppPage } from "./pages/MobileAppPage";
 import { AboutPage } from "./pages/AboutPage";
+import { DocumentsPage } from "./pages/DocumentsPage";
 import { MembershipsPage } from "./pages/MembershipsPage";
 import { WorkoutItemPage, WorkoutsPage } from "./pages/WorkoutsPage";
 import { CoachesPublicPage } from "./pages/CoachesPublicPage";
@@ -76,6 +77,7 @@ export function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/memberships" element={<MembershipsPage />} />
         <Route path="/pay/success" element={<PaymentSuccessPage />} />
         <Route path="/workouts" element={<WorkoutsPage />} />

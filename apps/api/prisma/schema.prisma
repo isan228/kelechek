@@ -182,8 +182,8 @@ model TariffI18n {
 
 model RatePlan {
   id                  String    @id @default(uuid()) @db.Uuid
-  traineeSoloBps      Int       @default(8200)
-  traineeWithCoachBps Int       @default(3200)
+  traineeSoloBps      Int       @default(8400)
+  traineeWithCoachBps Int       @default(3400)
   coachBps            Int       @default(5000)
   validFrom           DateTime
   validTo             DateTime?
